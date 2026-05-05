@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
@@ -5,11 +6,17 @@ from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
 
+from app.api.v1.auth import router as auth_router
+from app.api.v1.policies import router as policies_router
+from app.api.v1.reviews import router as reviews_router
 from app.core.config import get_settings
 from app.core.database import engine
+from app.core.policy import get_policy_engine
 from app.models.schema import create_tables
 
 settings = get_settings()
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -17,6 +24,14 @@ async def lifespan(app: FastAPI):
     # Startup: initialize database schema
     async with engine.begin() as conn:
         await conn.run_sync(create_tables)
+
+    # Startup: load default policies from YAML files
+    engine_instance = get_policy_engine()
+    try:
+        loaded = engine_instance.load_from_directory("app/policies")
+        logger.info("Loaded %d default policies: %s", len(loaded), loaded)
+    except Exception as exc:
+        logger.warning("Failed to load default policies: %s", exc)
 
     # Startup: initialize Redis connection
     try:
@@ -49,6 +64,11 @@ app = FastAPI(
     title="Kai's Review Platform",
     version="1.0.0",
 )
+
+# Register API routers
+app.include_router(auth_router)
+app.include_router(reviews_router)
+app.include_router(policies_router)
 
 
 @app.get("/health")
