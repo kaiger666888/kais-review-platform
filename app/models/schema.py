@@ -75,5 +75,25 @@ class PolicyVersion(Base):
     )
 
 
+class WebhookConfig(Base):
+    __tablename__ = "webhook_configs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    secret: Mapped[str] = mapped_column(String, nullable=False)
+    source_system: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_webhook_source_active", "source_system", "is_active"),
+    )
+
+
 def create_tables(conn):
     Base.metadata.create_all(conn)

@@ -56,6 +56,31 @@ class PolicyUpdateRequest(BaseModel):
     content: str
 
 
+class WebhookCreateRequest(BaseModel):
+    url: str = Field(min_length=1)
+    secret: str = Field(min_length=1)
+    source_system: str = Field(min_length=1)
+
+
+class WebhookUpdateRequest(BaseModel):
+    url: str | None = None
+    secret: str | None = None
+    source_system: str | None = None
+    is_active: bool | None = None
+
+
+class WebhookResponse(BaseModel):
+    id: int
+    url: str
+    secret: str
+    source_system: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # --- Response Models ---
 
 
