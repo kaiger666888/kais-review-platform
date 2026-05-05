@@ -27,7 +27,7 @@
 - [x] **SM-02**: State transitions are persisted with checkpoint to SQLite
 - [x] **SM-03**: Concurrent state transitions are protected by optimistic locking (version column)
 - [x] **SM-04**: State machine supports reject/escalate/expire transitions at each state
-- [ ] **SM-05**: Timeout-based auto-escalation (AI review 5min → human review 24h)
+- [x] **SM-05**: Timeout-based auto-escalation (AI review 5min → human review 24h)
 
 ### Review API
 
@@ -128,7 +128,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SM-02 | Phase 1: Core Engine | Complete |
 | SM-03 | Phase 1: Core Engine | Complete |
 | SM-04 | Phase 1: Core Engine | Complete |
-| SM-05 | Phase 1: Core Engine | Pending |
+| SM-05 | Phase 1: Core Engine | Complete |
 | REV-01 | Phase 1: Core Engine | Pending |
 | REV-02 | Phase 1: Core Engine | Pending |
 | REV-03 | Phase 1: Core Engine | Pending |
