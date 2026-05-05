@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-PLAN.md -- Project foundation: FastAPI skeleton, SQLite WAL, SQLAlchemy models, Pydantic schemas, audit trail
-- [ ] 02-PLAN.md -- Auth (JWT + one-time tokens) and 4-state checkpoint state machine with optimistic locking
+- [x] 02-PLAN.md -- Auth (JWT + one-time tokens) and 4-state checkpoint state machine with optimistic locking
 - [ ] 03-PLAN.md -- YAML policy engine with JSON Schema validation and Policy CRUD API
 - [ ] 04-PLAN.md -- Review API: submit, approve/reject, query, list, audit query endpoints
 - [ ] 05-PLAN.md -- Auto-escalation task and integration tests for full review lifecycle
@@ -83,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Engine | 0/5 | Planning complete | - |
+| 1. Core Engine | 2/5 | In Progress|  |
 | 2. Real-Time Events | 0/? | Not started | - |
 | 3. Review Frontend | 0/? | Not started | - |
 | 4. Deployment & Hardening | 0/? | Not started | - |

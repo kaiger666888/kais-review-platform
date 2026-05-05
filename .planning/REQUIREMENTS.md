@@ -7,10 +7,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: System can issue short-lived JWT tokens (15min) for API access
-- [ ] **AUTH-02**: System can generate one-time review tokens (32-char, unguessable, time-limited) for approval links
-- [ ] **AUTH-03**: API endpoints enforce JWT authentication on protected routes
-- [ ] **AUTH-04**: One-time tokens are invalidated after single use (atomic operation)
+- [x] **AUTH-01**: System can issue short-lived JWT tokens (15min) for API access
+- [x] **AUTH-02**: System can generate one-time review tokens (32-char, unguessable, time-limited) for approval links
+- [x] **AUTH-03**: API endpoints enforce JWT authentication on protected routes
+- [x] **AUTH-04**: One-time tokens are invalidated after single use (atomic operation)
 
 ### Policy Engine
 
@@ -23,10 +23,10 @@
 
 ### State Machine
 
-- [ ] **SM-01**: Review items follow a 4-state directed graph (PENDING → POLICY_EVAL → APPROVING → COMPLETE)
-- [ ] **SM-02**: State transitions are persisted with checkpoint to SQLite
-- [ ] **SM-03**: Concurrent state transitions are protected by optimistic locking (version column)
-- [ ] **SM-04**: State machine supports reject/escalate/expire transitions at each state
+- [x] **SM-01**: Review items follow a 4-state directed graph (PENDING → POLICY_EVAL → APPROVING → COMPLETE)
+- [x] **SM-02**: State transitions are persisted with checkpoint to SQLite
+- [x] **SM-03**: Concurrent state transitions are protected by optimistic locking (version column)
+- [x] **SM-04**: State machine supports reject/escalate/expire transitions at each state
 - [ ] **SM-05**: Timeout-based auto-escalation (AI review 5min → human review 24h)
 
 ### Review API
@@ -114,20 +114,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1: Core Engine | Pending |
-| AUTH-02 | Phase 1: Core Engine | Pending |
-| AUTH-03 | Phase 1: Core Engine | Pending |
-| AUTH-04 | Phase 1: Core Engine | Pending |
+| AUTH-01 | Phase 1: Core Engine | Complete |
+| AUTH-02 | Phase 1: Core Engine | Complete |
+| AUTH-03 | Phase 1: Core Engine | Complete |
+| AUTH-04 | Phase 1: Core Engine | Complete |
 | POLC-01 | Phase 1: Core Engine | Pending |
 | POLC-02 | Phase 1: Core Engine | Pending |
 | POLC-03 | Phase 1: Core Engine | Pending |
 | POLC-04 | Phase 1: Core Engine | Pending |
 | POLC-05 | Phase 1: Core Engine | Pending |
 | POLC-06 | Phase 1: Core Engine | Pending |
-| SM-01 | Phase 1: Core Engine | Pending |
-| SM-02 | Phase 1: Core Engine | Pending |
-| SM-03 | Phase 1: Core Engine | Pending |
-| SM-04 | Phase 1: Core Engine | Pending |
+| SM-01 | Phase 1: Core Engine | Complete |
+| SM-02 | Phase 1: Core Engine | Complete |
+| SM-03 | Phase 1: Core Engine | Complete |
+| SM-04 | Phase 1: Core Engine | Complete |
 | SM-05 | Phase 1: Core Engine | Pending |
 | REV-01 | Phase 1: Core Engine | Pending |
 | REV-02 | Phase 1: Core Engine | Pending |
