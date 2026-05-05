@@ -55,7 +55,7 @@ Exceptions:
 | Body | 14px | `text-sm` | 400 (regular) | 1.5 (`leading-relaxed`) |
 | Label | 12px | `text-xs` | 600 (semibold) | 1.33 (`leading-normal`) |
 | Heading | 18px | `text-lg` | 600 (semibold) | 1.33 (`leading-normal`) |
-| Display | 24px | `text-2xl` | 700 (bold) | 1.2 (`leading-tight`) |
+| Display | 24px | `text-2xl` | 600 (semibold) | 1.2 (`leading-tight`) |
 
 **Usage rules:**
 - Body (14px): review card descriptions, detail page content, toast messages
