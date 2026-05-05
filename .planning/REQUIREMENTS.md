@@ -49,9 +49,9 @@
 
 ### Audit Trail
 
-- [ ] **AUDT-01**: Every state transition creates an immutable audit log entry in SQLite
-- [ ] **AUDT-02**: Audit entries include: timestamp, review_id, previous_state, new_state, actor, action, metadata
-- [ ] **AUDT-03**: Audit log is append-only (no update or delete operations)
+- [x] **AUDT-01**: Every state transition creates an immutable audit log entry in SQLite
+- [x] **AUDT-02**: Audit entries include: timestamp, review_id, previous_state, new_state, actor, action, metadata
+- [x] **AUDT-03**: Audit log is append-only (no update or delete operations)
 - [ ] **AUDT-04**: System queries audit history for a review item (GET /api/v1/audit/{review_id})
 - [ ] **AUDT-05**: System queries audit log with filters (date range, action type, actor)
 
@@ -141,9 +141,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVNT-03 | Phase 2: Real-Time Events | Pending |
 | EVNT-04 | Phase 2: Real-Time Events | Pending |
 | EVNT-05 | Phase 2: Real-Time Events | Pending |
-| AUDT-01 | Phase 1: Core Engine | Pending |
-| AUDT-02 | Phase 1: Core Engine | Pending |
-| AUDT-03 | Phase 1: Core Engine | Pending |
+| AUDT-01 | Phase 1: Core Engine | Complete |
+| AUDT-02 | Phase 1: Core Engine | Complete |
+| AUDT-03 | Phase 1: Core Engine | Complete |
 | AUDT-04 | Phase 1: Core Engine | Pending |
 | AUDT-05 | Phase 1: Core Engine | Pending |
 | UI-01 | Phase 3: Review Frontend | Pending |

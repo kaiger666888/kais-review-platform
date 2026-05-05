@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans in 3 waves
 
 Plans:
-- [ ] 01-PLAN.md -- Project foundation: FastAPI skeleton, SQLite WAL, SQLAlchemy models, Pydantic schemas, audit trail
+- [x] 01-PLAN.md -- Project foundation: FastAPI skeleton, SQLite WAL, SQLAlchemy models, Pydantic schemas, audit trail
 - [ ] 02-PLAN.md -- Auth (JWT + one-time tokens) and 4-state checkpoint state machine with optimistic locking
 - [ ] 03-PLAN.md -- YAML policy engine with JSON Schema validation and Policy CRUD API
 - [ ] 04-PLAN.md -- Review API: submit, approve/reject, query, list, audit query endpoints
