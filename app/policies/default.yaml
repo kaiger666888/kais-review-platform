@@ -1,0 +1,38 @@
+name: default_routing
+version: "1.0"
+rules:
+  - name: auto_approve_low_risk
+    priority: 1
+    conditions:
+      operator: AND
+      checks:
+        - field: risk_score
+          operator: less_than
+          value: 0.3
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+    disposition: AUTO
+
+  - name: human_review_high_risk
+    priority: 2
+    conditions:
+      operator: OR
+      checks:
+        - field: risk_score
+          operator: greater_than
+          value: 0.7
+        - field: priority
+          operator: equals
+          value: critical
+    disposition: HUMAN
+
+  - name: block_flagged_content
+    priority: 3
+    conditions:
+      operator: AND
+      checks:
+        - field: metadata.flagged
+          operator: equals
+          value: true
+    disposition: BLOCK
