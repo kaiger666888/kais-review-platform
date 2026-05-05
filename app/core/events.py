@@ -2,9 +2,13 @@
 
 Provides a singleton EventManager that maintains per-connection asyncio.Queue
 instances for broadcasting review_status events to connected SSE clients.
+Also provides emit_state_change() for wiring state machine transitions
+into the SSE + webhook delivery pipeline.
 """
 
 import asyncio
+import json
+from datetime import datetime, timezone
 
 import structlog
 
@@ -88,3 +92,60 @@ class EventManager:
 
 # Module-level singleton instance
 event_manager = EventManager()
+
+
+async def emit_state_change(
+    review_id: int,
+    old_state: str,
+    new_state: str,
+    source_system: str,
+) -> None:
+    """Emit a state change event to SSE clients and enqueue webhook deliveries.
+
+    This function is called from transition_state() after a successful
+    state transition and audit logging. It broadcasts the event to all
+    connected SSE clients and enqueues a deliver_webhook arq job for each
+    active WebhookConfig.
+
+    Args:
+        review_id: ID of the review that changed state.
+        old_state: Previous state value.
+        new_state: New state value.
+        source_system: Source system that owns the review.
+    """
+    event_data = {
+        "review_id": review_id,
+        "old_state": old_state,
+        "new_state": new_state,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source_system": source_system,
+    }
+
+    # 1. Broadcast to SSE clients
+    await event_manager.broadcast(event_data)
+
+    # 2. Enqueue webhook deliveries for all active configs
+    #    (source_system filtering happens per webhook config)
+    try:
+        from app.core.database import async_session_factory
+        from app.models.schema import WebhookConfig
+        from sqlalchemy import select
+
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(WebhookConfig).where(WebhookConfig.is_active == True)
+            )
+            configs = result.scalars().all()
+
+        # Import arq pool lazily to avoid circular imports
+        from app.main import app
+        arq_pool = app.state.arq_pool
+        if arq_pool:
+            for config in configs:
+                await arq_pool.enqueue_job(
+                    "deliver_webhook",
+                    config.id,
+                    event_data,
+                )
+    except Exception as e:
+        logger.error("webhook_enqueue_failed", error=str(e))

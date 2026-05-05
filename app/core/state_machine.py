@@ -136,6 +136,17 @@ async def transition_state(
         payload=payload,
     )
 
+    # Emit state change event (SSE + webhook)
+    from app.core.events import emit_state_change
+
+    review = await session.get(Review, review_id)
+    await emit_state_change(
+        review_id=review_id,
+        old_state=from_state.value,
+        new_state=to_state.value,
+        source_system=review.source_system,
+    )
+
     # Refresh and return the updated review
     await session.flush()
     await session.refresh(await session.get(Review, review_id))
