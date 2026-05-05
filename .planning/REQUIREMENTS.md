@@ -14,12 +14,12 @@
 
 ### Policy Engine
 
-- [ ] **POLC-01**: System evaluates YAML-based policy rules for each review submission
-- [ ] **POLC-02**: Policy rules route items to AUTO/HUMAN/AI_AUDIT/BLOCK based on configurable conditions
-- [ ] **POLC-03**: Risk-tier routing supports threshold-based classification (low → auto, medium → AI, high → human)
-- [ ] **POLC-04**: Policies are validated against JSON Schema before activation
-- [ ] **POLC-05**: Policy CRUD via API (create, read, update, delete with version tracking)
-- [ ] **POLC-06**: Policy changes are logged in audit trail
+- [x] **POLC-01**: System evaluates YAML-based policy rules for each review submission
+- [x] **POLC-02**: Policy rules route items to AUTO/HUMAN/AI_AUDIT/BLOCK based on configurable conditions
+- [x] **POLC-03**: Risk-tier routing supports threshold-based classification (low → auto, medium → AI, high → human)
+- [x] **POLC-04**: Policies are validated against JSON Schema before activation
+- [x] **POLC-05**: Policy CRUD via API (create, read, update, delete with version tracking)
+- [x] **POLC-06**: Policy changes are logged in audit trail
 
 ### State Machine
 
@@ -118,12 +118,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1: Core Engine | Complete |
 | AUTH-03 | Phase 1: Core Engine | Complete |
 | AUTH-04 | Phase 1: Core Engine | Complete |
-| POLC-01 | Phase 1: Core Engine | Pending |
-| POLC-02 | Phase 1: Core Engine | Pending |
-| POLC-03 | Phase 1: Core Engine | Pending |
-| POLC-04 | Phase 1: Core Engine | Pending |
-| POLC-05 | Phase 1: Core Engine | Pending |
-| POLC-06 | Phase 1: Core Engine | Pending |
+| POLC-01 | Phase 1: Core Engine | Complete |
+| POLC-02 | Phase 1: Core Engine | Complete |
+| POLC-03 | Phase 1: Core Engine | Complete |
+| POLC-04 | Phase 1: Core Engine | Complete |
+| POLC-05 | Phase 1: Core Engine | Complete |
+| POLC-06 | Phase 1: Core Engine | Complete |
 | SM-01 | Phase 1: Core Engine | Complete |
 | SM-02 | Phase 1: Core Engine | Complete |
 | SM-03 | Phase 1: Core Engine | Complete |
