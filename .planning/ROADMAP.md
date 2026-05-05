@@ -38,7 +38,7 @@ Plans:
 - [x] 02-PLAN.md -- Auth (JWT + one-time tokens) and 4-state checkpoint state machine with optimistic locking
 - [x] 03-PLAN.md -- YAML policy engine with JSON Schema validation and Policy CRUD API
 - [x] 04-PLAN.md -- Review API: submit, approve/reject, query, list, audit query endpoints
-- [ ] 05-PLAN.md -- Auto-escalation task and integration tests for full review lifecycle
+- [x] 05-PLAN.md -- Auto-escalation task and integration tests for full review lifecycle
 
 ### Phase 2: Real-Time Events
 **Goal**: Review status changes are pushed to browsers in real-time via SSE and delivered to registered external systems via webhooks with retry -- no polling required.
