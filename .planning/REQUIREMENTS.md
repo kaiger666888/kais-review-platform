@@ -31,13 +31,13 @@
 
 ### Review API
 
-- [ ] **REV-01**: External systems can submit review items via REST API (POST /api/v1/reviews)
-- [ ] **REV-02**: Review submission includes: type, content_ref, metadata, source_system, priority
-- [ ] **REV-03**: Submitters receive immediate response with review_id and routing decision
-- [ ] **REV-04**: Reviewers can approve items with optional comment (POST /api/v1/reviews/{id}/approve)
-- [ ] **REV-05**: Reviewers can reject items with mandatory reason (POST /api/v1/reviews/{id}/reject)
-- [ ] **REV-06**: System queries review status by ID (GET /api/v1/reviews/{id})
-- [ ] **REV-07**: System lists reviews with filters (status, type, source, date range) and pagination
+- [x] **REV-01**: External systems can submit review items via REST API (POST /api/v1/reviews)
+- [x] **REV-02**: Review submission includes: type, content_ref, metadata, source_system, priority
+- [x] **REV-03**: Submitters receive immediate response with review_id and routing decision
+- [x] **REV-04**: Reviewers can approve items with optional comment (POST /api/v1/reviews/{id}/approve)
+- [x] **REV-05**: Reviewers can reject items with mandatory reason (POST /api/v1/reviews/{id}/reject)
+- [x] **REV-06**: System queries review status by ID (GET /api/v1/reviews/{id})
+- [x] **REV-07**: System lists reviews with filters (status, type, source, date range) and pagination
 
 ### Event Bus
 
@@ -52,8 +52,8 @@
 - [x] **AUDT-01**: Every state transition creates an immutable audit log entry in SQLite
 - [x] **AUDT-02**: Audit entries include: timestamp, review_id, previous_state, new_state, actor, action, metadata
 - [x] **AUDT-03**: Audit log is append-only (no update or delete operations)
-- [ ] **AUDT-04**: System queries audit history for a review item (GET /api/v1/audit/{review_id})
-- [ ] **AUDT-05**: System queries audit log with filters (date range, action type, actor)
+- [x] **AUDT-04**: System queries audit history for a review item (GET /api/v1/audit/{review_id})
+- [x] **AUDT-05**: System queries audit log with filters (date range, action type, actor)
 
 ### Frontend
 
@@ -129,13 +129,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SM-03 | Phase 1: Core Engine | Complete |
 | SM-04 | Phase 1: Core Engine | Complete |
 | SM-05 | Phase 1: Core Engine | Pending |
-| REV-01 | Phase 1: Core Engine | Pending |
-| REV-02 | Phase 1: Core Engine | Pending |
-| REV-03 | Phase 1: Core Engine | Pending |
-| REV-04 | Phase 1: Core Engine | Pending |
-| REV-05 | Phase 1: Core Engine | Pending |
-| REV-06 | Phase 1: Core Engine | Pending |
-| REV-07 | Phase 1: Core Engine | Pending |
+| REV-01 | Phase 1: Core Engine | Complete |
+| REV-02 | Phase 1: Core Engine | Complete |
+| REV-03 | Phase 1: Core Engine | Complete |
+| REV-04 | Phase 1: Core Engine | Complete |
+| REV-05 | Phase 1: Core Engine | Complete |
+| REV-06 | Phase 1: Core Engine | Complete |
+| REV-07 | Phase 1: Core Engine | Complete |
 | EVNT-01 | Phase 2: Real-Time Events | Pending |
 | EVNT-02 | Phase 2: Real-Time Events | Pending |
 | EVNT-03 | Phase 2: Real-Time Events | Pending |
@@ -144,8 +144,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDT-01 | Phase 1: Core Engine | Complete |
 | AUDT-02 | Phase 1: Core Engine | Complete |
 | AUDT-03 | Phase 1: Core Engine | Complete |
-| AUDT-04 | Phase 1: Core Engine | Pending |
-| AUDT-05 | Phase 1: Core Engine | Pending |
+| AUDT-04 | Phase 1: Core Engine | Complete |
+| AUDT-05 | Phase 1: Core Engine | Complete |
 | UI-01 | Phase 3: Review Frontend | Pending |
 | UI-02 | Phase 3: Review Frontend | Pending |
 | UI-03 | Phase 3: Review Frontend | Pending |
