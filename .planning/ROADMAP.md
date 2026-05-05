@@ -52,7 +52,7 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 02-01-PLAN.md -- SSE streaming endpoint (EventManager + heartbeat cleanup) and WebhookConfig CRUD API
+- [x] 02-01-PLAN.md -- SSE streaming endpoint (EventManager + heartbeat cleanup) and WebhookConfig CRUD API
 - [ ] 02-02-PLAN.md -- Webhook delivery with retry (arq task + HMAC signatures) and event emission integration into state machine
 
 ### Phase 3: Review Frontend
