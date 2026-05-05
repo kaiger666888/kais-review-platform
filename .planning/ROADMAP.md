@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- SSE streaming endpoint (EventManager + heartbeat cleanup) and WebhookConfig CRUD API
-- [ ] 02-02-PLAN.md -- Webhook delivery with retry (arq task + HMAC signatures) and event emission integration into state machine
+- [x] 02-02-PLAN.md -- Webhook delivery with retry (arq task + HMAC signatures) and event emission integration into state machine
 
 ### Phase 3: Review Frontend
 **Goal**: Reviewers have a mobile-first web interface to view pending reviews, approve or reject items with one tap, receive real-time updates, and open one-time approval links directly on their phone.

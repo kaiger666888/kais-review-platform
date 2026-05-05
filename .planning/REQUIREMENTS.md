@@ -43,8 +43,8 @@
 
 - [x] **EVNT-01**: System pushes real-time review status changes via SSE (GET /api/v1/stream)
 - [x] **EVNT-02**: SSE connections include heartbeat-based cleanup for zombie connections
-- [ ] **EVNT-03**: System sends Webhook callbacks to registered external systems on status change
-- [ ] **EVNT-04**: Webhook delivery uses retry with exponential backoff (max 3 retries)
+- [x] **EVNT-03**: System sends Webhook callbacks to registered external systems on status change
+- [x] **EVNT-04**: Webhook delivery uses retry with exponential backoff (max 3 retries)
 - [x] **EVNT-05**: Webhook targets are configurable per source system (kais-movie-agent, kais-gold-team)
 
 ### Audit Trail
@@ -138,8 +138,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REV-07 | Phase 1: Core Engine | Complete |
 | EVNT-01 | Phase 2: Real-Time Events | Complete |
 | EVNT-02 | Phase 2: Real-Time Events | Complete |
-| EVNT-03 | Phase 2: Real-Time Events | Pending |
-| EVNT-04 | Phase 2: Real-Time Events | Pending |
+| EVNT-03 | Phase 2: Real-Time Events | Complete |
+| EVNT-04 | Phase 2: Real-Time Events | Complete |
 | EVNT-05 | Phase 2: Real-Time Events | Complete |
 | AUDT-01 | Phase 1: Core Engine | Complete |
 | AUDT-02 | Phase 1: Core Engine | Complete |
