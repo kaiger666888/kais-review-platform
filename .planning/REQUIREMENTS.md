@@ -114,57 +114,57 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| POLC-01 | — | Pending |
-| POLC-02 | — | Pending |
-| POLC-03 | — | Pending |
-| POLC-04 | — | Pending |
-| POLC-05 | — | Pending |
-| POLC-06 | — | Pending |
-| SM-01 | — | Pending |
-| SM-02 | — | Pending |
-| SM-03 | — | Pending |
-| SM-04 | — | Pending |
-| SM-05 | — | Pending |
-| REV-01 | — | Pending |
-| REV-02 | — | Pending |
-| REV-03 | — | Pending |
-| REV-04 | — | Pending |
-| REV-05 | — | Pending |
-| REV-06 | — | Pending |
-| REV-07 | — | Pending |
-| EVNT-01 | — | Pending |
-| EVNT-02 | — | Pending |
-| EVNT-03 | — | Pending |
-| EVNT-04 | — | Pending |
-| EVNT-05 | — | Pending |
-| AUDT-01 | — | Pending |
-| AUDT-02 | — | Pending |
-| AUDT-03 | — | Pending |
-| AUDT-04 | — | Pending |
-| AUDT-05 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| DEPL-01 | — | Pending |
-| DEPL-02 | — | Pending |
-| DEPL-03 | — | Pending |
-| DEPL-04 | — | Pending |
-| DEPL-05 | — | Pending |
-| DEPL-06 | — | Pending |
-| DEPL-07 | — | Pending |
+| AUTH-01 | Phase 1: Core Engine | Pending |
+| AUTH-02 | Phase 1: Core Engine | Pending |
+| AUTH-03 | Phase 1: Core Engine | Pending |
+| AUTH-04 | Phase 1: Core Engine | Pending |
+| POLC-01 | Phase 1: Core Engine | Pending |
+| POLC-02 | Phase 1: Core Engine | Pending |
+| POLC-03 | Phase 1: Core Engine | Pending |
+| POLC-04 | Phase 1: Core Engine | Pending |
+| POLC-05 | Phase 1: Core Engine | Pending |
+| POLC-06 | Phase 1: Core Engine | Pending |
+| SM-01 | Phase 1: Core Engine | Pending |
+| SM-02 | Phase 1: Core Engine | Pending |
+| SM-03 | Phase 1: Core Engine | Pending |
+| SM-04 | Phase 1: Core Engine | Pending |
+| SM-05 | Phase 1: Core Engine | Pending |
+| REV-01 | Phase 1: Core Engine | Pending |
+| REV-02 | Phase 1: Core Engine | Pending |
+| REV-03 | Phase 1: Core Engine | Pending |
+| REV-04 | Phase 1: Core Engine | Pending |
+| REV-05 | Phase 1: Core Engine | Pending |
+| REV-06 | Phase 1: Core Engine | Pending |
+| REV-07 | Phase 1: Core Engine | Pending |
+| EVNT-01 | Phase 2: Real-Time Events | Pending |
+| EVNT-02 | Phase 2: Real-Time Events | Pending |
+| EVNT-03 | Phase 2: Real-Time Events | Pending |
+| EVNT-04 | Phase 2: Real-Time Events | Pending |
+| EVNT-05 | Phase 2: Real-Time Events | Pending |
+| AUDT-01 | Phase 1: Core Engine | Pending |
+| AUDT-02 | Phase 1: Core Engine | Pending |
+| AUDT-03 | Phase 1: Core Engine | Pending |
+| AUDT-04 | Phase 1: Core Engine | Pending |
+| AUDT-05 | Phase 1: Core Engine | Pending |
+| UI-01 | Phase 3: Review Frontend | Pending |
+| UI-02 | Phase 3: Review Frontend | Pending |
+| UI-03 | Phase 3: Review Frontend | Pending |
+| UI-04 | Phase 3: Review Frontend | Pending |
+| UI-05 | Phase 3: Review Frontend | Pending |
+| UI-06 | Phase 3: Review Frontend | Pending |
+| DEPL-01 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-02 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-03 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-04 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-05 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-06 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-07 | Phase 4: Deployment & Hardening | Pending |
 
 **Coverage:**
 - v1 requirements: 44 total
-- Mapped to phases: 0
-- Unmapped: 44 ⚠️
+- Mapped to phases: 44
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 after initial definition*
+*Last updated: 2026-05-05 after roadmap creation*
