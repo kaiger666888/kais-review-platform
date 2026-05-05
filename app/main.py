@@ -6,9 +6,12 @@ from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
 
+from app.api.v1.actions import router as actions_router
+from app.api.v1.audit_api import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.policies import router as policies_router
 from app.api.v1.reviews import router as reviews_router
+from app.core.dependencies import get_arq_pool, get_redis
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.policy import get_policy_engine
@@ -68,17 +71,11 @@ app = FastAPI(
 # Register API routers
 app.include_router(auth_router)
 app.include_router(reviews_router)
+app.include_router(actions_router)
+app.include_router(audit_router)
 app.include_router(policies_router)
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
-
-
-def get_redis(request: Request):
-    return request.app.state.redis
-
-
-def get_arq_pool(request: Request):
-    return request.app.state.arq_pool
