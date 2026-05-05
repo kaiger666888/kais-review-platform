@@ -49,7 +49,11 @@ Plans:
   2. Zombie SSE connections are detected and cleaned up via heartbeat mechanism, preventing memory leaks
   3. Registered external systems receive webhook callbacks when review status changes, with automatic retry on failure (up to 3 attempts with backoff)
   4. Webhook targets are configurable per source system (kais-movie-agent, kais-gold-team) and can be added/updated without code changes
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [ ] 02-01-PLAN.md -- SSE streaming endpoint (EventManager + heartbeat cleanup) and WebhookConfig CRUD API
+- [ ] 02-02-PLAN.md -- Webhook delivery with retry (arq task + HMAC signatures) and event emission integration into state machine
 
 ### Phase 3: Review Frontend
 **Goal**: Reviewers have a mobile-first web interface to view pending reviews, approve or reject items with one tap, receive real-time updates, and open one-time approval links directly on their phone.
@@ -83,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Engine | 2/5 | In Progress|  |
-| 2. Real-Time Events | 0/? | Not started | - |
+| 1. Core Engine | 5/5 | Complete | 2026-05-05 |
+| 2. Real-Time Events | 0/2 | Not started | - |
 | 3. Review Frontend | 0/? | Not started | - |
 | 4. Deployment & Hardening | 0/? | Not started | - |
