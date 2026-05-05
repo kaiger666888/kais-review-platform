@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from app.core.audit import audit_protect_authorizer
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -24,6 +25,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA busy_timeout=5000")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+    dbapi_connection.set_authorizer(audit_protect_authorizer)
 
 
 async_session_factory = async_sessionmaker(
