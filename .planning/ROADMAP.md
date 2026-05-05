@@ -31,7 +31,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Every state transition is queryable in an append-only audit log with timestamp, actor, previous state, and new state
   4. YAML policy rules route items based on risk-tier thresholds and invalid YAML is rejected with clear validation errors
   5. JWT-protected endpoints reject unauthenticated requests and one-time review tokens work exactly once
-**Plans**: TBD
+**Plans**: 5 plans in 3 waves
+
+Plans:
+- [ ] 01-PLAN.md -- Project foundation: FastAPI skeleton, SQLite WAL, SQLAlchemy models, Pydantic schemas, audit trail
+- [ ] 02-PLAN.md -- Auth (JWT + one-time tokens) and 4-state checkpoint state machine with optimistic locking
+- [ ] 03-PLAN.md -- YAML policy engine with JSON Schema validation and Policy CRUD API
+- [ ] 04-PLAN.md -- Review API: submit, approve/reject, query, list, audit query endpoints
+- [ ] 05-PLAN.md -- Auto-escalation task and integration tests for full review lifecycle
 
 ### Phase 2: Real-Time Events
 **Goal**: Review status changes are pushed to browsers in real-time via SSE and delivered to registered external systems via webhooks with retry -- no polling required.
@@ -76,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Engine | 0/? | Not started | - |
+| 1. Core Engine | 0/5 | Planning complete | - |
 | 2. Real-Time Events | 0/? | Not started | - |
 | 3. Review Frontend | 0/? | Not started | - |
 | 4. Deployment & Hardening | 0/? | Not started | - |
