@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import append_audit
+from app.core.auth import get_current_client
 from app.core.database import get_db
 from app.core.policy import PolicyEngine, PolicyValidationError, get_policy_engine
 from app.models.schema import PolicyVersion
@@ -33,15 +34,6 @@ router = APIRouter(prefix="/api/v1/policies", tags=["policies"])
 async def get_policy_engine_dependency() -> PolicyEngine:
     """FastAPI dependency that returns the global PolicyEngine."""
     return get_policy_engine()
-
-
-async def get_current_client() -> str:
-    """Placeholder auth dependency -- returns client identity.
-
-    Will be replaced with proper JWT validation once the auth module
-    is implemented (Plan 02).
-    """
-    return "system"
 
 
 # ---------------------------------------------------------------------------
