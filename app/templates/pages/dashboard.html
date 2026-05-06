@@ -26,5 +26,24 @@
 </div>
 
 <!-- Detail overlay container -->
-<div id="detail-overlay"></div>
+<div id="detail-overlay">
+  {% if detail_id and reviews %}
+    {% set review = reviews | selectattr('id', 'equalto', detail_id) | first %}
+    {% if review %}
+      {% include "partials/_review_detail.html" %}
+    {% else %}
+      {# Review not in current page -- fetch via HTMX on load #}
+      <div hx-get="/reviews/{{ detail_id }}/detail"
+           hx-trigger="load"
+           hx-target="#detail-overlay"
+           hx-swap="innerHTML"></div>
+    {% endif %}
+  {% elif detail_id %}
+    {# detail_id set but no reviews match -- fetch via HTMX #}
+    <div hx-get="/reviews/{{ detail_id }}/detail"
+         hx-trigger="load"
+         hx-target="#detail-overlay"
+         hx-swap="innerHTML"></div>
+  {% endif %}
+</div>
 {% endblock %}
