@@ -72,7 +72,7 @@
 - [x] **DEPL-04**: SQLite data persisted via bind mount with WAL mode
 - [x] **DEPL-05**: Redis data persisted for state machine and task queue
 - [x] **DEPL-06**: Docker security hardening (read_only, cap_drop ALL, non-root user)
-- [ ] **DEPL-07**: Health check endpoints for all services with auto-restart
+- [x] **DEPL-07**: Health check endpoints for all services with auto-restart
 
 ## v2 Requirements
 
@@ -158,7 +158,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPL-04 | Phase 4: Deployment & Hardening | Complete |
 | DEPL-05 | Phase 4: Deployment & Hardening | Complete |
 | DEPL-06 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-07 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-07 | Phase 4: Deployment & Hardening | Complete |
 
 **Coverage:**
 - v1 requirements: 44 total
