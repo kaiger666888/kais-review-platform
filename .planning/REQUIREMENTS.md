@@ -66,12 +66,12 @@
 
 ### Deployment
 
-- [ ] **DEPL-01**: Docker Compose with 4 services (api, nginx, redis, optional dozzle)
-- [ ] **DEPL-02**: Total container memory usage under 400MB
-- [ ] **DEPL-03**: Nginx reverse proxy with SSE support and rate limiting
-- [ ] **DEPL-04**: SQLite data persisted via bind mount with WAL mode
-- [ ] **DEPL-05**: Redis data persisted for state machine and task queue
-- [ ] **DEPL-06**: Docker security hardening (read_only, cap_drop ALL, non-root user)
+- [x] **DEPL-01**: Docker Compose with 4 services (api, nginx, redis, optional dozzle)
+- [x] **DEPL-02**: Total container memory usage under 400MB
+- [x] **DEPL-03**: Nginx reverse proxy with SSE support and rate limiting
+- [x] **DEPL-04**: SQLite data persisted via bind mount with WAL mode
+- [x] **DEPL-05**: Redis data persisted for state machine and task queue
+- [x] **DEPL-06**: Docker security hardening (read_only, cap_drop ALL, non-root user)
 - [ ] **DEPL-07**: Health check endpoints for all services with auto-restart
 
 ## v2 Requirements
@@ -152,12 +152,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-04 | Phase 3: Review Frontend | Complete |
 | UI-05 | Phase 3: Review Frontend | Complete |
 | UI-06 | Phase 3: Review Frontend | Complete |
-| DEPL-01 | Phase 4: Deployment & Hardening | Pending |
-| DEPL-02 | Phase 4: Deployment & Hardening | Pending |
-| DEPL-03 | Phase 4: Deployment & Hardening | Pending |
-| DEPL-04 | Phase 4: Deployment & Hardening | Pending |
-| DEPL-05 | Phase 4: Deployment & Hardening | Pending |
-| DEPL-06 | Phase 4: Deployment & Hardening | Pending |
+| DEPL-01 | Phase 4: Deployment & Hardening | Complete |
+| DEPL-02 | Phase 4: Deployment & Hardening | Complete |
+| DEPL-03 | Phase 4: Deployment & Hardening | Complete |
+| DEPL-04 | Phase 4: Deployment & Hardening | Complete |
+| DEPL-05 | Phase 4: Deployment & Hardening | Complete |
+| DEPL-06 | Phase 4: Deployment & Hardening | Complete |
 | DEPL-07 | Phase 4: Deployment & Hardening | Pending |
 
 **Coverage:**

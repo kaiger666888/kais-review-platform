@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-05-06T00:27:43.189Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-05-06T00:38:20.453Z"
 last_activity: 2026-05-06
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
   percent: 0
 ---
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P01 | 5min | 2 tasks | 13 files |
 | Phase 03 P03 | 1min | 2 tasks | 2 files |
 | Phase 03 P02 | 4min | 1 tasks | 4 files |
+| Phase 04 P01 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,10 @@ Recent decisions affecting current work:
 - [Phase 03]: Detail overlay pre-renders server-side when review in current results, HTMX lazy-load fallback otherwise
 - [Phase 03]: Separate SSE endpoint (/events/stream) with cookie auth instead of modifying existing API endpoint (/api/v1/events/stream) with Bearer auth -- avoids touching working API code
 - [Phase 03]: Extract inline new reviews banner to partial file for reuse and consistency with other partials
+- [Phase 04]: Single worker (no --workers flag) in Dockerfile CMD since SQLite single-writer constraint
+- [Phase 04]: Dozzle in monitoring profile (not default) to keep baseline memory under 400MB
+- [Phase 04]: Redis NOT read_only since it writes AOF to /data named volume
+- [Phase 04]: SSE /events/stream gets dedicated nginx location bypassing rate limit with 86400s read timeout
 
 ### Pending Todos
 
@@ -102,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-06T00:26:40.546Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-05-06T00:38:20.450Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
