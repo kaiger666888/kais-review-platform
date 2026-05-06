@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
+from sqlalchemy import text
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
@@ -88,4 +89,30 @@ app.include_router(web_router)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    checks = {"status": "ok"}
+
+    # Check Redis connectivity
+    try:
+        redis = getattr(app.state, "redis", None)
+        if redis:
+            await redis.ping()
+            checks["redis"] = "ok"
+        else:
+            checks["redis"] = "unavailable"
+            checks["status"] = "degraded"
+    except Exception:
+        checks["redis"] = "error"
+        checks["status"] = "degraded"
+
+    # Check SQLite connectivity
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+        checks["status"] = "degraded"
+
+    status_code = 200 if checks["status"] == "ok" else 503
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=checks, status_code=status_code)
