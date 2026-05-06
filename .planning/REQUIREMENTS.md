@@ -60,7 +60,7 @@
 - [x] **UI-01**: Mobile-first review dashboard showing pending/approved/rejected review lists
 - [x] **UI-02**: Review detail page with content preview and approve/reject action buttons
 - [ ] **UI-03**: Dashboard receives real-time updates via SSE (new reviews appear automatically)
-- [ ] **UI-04**: One-time token deep links open review detail directly for quick approval
+- [x] **UI-04**: One-time token deep links open review detail directly for quick approval
 - [x] **UI-05**: Responsive layout optimized for mobile phone screens (primary target)
 - [x] **UI-06**: HTMX server-rendered with Alpine.js for client-side interactivity
 
@@ -149,7 +149,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-01 | Phase 3: Review Frontend | Complete |
 | UI-02 | Phase 3: Review Frontend | Complete |
 | UI-03 | Phase 3: Review Frontend | Pending |
-| UI-04 | Phase 3: Review Frontend | Pending |
+| UI-04 | Phase 3: Review Frontend | Complete |
 | UI-05 | Phase 3: Review Frontend | Complete |
 | UI-06 | Phase 3: Review Frontend | Complete |
 | DEPL-01 | Phase 4: Deployment & Hardening | Pending |
