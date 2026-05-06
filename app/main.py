@@ -15,6 +15,7 @@ from app.api.v1.reviews import router as reviews_router
 from app.api.v1.webhooks import router as webhooks_router
 from app.web.routes import router as web_router
 from app.web.auth import router as web_auth_router
+from app.web.sse import router as sse_router
 from app.core.dependencies import get_arq_pool, get_redis
 from app.core.config import get_settings
 from app.core.database import engine
@@ -81,6 +82,7 @@ app.include_router(policies_router)
 app.include_router(events_router)
 app.include_router(webhooks_router)
 app.include_router(web_auth_router)
+app.include_router(sse_router)
 app.include_router(web_router)
 
 

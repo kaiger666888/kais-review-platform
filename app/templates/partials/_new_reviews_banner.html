@@ -1,0 +1,7 @@
+<!-- New reviews banner: shows count of new items since last view -->
+<!-- Alpine.js x-data manages count state, x-cloak hides on initial load -->
+<div id="new-reviews-banner" x-data="{ count: 0 }" x-show="count > 0" x-cloak
+     class="bg-blue-600 text-white text-center p-2 text-sm font-semibold cursor-pointer"
+     @click="count = 0; htmx.trigger('#review-list-container', 'refreshList')">
+  <span x-text="count + ' new reviews'"></span>
+</div>

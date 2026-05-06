@@ -6,14 +6,10 @@
   <h1 class="text-2xl font-semibold text-gray-900">Kai's Review Platform</h1>
 </div>
 
-<!-- SSE wrapper (placeholder for Plan 02 real-time integration) -->
-<div hx-ext="sse" sse-connect="/api/v1/events/stream">
-  <!-- New reviews banner placeholder -->
-  <div id="new-reviews-banner" x-data="{ count: 0 }" x-show="count > 0" x-cloak
-       class="bg-blue-600 text-white text-center p-2 text-sm font-semibold cursor-pointer"
-       @click="count = 0; htmx.trigger('#review-list', 'refreshList')">
-    <span x-text="count + ' new reviews'"></span>
-  </div>
+<!-- SSE wrapper: real-time review status updates via cookie-auth endpoint -->
+<div hx-ext="sse" sse-connect="/events/stream">
+  <!-- New reviews banner: shows count of new items, click resets and refreshes -->
+  {% include "partials/_new_reviews_banner.html" %}
 
   <!-- Review list area -->
   <div id="review-list-container"
