@@ -1,0 +1,20 @@
+<div id="review-list">
+  {% if reviews %}
+    {% for review in reviews %}
+      {% include "partials/_review_card.html" %}
+    {% endfor %}
+    {% if has_more %}
+      <div class="p-4 text-center">
+        <button class="text-blue-600 text-sm font-semibold min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-blue-600"
+                hx-get="/partials/review-list?status={{ active_tab }}&cursor={{ cursor }}"
+                hx-target="#review-list"
+                hx-swap="beforeend"
+                hx-select="#review-list > *">
+          Load more
+        </button>
+      </div>
+    {% endif %}
+  {% else %}
+    {% include "partials/_empty_state.html" %}
+  {% endif %}
+</div>

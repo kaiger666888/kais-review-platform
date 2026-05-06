@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="bg-white border-b border-gray-200 p-4">
+  <h1 class="text-2xl font-semibold text-gray-900">Kai's Review Platform</h1>
+</div>
+
+<!-- SSE wrapper (placeholder for Plan 02 real-time integration) -->
+<div hx-ext="sse" sse-connect="/api/v1/events/stream">
+  <!-- New reviews banner placeholder -->
+  <div id="new-reviews-banner" x-data="{ count: 0 }" x-show="count > 0" x-cloak
+       class="bg-blue-600 text-white text-center p-2 text-sm font-semibold cursor-pointer"
+       @click="count = 0; htmx.trigger('#review-list', 'refreshList')">
+    <span x-text="count + ' new reviews'"></span>
+  </div>
+
+  <!-- Review list area -->
+  <div id="review-list-container"
+       hx-get="/partials/review-list?status={{ active_tab }}"
+       hx-trigger="sse:review_status, load, refreshList from:body"
+       hx-target="#review-list"
+       hx-swap="innerHTML">
+    {% include "partials/_review_list.html" %}
+  </div>
+</div>
+
+<!-- Detail overlay container -->
+<div id="detail-overlay"></div>
+{% endblock %}
