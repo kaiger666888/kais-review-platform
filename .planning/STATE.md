@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: verifying
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-05-06T00:40:39.555Z"
-last_activity: 2026-05-06
+milestone: v1.1
+milestone_name: integration-tests-and-tech-debt
+status: defining_requirements
+stopped_at: Milestone v1.1 started
+last_updated: "2026-05-07T00:00:00.000Z"
+last_activity: 2026-05-07
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-05)
+See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** 策略引擎驱动的审核路由 -- 每个 AI 生产任务执行前必须通过策略评估
-**Current focus:** Phase 03 — review-frontend
+**Current focus:** Milestone v1.1 — Integration Tests & Tech Debt
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-06
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-07 — Milestone v1.1 started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -110,5 +110,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-06T00:40:14.895Z
-Stopped at: Completed 04-02-PLAN.md
+Stopped at: Milestone v1.1 started
 Resume file: None
