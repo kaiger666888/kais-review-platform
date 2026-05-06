@@ -82,7 +82,11 @@ Plans:
   3. Nginx correctly proxies SSE connections (no buffering) and enforces rate limiting
   4. SQLite data persists across container restarts via bind mount with WAL mode confirmed
   5. All services have health check endpoints and auto-restart on failure; containers run with security hardening (read_only, cap_drop ALL, non-root)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [ ] 04-01-PLAN.md -- Dockerfile, docker-compose.yml (4 services), Nginx config with SSE support, security hardening, data persistence
+- [ ] 04-02-PLAN.md -- Enhanced health check with dependency verification, startup script, full-stack verification
 
 ## Progress
 
@@ -92,6 +96,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Engine | 5/5 | Complete | 2026-05-05 |
-| 2. Real-Time Events | 0/2 | Not started | - |
-| 3. Review Frontend | 0/3 | Not started | - |
-| 4. Deployment & Hardening | 0/? | Not started | - |
+| 2. Real-Time Events | 2/2 | Complete | 2026-05-05 |
+| 3. Review Frontend | 3/3 | Complete | 2026-05-06 |
+| 4. Deployment & Hardening | 0/2 | Not started | - |
