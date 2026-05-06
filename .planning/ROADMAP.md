@@ -65,8 +65,12 @@ Plans:
   3. New reviews appear on the dashboard automatically without page refresh (SSE-driven)
   4. Opening a one-time token link on a phone opens the review detail page directly for quick approval
   5. The layout renders correctly on mobile phone screens (primary target) with responsive HTMX + Alpine.js interactions
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans in 2 waves
+
+Plans:
+- [ ] 03-01-PLAN.md -- Template foundation: base.html, dashboard, review card/list/detail partials, web route handlers, approve/reject form actions
+- [ ] 03-02-PLAN.md -- SSE real-time updates: cookie-auth SSE wrapper, htmx-ext-sse integration, new reviews banner
+- [ ] 03-03-PLAN.md -- One-time token deep link flow: JWT cookie exchange, auto-open detail, error toast handling
 
 ### Phase 4: Deployment & Hardening
 **Goal**: The entire platform runs as a Docker Compose stack on the target machine (192.168.71.140) with Nginx reverse proxy, resource limits under 400MB, security hardening, and validated integration with external AI systems.
@@ -89,5 +93,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Core Engine | 5/5 | Complete | 2026-05-05 |
 | 2. Real-Time Events | 0/2 | Not started | - |
-| 3. Review Frontend | 0/? | Not started | - |
+| 3. Review Frontend | 0/3 | Not started | - |
 | 4. Deployment & Hardening | 0/? | Not started | - |
