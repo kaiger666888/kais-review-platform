@@ -57,12 +57,12 @@
 
 ### Frontend
 
-- [ ] **UI-01**: Mobile-first review dashboard showing pending/approved/rejected review lists
-- [ ] **UI-02**: Review detail page with content preview and approve/reject action buttons
+- [x] **UI-01**: Mobile-first review dashboard showing pending/approved/rejected review lists
+- [x] **UI-02**: Review detail page with content preview and approve/reject action buttons
 - [ ] **UI-03**: Dashboard receives real-time updates via SSE (new reviews appear automatically)
 - [ ] **UI-04**: One-time token deep links open review detail directly for quick approval
-- [ ] **UI-05**: Responsive layout optimized for mobile phone screens (primary target)
-- [ ] **UI-06**: HTMX server-rendered with Alpine.js for client-side interactivity
+- [x] **UI-05**: Responsive layout optimized for mobile phone screens (primary target)
+- [x] **UI-06**: HTMX server-rendered with Alpine.js for client-side interactivity
 
 ### Deployment
 
@@ -146,12 +146,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDT-03 | Phase 1: Core Engine | Complete |
 | AUDT-04 | Phase 1: Core Engine | Complete |
 | AUDT-05 | Phase 1: Core Engine | Complete |
-| UI-01 | Phase 3: Review Frontend | Pending |
-| UI-02 | Phase 3: Review Frontend | Pending |
+| UI-01 | Phase 3: Review Frontend | Complete |
+| UI-02 | Phase 3: Review Frontend | Complete |
 | UI-03 | Phase 3: Review Frontend | Pending |
 | UI-04 | Phase 3: Review Frontend | Pending |
-| UI-05 | Phase 3: Review Frontend | Pending |
-| UI-06 | Phase 3: Review Frontend | Pending |
+| UI-05 | Phase 3: Review Frontend | Complete |
+| UI-06 | Phase 3: Review Frontend | Complete |
 | DEPL-01 | Phase 4: Deployment & Hardening | Pending |
 | DEPL-02 | Phase 4: Deployment & Hardening | Pending |
 | DEPL-03 | Phase 4: Deployment & Hardening | Pending |

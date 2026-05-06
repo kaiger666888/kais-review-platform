@@ -68,7 +68,7 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 03-01-PLAN.md -- Template foundation: base.html, dashboard, review card/list/detail partials, web route handlers, approve/reject form actions
+- [x] 03-01-PLAN.md -- Template foundation: base.html, dashboard, review card/list/detail partials, web route handlers, approve/reject form actions
 - [ ] 03-02-PLAN.md -- SSE real-time updates: cookie-auth SSE wrapper, htmx-ext-sse integration, new reviews banner
 - [ ] 03-03-PLAN.md -- One-time token deep link flow: JWT cookie exchange, auto-open detail, error toast handling
 
