@@ -34,7 +34,7 @@
 - [x] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection (completed 2026-05-07)
 - [x] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process (completed 2026-05-07)
 - [x] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval (completed 2026-05-07)
-- [ ] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images
+- [x] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images (completed 2026-05-07)
 - [ ] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows
 
 ## Phase Details
@@ -102,7 +102,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Node.js ReviewPlatformClient, pipeline _runRemoteReview replacement, callback server with HMAC + resume/rollback (MA-01, MA-02, MA-03, MA-04, MA-05, MA-06)
+- [x] 11-01-PLAN.md — Node.js ReviewPlatformClient, pipeline _runRemoteReview replacement, callback server with HMAC + resume/rollback (MA-01, MA-02, MA-03, MA-04, MA-05, MA-06)
 - [x] 11-02-PLAN.md — Telegram sendPhoto for preview images in APPROVING notification (MA-07)
 
 ### Phase 12: Dual Bot Coordination & E2E
@@ -133,5 +133,5 @@ Plans:
 | 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 10. kais-gold-team Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 11. kais-movie-agent Integration | v1.2 | 1/2 | In Progress|  |
+| 11. kais-movie-agent Integration | v1.2 | 2/2 | Complete   | 2026-05-07 |
 | 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |

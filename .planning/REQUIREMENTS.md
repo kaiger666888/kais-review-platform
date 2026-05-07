@@ -41,12 +41,12 @@
 
 ### kais-movie-agent Integration
 
-- [ ] **MA-01**: Node.js HTTP client module (`ReviewPlatformClient`) for calling review-platform REST API (submit, query, auth)
-- [ ] **MA-02**: Pipeline review gates replaced: `interactive-review.js` submits to review-platform instead of launching local HTTP server
-- [ ] **MA-03**: Pipeline pauses after review submission, waiting for callback approval/rejection
-- [ ] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
-- [ ] **MA-05**: On approval callback, pipeline auto-resumes to next phase
-- [ ] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
+- [x] **MA-01**: Node.js HTTP client module (`ReviewPlatformClient`) for calling review-platform REST API (submit, query, auth)
+- [x] **MA-02**: Pipeline review gates replaced: `interactive-review.js` submits to review-platform instead of launching local HTTP server
+- [x] **MA-03**: Pipeline pauses after review submission, waiting for callback approval/rejection
+- [x] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
+- [x] **MA-05**: On approval callback, pipeline auto-resumes to next phase
+- [x] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
 - [x] **MA-07**: Review notification includes material preview images (scene renders, storyboard frames) sent as Telegram photo messages
 
 ### Dual Bot Coordination & E2E
@@ -104,12 +104,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GT-04 | Phase 10 | Complete |
 | GT-05 | Phase 10 | Complete |
 | GT-06 | Phase 10 | Complete |
-| MA-01 | Phase 11 | Pending |
-| MA-02 | Phase 11 | Pending |
-| MA-03 | Phase 11 | Pending |
-| MA-04 | Phase 11 | Pending |
-| MA-05 | Phase 11 | Pending |
-| MA-06 | Phase 11 | Pending |
+| MA-01 | Phase 11 | Complete |
+| MA-02 | Phase 11 | Complete |
+| MA-03 | Phase 11 | Complete |
+| MA-04 | Phase 11 | Complete |
+| MA-05 | Phase 11 | Complete |
+| MA-06 | Phase 11 | Complete |
 | MA-07 | Phase 11 | Complete |
 | E2E-01 | Phase 12 | Pending |
 | E2E-02 | Phase 12 | Pending |
