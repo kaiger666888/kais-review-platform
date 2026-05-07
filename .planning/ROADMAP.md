@@ -31,7 +31,7 @@
 
 **v1.2 External System Integration** — Phases 08-12
 
-- [ ] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection
+- [x] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection (completed 2026-05-07)
 - [ ] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process
 - [ ] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval
 - [ ] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images
@@ -53,7 +53,7 @@
 
 Plans:
 - [x] 08-01-PLAN.md — Add callback columns to Review model, Pydantic schemas, RFC1918 validator, Telegram settings, migration script
-- [ ] 08-02-PLAN.md — deliver_review_callback arq task with HMAC signing/retry, wire emit_state_change, integration tests
+- [x] 08-02-PLAN.md — deliver_review_callback arq task with HMAC signing/retry, wire emit_state_change, integration tests
 
 ### Phase 09: Telegram Review Bot
 **Goal**: Reviewers can approve or reject reviews entirely within Telegram, with inline buttons and status feedback
@@ -130,7 +130,7 @@ Plans:
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
-| 08. Schema & Callback Infrastructure | v1.2 | 1/2 | In Progress|  |
+| 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete   | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 0/? | Not started | - |
 | 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |

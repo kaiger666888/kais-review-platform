@@ -14,11 +14,11 @@
 
 ### Callback Delivery
 
-- [ ] **CB-01**: New arq task `deliver_review_callback` delivers review result to callback_url when review reaches COMPLETE state
-- [ ] **CB-02**: Callback payloads are HMAC-SHA256 signed using per-review callback_secret
-- [ ] **CB-03**: Callback delivery retries on failure (3 attempts, exponential backoff: 1s/5s/30s)
+- [x] **CB-01**: New arq task `deliver_review_callback` delivers review result to callback_url when review reaches COMPLETE state
+- [x] **CB-02**: Callback payloads are HMAC-SHA256 signed using per-review callback_secret
+- [x] **CB-03**: Callback delivery retries on failure (3 attempts, exponential backoff: 1s/5s/30s)
 - [x] **CB-04**: Callback URL validated as RFC1918 private address only (SSRF mitigation for LAN deployment)
-- [ ] **CB-05**: Telegram admin notification when all callback retry attempts fail
+- [x] **CB-05**: Telegram admin notification when all callback retry attempts fail
 
 ### Telegram Bot Core
 
@@ -86,11 +86,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DB-02 | Phase 08 | Complete |
 | DB-03 | Phase 08 | Complete |
 | DB-04 | Phase 08 | Complete |
-| CB-01 | Phase 08 | Pending |
-| CB-02 | Phase 08 | Pending |
-| CB-03 | Phase 08 | Pending |
+| CB-01 | Phase 08 | Complete |
+| CB-02 | Phase 08 | Complete |
+| CB-03 | Phase 08 | Complete |
 | CB-04 | Phase 08 | Complete |
-| CB-05 | Phase 08 | Pending |
+| CB-05 | Phase 08 | Complete |
 | TG-01 | Phase 09 | Pending |
 | TG-02 | Phase 09 | Pending |
 | TG-03 | Phase 09 | Pending |
