@@ -82,11 +82,11 @@ Plans:
   3. Control node exposes /callback/review_result endpoint that receives approval/rejection from the review platform
   4. On approval callback, Guardian scheduling resumes for the approved task without manual intervention
   5. On rejection callback, the task is marked failed with the rejection reason and the user is notified via Telegram
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
+- [ ] 10-01-PLAN.md -- Risk routing policy (gold_team_risk.yaml) + ReviewPlatformClient module for gold-team (GT-01, GT-02, GT-03)
+- [ ] 10-02-PLAN.md -- Guardian review interception, callback endpoint, polling + crash recovery (GT-01, GT-04, GT-05, GT-06)
 
 ### Phase 11: kais-movie-agent Integration
 **Goal**: Movie-agent pipeline review gates use the remote review platform instead of local interactive review, with automatic resume or rollback
@@ -99,7 +99,7 @@ Plans:
   4. On approval callback, the pipeline auto-resumes to the next production phase
   5. On rejection callback, the pipeline rolls back to the previous phase using the existing git checkpoint mechanism
   6. Review notifications include material preview images (scene renders, storyboard frames) sent as Telegram photo messages
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 11-01: TBD
@@ -114,7 +114,7 @@ Plans:
   2. End-to-end flow works for gold-team: task submitted -> review created -> Telegram approval -> callback delivered -> task execution resumes
   3. End-to-end flow works for movie-agent: phase review submitted -> Telegram approval -> callback delivered -> pipeline resumes
   4. Rejection flows work end-to-end: review rejected -> callback delivered -> gold-team marks task failed / movie-agent rolls back
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 12-01: TBD
