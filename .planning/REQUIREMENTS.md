@@ -22,13 +22,13 @@
 
 ### Telegram Bot Core
 
-- [ ] **TG-01**: Telegram Bot runs in polling mode inside FastAPI process, sharing event loop via python-telegram-bot v22
-- [ ] **TG-02**: Bot lifecycle managed in FastAPI lifespan (initialize + start + graceful shutdown)
-- [ ] **TG-03**: Bot sends review notification with InlineKeyboard approve/reject buttons when review enters APPROVING state
-- [ ] **TG-04**: Bot handles InlineKeyboard callback: approve or reject review via direct `transition_state()` call
-- [ ] **TG-05**: Bot edits notification message after approval/rejection to show final status
+- [x] **TG-01**: Telegram Bot runs in polling mode inside FastAPI process, sharing event loop via python-telegram-bot v22
+- [x] **TG-02**: Bot lifecycle managed in FastAPI lifespan (initialize + start + graceful shutdown)
+- [x] **TG-03**: Bot sends review notification with InlineKeyboard approve/reject buttons when review enters APPROVING state
+- [x] **TG-04**: Bot handles InlineKeyboard callback: approve or reject review via direct `transition_state()` call
+- [x] **TG-05**: Bot edits notification message after approval/rejection to show final status
 - [ ] **TG-06**: Bot sends timeout reminder if review remains in APPROVING state beyond configured threshold
-- [ ] **TG-07**: Bot displays approval history (previous decisions with timestamps) in review notification
+- [x] **TG-07**: Bot displays approval history (previous decisions with timestamps) in review notification
 
 ### kais-gold-team Integration
 
@@ -91,13 +91,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CB-03 | Phase 08 | Complete |
 | CB-04 | Phase 08 | Complete |
 | CB-05 | Phase 08 | Complete |
-| TG-01 | Phase 09 | Pending |
-| TG-02 | Phase 09 | Pending |
-| TG-03 | Phase 09 | Pending |
-| TG-04 | Phase 09 | Pending |
-| TG-05 | Phase 09 | Pending |
+| TG-01 | Phase 09 | Complete |
+| TG-02 | Phase 09 | Complete |
+| TG-03 | Phase 09 | Complete |
+| TG-04 | Phase 09 | Complete |
+| TG-05 | Phase 09 | Complete |
 | TG-06 | Phase 09 | Pending |
-| TG-07 | Phase 09 | Pending |
+| TG-07 | Phase 09 | Complete |
 | GT-01 | Phase 10 | Pending |
 | GT-02 | Phase 10 | Pending |
 | GT-03 | Phase 10 | Pending |
