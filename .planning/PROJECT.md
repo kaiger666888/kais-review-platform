@@ -10,9 +10,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ## Current State
 
-**Shipped:** v1.1 Integration Tests & Tech Debt (2026-05-07)
-**Status:** All v1.0 + v1.1 requirements validated. Platform fully tested end-to-end.
-**Stats:** 7 phases, 18 plans, 7,145 LOC Python + 398 LOC Bash, 170 tests passing
+**Shipped:** v1.2 Phase 08 — Schema & Callback Infrastructure (2026-05-07)
+**Status:** Phase 08 complete (callback delivery + schema). Phases 09-12 remaining.
+**Stats:** 8 phases, 20 plans, 195 tests passing
 
 ## Current Milestone: v1.2 External System Integration
 
