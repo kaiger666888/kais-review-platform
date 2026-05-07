@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Integration Tests & Tech Debt
-status: verifying
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-05-07T04:33:08.448Z"
+status: executing
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-05-07T04:56:49.206Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 05 — Tech Debt Fixes
+**Current focus:** Phase 06 — API + Event Integration Tests
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 06 (API + Event Integration Tests) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-05-07
 
 Progress: [░░░░░░░░░░] 0%
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 05 P01 | 5min | 2 tasks | 4 files |
 | Phase 05 P02 | 8min | 1 tasks | 5 files |
+| Phase 06 P01 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Dashboard redirects (303) unauthenticated users to /login -- prevents data leakage
 - [Phase 05]: Login uses API key validation matching settings.api_key, sets httpOnly JWT cookie (15 min TTL)
 - [Phase 05]: Fixed TemplateResponse calls across routes.py/auth.py for FastAPI 0.136 request-first signature
+- [Phase 06]: Session-per-request pattern for SQLite integration tests: each API request gets its own AsyncSession from test engine factory to avoid re-entrant commit conflicts
+- [Phase 06]: Patch emit_state_change to no-op during integration tests -- SSE/webhook tested separately, avoids async_session_factory conflicts
+- [Phase 06]: Pre-load default YAML policy in conftest since ASGITransport bypasses FastAPI lifespan startup
 
 ### Pending Todos
 
@@ -88,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07T04:28:50.172Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-05-07T04:56:49.203Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None

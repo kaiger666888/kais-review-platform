@@ -13,16 +13,16 @@ Requirements for integration tests and tech debt fixes. Each maps to roadmap pha
 
 ### API Integration Tests (TEST)
 
-- [ ] **TEST-01**: TestClient can submit a review and receive correct disposition (AUTO/HUMAN/BLOCK) based on policy
-- [ ] **TEST-02**: TestClient can approve a review in APPROVING state, transitioning to COMPLETE with APPROVED disposition
-- [ ] **TEST-03**: TestClient can reject a review in APPROVING state, transitioning to COMPLETE with REJECTED disposition and reason
-- [ ] **TEST-04**: Every state transition through API creates an immutable audit log entry
-- [ ] **TEST-05**: TestClient can query review by ID and get full state with audit trail
-- [ ] **TEST-06**: API returns 401 for protected endpoints without valid JWT
-- [ ] **TEST-07**: API returns 409 on concurrent conflicting state transitions
-- [ ] **TEST-08**: API returns 422/400 for invalid state transition attempts (e.g., approve a PENDING review)
-- [ ] **TEST-09**: API returns 404 for non-existent review queries
-- [ ] **TEST-10**: Multiple reviews submitted concurrently maintain independent state machines
+- [x] **TEST-01**: TestClient can submit a review and receive correct disposition (AUTO/HUMAN/BLOCK) based on policy
+- [x] **TEST-02**: TestClient can approve a review in APPROVING state, transitioning to COMPLETE with APPROVED disposition
+- [x] **TEST-03**: TestClient can reject a review in APPROVING state, transitioning to COMPLETE with REJECTED disposition and reason
+- [x] **TEST-04**: Every state transition through API creates an immutable audit log entry
+- [x] **TEST-05**: TestClient can query review by ID and get full state with audit trail
+- [x] **TEST-06**: API returns 401 for protected endpoints without valid JWT
+- [x] **TEST-07**: API returns 409 on concurrent conflicting state transitions
+- [x] **TEST-08**: API returns 422/400 for invalid state transition attempts (e.g., approve a PENDING review)
+- [x] **TEST-09**: API returns 404 for non-existent review queries
+- [x] **TEST-10**: Multiple reviews submitted concurrently maintain independent state machines
 
 ### SSE Integration Tests (SSE)
 
@@ -94,16 +94,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEBT-01 | Phase 05 | Complete |
 | DEBT-02 | Phase 05 | Complete |
 | DEBT-03 | Phase 05 | Complete |
-| TEST-01 | Phase 06 | Pending |
-| TEST-02 | Phase 06 | Pending |
-| TEST-03 | Phase 06 | Pending |
-| TEST-04 | Phase 06 | Pending |
-| TEST-05 | Phase 06 | Pending |
-| TEST-06 | Phase 06 | Pending |
-| TEST-07 | Phase 06 | Pending |
-| TEST-08 | Phase 06 | Pending |
-| TEST-09 | Phase 06 | Pending |
-| TEST-10 | Phase 06 | Pending |
+| TEST-01 | Phase 06 | Complete |
+| TEST-02 | Phase 06 | Complete |
+| TEST-03 | Phase 06 | Complete |
+| TEST-04 | Phase 06 | Complete |
+| TEST-05 | Phase 06 | Complete |
+| TEST-06 | Phase 06 | Complete |
+| TEST-07 | Phase 06 | Complete |
+| TEST-08 | Phase 06 | Complete |
+| TEST-09 | Phase 06 | Complete |
+| TEST-10 | Phase 06 | Complete |
 | SSE-01 | Phase 06 | Pending |
 | SSE-02 | Phase 06 | Pending |
 | SSE-03 | Phase 06 | Pending |
