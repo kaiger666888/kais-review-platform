@@ -130,7 +130,7 @@ Plans:
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
-| 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete   | 2026-05-07 |
+| 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 0/? | Not started | - |
 | 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
