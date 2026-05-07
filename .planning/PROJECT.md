@@ -10,9 +10,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ## Current State
 
-**Shipped:** v1.2 Phase 09 — Telegram Review Bot (2026-05-07)
-**Status:** Phases 08-09 complete (callback infrastructure + Telegram Bot). Phases 10-12 remaining.
-**Stats:** 9 phases, 22 plans, 246 tests passing
+**Shipped:** v1.2 Phase 10 — kais-gold-team Integration (2026-05-07)
+**Status:** Phases 08-10 complete (callback + Bot + gold-team). Phases 11-12 remaining.
+**Stats:** 10 phases, 24 plans, 260 tests passing
 
 ## Current Milestone: v1.2 External System Integration
 
