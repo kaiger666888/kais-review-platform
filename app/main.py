@@ -22,6 +22,8 @@ from app.core.config import get_settings
 from app.core.database import engine
 from app.core.policy import get_policy_engine
 from app.models.schema import create_tables
+from app.bot import create_bot_application
+from app.bot.lifecycle import bot_start, bot_stop
 
 settings = get_settings()
 
@@ -58,7 +60,21 @@ async def lifespan(app: FastAPI):
     except Exception:
         app.state.arq_pool = None
 
+    # Startup: initialize Telegram Bot
+    try:
+        app.state.bot_application = create_bot_application()
+        await bot_start(app.state.bot_application)
+    except Exception as exc:
+        app.state.bot_application = None
+        logger.warning("Bot startup failed, continuing without Telegram Bot: %s", exc)
+
     yield
+
+    # Shutdown: stop Telegram Bot
+    try:
+        await bot_stop(app.state.bot_application)
+    except Exception as exc:
+        logger.warning("Bot stop failed: %s", exc)
 
     # Shutdown: cleanup connections
     if app.state.redis:

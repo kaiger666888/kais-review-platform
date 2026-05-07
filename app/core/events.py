@@ -124,6 +124,45 @@ async def emit_state_change(
     # 1. Broadcast to SSE clients
     await event_manager.broadcast(event_data)
 
+    # 1.5. Send Telegram notification when review enters APPROVING state
+    if new_state == "APPROVING":
+        try:
+            from app.main import app as _fastapi_app
+            from app.bot.notifications import build_notification_message
+            from app.core.database import async_session_factory
+            from app.models.schema import Review, AuditEntry
+            from sqlalchemy import select
+            from app.bot.lifecycle import parse_allowed_chat_ids
+            from app.core.config import get_settings
+
+            _bot_app = getattr(_fastapi_app.state, 'bot_application', None)
+            if _bot_app is not None:
+                _settings = get_settings()
+                _chat_ids = parse_allowed_chat_ids(_settings.telegram_allowed_chat_ids)
+                if _chat_ids:
+                    async with async_session_factory() as session:
+                        review = await session.get(Review, review_id)
+                        if review:
+                            # Fetch audit entries for approval history
+                            audit_result = await session.execute(
+                                select(AuditEntry)
+                                .where(AuditEntry.review_id == review_id)
+                                .order_by(AuditEntry.created_at)
+                            )
+                            entries = audit_result.scalars().all()
+                            text, reply_markup = build_notification_message(review, entries)
+                            for chat_id in _chat_ids:
+                                try:
+                                    await _bot_app.bot.send_message(
+                                        chat_id=chat_id,
+                                        text=text,
+                                        reply_markup=reply_markup,
+                                    )
+                                except Exception as e:
+                                    logger.error("telegram_send_failed", chat_id=chat_id, review_id=review_id, error=str(e))
+        except Exception as e:
+            logger.error("telegram_notification_failed", review_id=review_id, error=str(e))
+
     # 2. Enqueue webhook deliveries for all active configs
     #    (source_system filtering happens per webhook config)
     try:
