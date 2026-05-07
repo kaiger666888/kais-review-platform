@@ -37,7 +37,7 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Review token endpoint (DEBT-01) + audit authorizer verification test (DEBT-03)
+- [x] 05-01-PLAN.md — Review token endpoint (DEBT-01) + audit authorizer verification test (DEBT-03)
 - [ ] 05-02-PLAN.md — Web auth enforcement: login page and dashboard redirect (DEBT-02)
 
 ### Phase 06: API + Event Integration Tests
@@ -79,6 +79,6 @@ Phases execute in numeric order: 5 -> 6 -> 7
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 05. Tech Debt Fixes | v1.1 | 0/2 | Planning complete | - |
+| 05. Tech Debt Fixes | v1.1 | 1/2 | In Progress|  |
 | 06. API + Event Integration Tests | v1.1 | 0/3 | Not started | - |
 | 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
