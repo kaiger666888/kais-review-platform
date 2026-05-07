@@ -53,7 +53,7 @@ Requirements for integration tests and tech debt fixes. Each maps to roadmap pha
 ### Tech Debt Fixes (DEBT)
 
 - [x] **DEBT-01**: Admin API endpoint exists to generate one-time review tokens for external systems
-- [ ] **DEBT-02**: Web template routes redirect unauthenticated users instead of silently serving data
+- [x] **DEBT-02**: Web template routes redirect unauthenticated users instead of silently serving data
 - [x] **DEBT-03**: audit_protect_authorizer is registered on SQLite connection, blocking UPDATE/DELETE on audit_entries
 
 ## v2 Requirements
@@ -92,7 +92,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DEBT-01 | Phase 05 | Complete |
-| DEBT-02 | Phase 05 | Pending |
+| DEBT-02 | Phase 05 | Complete |
 | DEBT-03 | Phase 05 | Complete |
 | TEST-01 | Phase 06 | Pending |
 | TEST-02 | Phase 06 | Pending |

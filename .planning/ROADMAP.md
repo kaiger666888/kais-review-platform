@@ -16,7 +16,7 @@
 - Integer phases (5, 6, 7): Planned milestone work
 - Decimal phases (5.1, 5.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 05: Tech Debt Fixes** - Fix 3 blocking issues: review token endpoint, web auth redirects, audit log protection
+- [x] **Phase 05: Tech Debt Fixes** - Fix 3 blocking issues: review token endpoint, web auth redirects, audit log protection (completed 2026-05-07)
 - [ ] **Phase 06: API + Event Integration Tests** - TestClient-based tests for core API flows, SSE real-time push, webhook delivery with retry
 - [ ] **Phase 07: Docker Stack Integration Tests** - Black-box tests against full Docker Compose deployment
 
@@ -38,7 +38,7 @@
 
 Plans:
 - [x] 05-01-PLAN.md — Review token endpoint (DEBT-01) + audit authorizer verification test (DEBT-03)
-- [ ] 05-02-PLAN.md — Web auth enforcement: login page and dashboard redirect (DEBT-02)
+- [x] 05-02-PLAN.md — Web auth enforcement: login page and dashboard redirect (DEBT-02)
 
 ### Phase 06: API + Event Integration Tests
 **Goal**: All core workflows verified end-to-end through the HTTP layer (not just unit tests)
@@ -79,6 +79,6 @@ Phases execute in numeric order: 5 -> 6 -> 7
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 05. Tech Debt Fixes | v1.1 | 1/2 | In Progress|  |
+| 05. Tech Debt Fixes | v1.1 | 2/2 | Complete   | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 0/3 | Not started | - |
 | 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
