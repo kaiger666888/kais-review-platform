@@ -149,3 +149,22 @@ async def emit_state_change(
                 )
     except Exception as e:
         logger.error("webhook_enqueue_failed", error=str(e))
+
+    # 3. Enqueue per-review callback delivery when review reaches COMPLETE state
+    if new_state == "COMPLETE":
+        try:
+            from app.main import app
+            from app.models.schema import Review
+
+            async with async_session_factory() as session:
+                review = await session.get(Review, review_id)
+                if review and review.callback_url:
+                    _arq_pool = app.state.arq_pool
+                    if _arq_pool:
+                        await _arq_pool.enqueue_job(
+                            "deliver_review_callback",
+                            review_id,
+                            event_data,
+                        )
+        except Exception as e:
+            logger.error("callback_enqueue_failed", error=str(e))

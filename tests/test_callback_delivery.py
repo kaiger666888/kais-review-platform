@@ -449,3 +449,156 @@ class TestCallbackDeliveryEdgeCases:
 
         assert result["status"] == "error"
         assert result["reason"] == "review_not_found"
+
+
+class TestCallbackIntegration:
+    """Test emit_state_change integration with callback delivery enqueue."""
+
+    @pytest.mark.asyncio
+    async def test_emit_state_change_enqueues_callback_on_complete(self, db_engine):
+        """emit_state_change enqueues deliver_review_callback when review reaches COMPLETE and has callback_url."""
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+        from app.core.events import emit_state_change
+
+        factory = async_sessionmaker(db_engine, expire_on_commit=False, class_=AsyncSession)
+
+        # Create a Review with callback_url
+        async with factory() as session:
+            review = Review(
+                type="video_render",
+                content_ref="s3://bucket/output.mp4",
+                source_system="kais-gold-team",
+                state="APPROVING",
+                callback_url="http://192.168.1.100:8080/callback",
+                callback_secret="test-secret",
+            )
+            session.add(review)
+            await session.commit()
+            await session.refresh(review)
+            review_id = review.id
+
+        # Mock arq_pool
+        mock_arq_pool = AsyncMock()
+        mock_arq_pool.enqueue_job = AsyncMock()
+
+        with patch("app.core.database.async_session_factory", factory):
+            with patch("app.core.events.event_manager") as mock_em:
+                mock_em.broadcast = AsyncMock()
+
+                # Patch app.main.app to control arq_pool for both webhook and callback blocks
+                with patch("app.main.app") as mock_main_app:
+                    mock_main_app.state.arq_pool = mock_arq_pool
+
+                    await emit_state_change(
+                        review_id=review_id,
+                        old_state="APPROVING",
+                        new_state="COMPLETE",
+                        source_system="kais-gold-team",
+                    )
+
+        # Verify enqueue_job was called for deliver_review_callback
+        callback_calls = [
+            call for call in mock_arq_pool.enqueue_job.call_args_list
+            if call[0][0] == "deliver_review_callback"
+        ]
+        assert len(callback_calls) == 1
+        assert callback_calls[0][0][1] == review_id  # review_id
+        assert callback_calls[0][0][2]["new_state"] == "COMPLETE"  # event_data
+
+    @pytest.mark.asyncio
+    async def test_emit_state_change_no_callback_without_url(self, db_engine):
+        """emit_state_change does not enqueue callback when review has no callback_url."""
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+        from app.core.events import emit_state_change
+
+        factory = async_sessionmaker(db_engine, expire_on_commit=False, class_=AsyncSession)
+
+        # Create a Review WITHOUT callback_url
+        async with factory() as session:
+            review = Review(
+                type="video_render",
+                content_ref="s3://bucket/output.mp4",
+                source_system="kais-gold-team",
+                state="APPROVING",
+                # No callback_url
+            )
+            session.add(review)
+            await session.commit()
+            await session.refresh(review)
+            review_id = review.id
+
+        # Mock arq_pool
+        mock_arq_pool = AsyncMock()
+        mock_arq_pool.enqueue_job = AsyncMock()
+
+        with patch("app.core.database.async_session_factory", factory):
+            with patch("app.core.events.event_manager") as mock_em:
+                mock_em.broadcast = AsyncMock()
+
+                with patch("app.main.app") as mock_main_app:
+                    mock_main_app.state.arq_pool = mock_arq_pool
+
+                    await emit_state_change(
+                        review_id=review_id,
+                        old_state="APPROVING",
+                        new_state="COMPLETE",
+                        source_system="kais-gold-team",
+                    )
+
+        # Verify NO deliver_review_callback was enqueued
+        callback_calls = [
+            call for call in mock_arq_pool.enqueue_job.call_args_list
+            if call[0][0] == "deliver_review_callback"
+        ]
+        assert len(callback_calls) == 0
+
+    @pytest.mark.asyncio
+    async def test_emit_state_change_no_callback_on_non_complete(self, db_engine):
+        """emit_state_change does not enqueue callback when new_state is not COMPLETE."""
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+        from app.core.events import emit_state_change
+
+        factory = async_sessionmaker(db_engine, expire_on_commit=False, class_=AsyncSession)
+
+        # Create a Review with callback_url
+        async with factory() as session:
+            review = Review(
+                type="video_render",
+                content_ref="s3://bucket/output.mp4",
+                source_system="kais-gold-team",
+                state="PENDING",
+                callback_url="http://192.168.1.100:8080/callback",
+                callback_secret="test-secret",
+            )
+            session.add(review)
+            await session.commit()
+            await session.refresh(review)
+            review_id = review.id
+
+        mock_arq_pool = AsyncMock()
+        mock_arq_pool.enqueue_job = AsyncMock()
+
+        with patch("app.core.database.async_session_factory", factory):
+            with patch("app.core.events.event_manager") as mock_em:
+                mock_em.broadcast = AsyncMock()
+
+                with patch("app.main.app") as mock_main_app:
+                    mock_main_app.state.arq_pool = mock_arq_pool
+
+                    # Transition to APPROVING (not COMPLETE)
+                    await emit_state_change(
+                        review_id=review_id,
+                        old_state="PENDING",
+                        new_state="APPROVING",
+                        source_system="kais-gold-team",
+                    )
+
+        # Verify NO deliver_review_callback was enqueued
+        callback_calls = [
+            call for call in mock_arq_pool.enqueue_job.call_args_list
+            if call[0][0] == "deliver_review_callback"
+        ]
+        assert len(callback_calls) == 0
