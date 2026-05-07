@@ -100,6 +100,32 @@ def build_notification_message(
     return text, reply_markup
 
 
+def build_review_captions(metadata: dict, max_images: int = 3) -> list[str]:
+    """Build captions for preview images from review metadata.
+
+    Args:
+        metadata: Review metadata dict, may contain preview_images list.
+        max_images: Maximum number of image captions to generate.
+
+    Returns:
+        List of caption strings, one per image.
+    """
+    phase_name = metadata.get("phase_name", "未知阶段")
+    episode = metadata.get("episode", "")
+    preview_count = min(len(metadata.get("preview_images", [])), max_images)
+
+    if preview_count == 0:
+        return []
+
+    if preview_count == 1:
+        return [f"🖼️ {episode} {phase_name} 预览" if episode else f"🖼️ {phase_name} 预览"]
+
+    return [
+        f"🖼️ 预览 {i + 1}/{preview_count}" + (f" — {episode} {phase_name}" if episode else f" — {phase_name}")
+        for i in range(preview_count)
+    ]
+
+
 def build_status_text(review: Review, action: str, actor: str) -> str:
     """Build status update text after an approve/reject action.
 

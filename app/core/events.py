@@ -150,6 +150,31 @@ async def emit_state_change(
                                 .order_by(AuditEntry.created_at)
                             )
                             entries = audit_result.scalars().all()
+
+                            # Send preview images before text notification (MA-07)
+                            metadata = review.metadata_json or {}
+                            preview_images = metadata.get("preview_images", [])
+                            if preview_images and review.source_system == "kais-movie-agent":
+                                from app.bot.notifications import build_review_captions
+                                import base64
+                                from io import BytesIO
+
+                                captions = build_review_captions(metadata)
+                                for i, b64_data in enumerate(preview_images[:3]):
+                                    try:
+                                        image_bytes = base64.b64decode(b64_data)
+                                        for chat_id in _chat_ids:
+                                            try:
+                                                await _bot_app.bot.send_photo(
+                                                    chat_id=chat_id,
+                                                    photo=BytesIO(image_bytes),
+                                                    caption=captions[i] if i < len(captions) else None,
+                                                )
+                                            except Exception as e:
+                                                logger.warning("telegram_photo_send_failed", chat_id=chat_id, review_id=review_id, image_index=i, error=str(e))
+                                    except Exception as e:
+                                        logger.warning("preview_image_decode_failed", review_id=review_id, image_index=i, error=str(e))
+
                             text, reply_markup = build_notification_message(review, entries)
                             for chat_id in _chat_ids:
                                 try:
