@@ -32,7 +32,7 @@
 **v1.2 External System Integration** — Phases 08-12
 
 - [x] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection (completed 2026-05-07)
-- [ ] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process
+- [x] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process (completed 2026-05-07)
 - [ ] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval
 - [ ] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images
 - [ ] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows
@@ -70,7 +70,7 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md — Bot module: lifecycle, InlineKeyboard handlers, command handlers, notification builder (TG-01..05, TG-07)
-- [ ] 09-02-PLAN.md — FastAPI integration: lifespan wiring, APPROVING notification trigger, timeout reminder, real admin delivery (TG-06)
+- [x] 09-02-PLAN.md — FastAPI integration: lifespan wiring, APPROVING notification trigger, timeout reminder, real admin delivery (TG-06)
 
 ### Phase 10: kais-gold-team Integration
 **Goal**: GPU tasks in kais-gold-team are automatically intercepted for review before dispatch, and resume on approval or fail on rejection
@@ -131,7 +131,7 @@ Plans:
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
 | 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 09. Telegram Review Bot | v1.2 | 1/2 | In Progress|  |
+| 09. Telegram Review Bot | v1.2 | 2/2 | Complete   | 2026-05-07 |
 | 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
 | 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |

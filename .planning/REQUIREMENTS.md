@@ -27,7 +27,7 @@
 - [x] **TG-03**: Bot sends review notification with InlineKeyboard approve/reject buttons when review enters APPROVING state
 - [x] **TG-04**: Bot handles InlineKeyboard callback: approve or reject review via direct `transition_state()` call
 - [x] **TG-05**: Bot edits notification message after approval/rejection to show final status
-- [ ] **TG-06**: Bot sends timeout reminder if review remains in APPROVING state beyond configured threshold
+- [x] **TG-06**: Bot sends timeout reminder if review remains in APPROVING state beyond configured threshold
 - [x] **TG-07**: Bot displays approval history (previous decisions with timestamps) in review notification
 
 ### kais-gold-team Integration
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TG-03 | Phase 09 | Complete |
 | TG-04 | Phase 09 | Complete |
 | TG-05 | Phase 09 | Complete |
-| TG-06 | Phase 09 | Pending |
+| TG-06 | Phase 09 | Complete |
 | TG-07 | Phase 09 | Complete |
 | GT-01 | Phase 10 | Pending |
 | GT-02 | Phase 10 | Pending |
