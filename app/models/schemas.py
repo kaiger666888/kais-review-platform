@@ -130,6 +130,12 @@ class PolicyResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ReviewTokenResponse(BaseModel):
+    token: str
+    expires_in: int = 259200
+    review_url: str
+
+
 class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None

@@ -2,8 +2,9 @@
 
 POST /api/v1/reviews/{review_id}/approve -- Approve a review (REV-04)
 POST /api/v1/reviews/{review_id}/reject  -- Reject a review (REV-05)
+POST /api/v1/reviews/{review_id}/token   -- Generate one-time review token (DEBT-01)
 
-Both endpoints support JWT auth and one-time review tokens.
+Both approve/reject endpoints support JWT auth and one-time review tokens.
 """
 
 import uuid
@@ -11,7 +12,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import consume_review_token, get_current_client
+from app.core.auth import consume_review_token, create_review_token, get_current_client
 from app.core.database import get_db
 from app.core.state_machine import (
     InvalidTransitionError,
@@ -26,6 +27,7 @@ from app.models.schemas import (
     RejectRequest,
     ReviewResponse,
     ReviewState,
+    ReviewTokenResponse,
 )
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["actions"])
@@ -219,5 +221,52 @@ async def reject_review(
     await db.refresh(review)
     return ApiResponse(
         data=_review_response(review).model_dump(),
+        meta={"request_id": _request_id()},
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /{review_id}/token
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{review_id}/token",
+    response_model=ApiResponse[ReviewTokenResponse],
+)
+async def generate_review_token_endpoint(
+    review_id: int,
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+    redis=Depends(get_redis),
+):
+    """Generate a one-time review token for deep-linking reviewers.
+
+    Any JWT-authenticated client can create tokens for reviews.
+    The token is stored in Redis with a 72-hour TTL and can be
+    consumed once via the approve/reject endpoints.
+    """
+    if redis is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Redis unavailable for token generation",
+        )
+
+    review = await db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Review {review_id} not found",
+        )
+
+    token = await create_review_token(redis, review_id, ttl=259200)
+    review_url = f"/t/{token}"
+
+    return ApiResponse(
+        data=ReviewTokenResponse(
+            token=token,
+            expires_in=259200,
+            review_url=review_url,
+        ).model_dump(),
         meta={"request_id": _request_id()},
     )
