@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: External System Integration
-status: defining_requirements
+status: roadmap_created
 stopped_at: ""
-last_updated: "2026-05-07T10:00:00.000Z"
+last_updated: "2026-05-07T12:00:00.000Z"
 last_activity: 2026-05-07
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,21 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** v1.2 — External System Integration
+**Current focus:** Phase 08 — Schema & Callback Infrastructure
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 08 of 12 (Schema & Callback Infrastructure)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-07 — Milestone v1.2 started
+Status: Roadmap created, ready to plan
+Last activity: 2026-05-07 — Roadmap created for v1.2 milestone
 
 Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-
 - Total plans completed: 18 (v1.0 + v1.1)
 - Average duration: ~5min
 - Total execution time: ~1.5 hours
@@ -53,7 +52,6 @@ Progress: [░░░░░░░░░░] 0%
 | 07 (v1.1) | 1 | 4min | 4.0min |
 
 **Recent Trend:**
-
 - Last 5 plans: 10min, 10min, 18min, 4min, 4min
 - Trend: Stable
 
@@ -64,32 +62,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.2 milestone]: Two systems both integrated (kais-gold-team + kais-movie-agent) in this milestone
-- [v1.2 milestone]: Code changes on both sides — review-platform AND kais-* systems
-- [v1.2 milestone]: Dual Bot collaboration — gold-team Bot forwards to review-platform Bot
-- [v1.2 milestone]: Full callback automation — approval triggers auto-resume in kais-* systems
-- [v1.2 milestone]: Cross-machine LAN deployment (192.168.71.x)
-- [v1.1 roadmap]: Tech debt fixes before integration tests -- tests will verify the fixes work
-- [v1.1 roadmap]: SSE/HOOK/TEST combined into Phase 06 (all TestClient-based, share fixtures, no Docker dependency)
-- [v1.1 roadmap]: Docker tests isolated in Phase 07 (requires running stack, separate test runner)
-- [Phase 01]: redis 5.3.1 instead of 7.4.0 due to arq 0.28.0 dependency constraint (redis<6)
-- [Phase 02]: In-memory asyncio.Queue per connection for SSE, 30s heartbeat for zombie detection
-- [Phase 03]: Separate SSE endpoint (/events/stream) with cookie auth for web UI
-- [Phase 04]: Single worker, Dozzle in monitoring profile, SSE gets dedicated nginx location
-- [Phase 05]: Token endpoint co-located in actions.py with approve/reject -- shares router prefix and auth pattern
-- [Phase 05]: sqlite3.DatabaseError (not OperationalError) for authorizer violations in SQLite Python binding
-- [Phase 05]: Dashboard redirects (303) unauthenticated users to /login -- prevents data leakage
-- [Phase 05]: Login uses API key validation matching settings.api_key, sets httpOnly JWT cookie (15 min TTL)
-- [Phase 05]: Fixed TemplateResponse calls across routes.py/auth.py for FastAPI 0.136 request-first signature
-- [Phase 06]: Session-per-request pattern for SQLite integration tests: each API request gets its own AsyncSession from test engine factory to avoid re-entrant commit conflicts
-- [Phase 06]: Patch emit_state_change to no-op during integration tests -- SSE/webhook tested separately, avoids async_session_factory conflicts
-- [Phase 06]: Pre-load default YAML policy in conftest since ASGITransport bypasses FastAPI lifespan startup
-- [Phase 06]: Webhook HTTP CRUD tests require auth_headers fixture (endpoints use get_current_client dependency)
-- [Phase 06]: FastAPI 0.136 SSE pattern: endpoint must be async generator with response_class=EventSourceResponse, NOT function returning EventSourceResponse
-- [Phase 06]: SSE integration tests use event_manager queue manipulation (ASGITransport cannot stream SSE responses)
-- [Phase 06]: Heartbeat tested by calling SSE generator directly with patched asyncio.wait_for to trigger TimeoutError
-- [Phase 07]: SSE endpoint tested via /api/v1/events/stream (Bearer auth) through /api/ Nginx location
-- [Phase 07]: Redis cross-verification via docker exec redis-cli GET confirms token reaches Redis store
+- [v1.2 roadmap]: 5 phases (coarse granularity) — Schema+Callback, Telegram Bot, gold-team, movie-agent, E2E
+- [v1.2 roadmap]: Phase 08 combines DB schema + callback delivery (DB-01..04 + CB-01..05) since callback is tightly coupled to schema
+- [v1.2 roadmap]: Telegram Bot core + handlers in single Phase 09 (TG-01..07) since handlers are inseparable from bot lifecycle
+- [v1.2 roadmap]: Phases 10 and 11 are independent (gold-team Python, movie-agent Node.js) but both depend on Phase 08 callback infrastructure
+- [v1.2 roadmap]: Phase 12 (E2E) depends on everything — tests cross system boundaries
 
 ### Pending Todos
 
@@ -97,10 +74,12 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- [Phase 10]: Gold-team callback endpoint shape needs coordination with gold-team codebase
+- [Phase 11]: Movie-agent Node.js HTTP client library choice depends on movie-agent's existing dependency tree
+- [Phase 09]: Telegram InlineKeyboard callback_data has 64-byte limit — verified low risk (approve:9999:5 = 14 bytes)
 
 ## Session Continuity
 
-Last session: 2026-05-07T08:17:41.612Z
-Stopped at: Completed v1.1 milestone
+Last session: 2026-05-07T10:00:00.000Z
+Stopped at: Roadmap created for v1.2 milestone
 Resume file: None

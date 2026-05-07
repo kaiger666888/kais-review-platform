@@ -82,45 +82,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DB-01 | — | Pending |
-| DB-02 | — | Pending |
-| DB-03 | — | Pending |
-| DB-04 | — | Pending |
-| CB-01 | — | Pending |
-| CB-02 | — | Pending |
-| CB-03 | — | Pending |
-| CB-04 | — | Pending |
-| CB-05 | — | Pending |
-| TG-01 | — | Pending |
-| TG-02 | — | Pending |
-| TG-03 | — | Pending |
-| TG-04 | — | Pending |
-| TG-05 | — | Pending |
-| TG-06 | — | Pending |
-| TG-07 | — | Pending |
-| GT-01 | — | Pending |
-| GT-02 | — | Pending |
-| GT-03 | — | Pending |
-| GT-04 | — | Pending |
-| GT-05 | — | Pending |
-| GT-06 | — | Pending |
-| MA-01 | — | Pending |
-| MA-02 | — | Pending |
-| MA-03 | — | Pending |
-| MA-04 | — | Pending |
-| MA-05 | — | Pending |
-| MA-06 | — | Pending |
-| MA-07 | — | Pending |
-| E2E-01 | — | Pending |
-| E2E-02 | — | Pending |
-| E2E-03 | — | Pending |
-| E2E-04 | — | Pending |
+| DB-01 | Phase 08 | Pending |
+| DB-02 | Phase 08 | Pending |
+| DB-03 | Phase 08 | Pending |
+| DB-04 | Phase 08 | Pending |
+| CB-01 | Phase 08 | Pending |
+| CB-02 | Phase 08 | Pending |
+| CB-03 | Phase 08 | Pending |
+| CB-04 | Phase 08 | Pending |
+| CB-05 | Phase 08 | Pending |
+| TG-01 | Phase 09 | Pending |
+| TG-02 | Phase 09 | Pending |
+| TG-03 | Phase 09 | Pending |
+| TG-04 | Phase 09 | Pending |
+| TG-05 | Phase 09 | Pending |
+| TG-06 | Phase 09 | Pending |
+| TG-07 | Phase 09 | Pending |
+| GT-01 | Phase 10 | Pending |
+| GT-02 | Phase 10 | Pending |
+| GT-03 | Phase 10 | Pending |
+| GT-04 | Phase 10 | Pending |
+| GT-05 | Phase 10 | Pending |
+| GT-06 | Phase 10 | Pending |
+| MA-01 | Phase 11 | Pending |
+| MA-02 | Phase 11 | Pending |
+| MA-03 | Phase 11 | Pending |
+| MA-04 | Phase 11 | Pending |
+| MA-05 | Phase 11 | Pending |
+| MA-06 | Phase 11 | Pending |
+| MA-07 | Phase 11 | Pending |
+| E2E-01 | Phase 12 | Pending |
+| E2E-02 | Phase 12 | Pending |
+| E2E-03 | Phase 12 | Pending |
+| E2E-04 | Phase 12 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33 ⚠️
+- Mapped to phases: 33
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-07*
-*Last updated: 2026-05-07 after initial definition*
+*Last updated: 2026-05-07 after roadmap creation*

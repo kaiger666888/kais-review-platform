@@ -4,15 +4,12 @@
 
 - [x] **v1.0** — Policy-driven review governance platform with REST API, SSE real-time events, mobile-first HTMX frontend, Docker deployment — [archived roadmap](milestones/v1.0-ROADMAP.md) | [requirements](milestones/v1.0-REQUIREMENTS.md)
 - [x] **v1.1** — Integration tests covering API end-to-end, SSE, webhooks, Docker stack; 3 tech debt fixes — [archived roadmap](milestones/v1.1-ROADMAP.md) | [requirements](milestones/v1.1-REQUIREMENTS.md)
-
-## Active Milestone
-
-_None — run `/gsd:new-milestone` to plan the next milestone._
+- [ ] **v1.2** — External system integration: Telegram Bot, kais-gold-team + kais-movie-agent callback automation, dual Bot coordination, E2E testing
 
 ## Phases
 
 <details>
-<summary>v1.0 Foundation (Phases 1-4) — Shipped 2026-05-05</summary>
+<summary>v1.0 Foundation (Phases 01-04) — Shipped 2026-05-05</summary>
 
 - [x] Phase 01: Core Engine (5/5 plans)
 - [x] Phase 02: Real-time Events (2/2 plans)
@@ -22,13 +19,105 @@ _None — run `/gsd:new-milestone` to plan the next milestone._
 </details>
 
 <details>
-<summary>v1.1 Integration Tests & Tech Debt (Phases 5-7) — Shipped 2026-05-07</summary>
+<summary>v1.1 Integration Tests & Tech Debt (Phases 05-07) — Shipped 2026-05-07</summary>
 
 - [x] Phase 05: Tech Debt Fixes (2/2 plans) — completed 2026-05-07
 - [x] Phase 06: API + Event Integration Tests (3/3 plans) — completed 2026-05-07
 - [x] Phase 07: Docker Stack Integration Tests (1/1 plan) — completed 2026-05-07
 
 </details>
+
+## Active Milestone
+
+**v1.2 External System Integration** — Phases 08-12
+
+- [ ] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection
+- [ ] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process
+- [ ] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval
+- [ ] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images
+- [ ] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows
+
+## Phase Details
+
+### Phase 08: Schema & Callback Infrastructure
+**Goal**: External systems can register a callback URL when submitting reviews, and the platform reliably delivers signed results when reviews complete
+**Depends on**: Phase 07 (v1.1 complete)
+**Requirements**: DB-01, DB-02, DB-03, DB-04, CB-01, CB-02, CB-03, CB-04, CB-05
+**Success Criteria** (what must be TRUE):
+  1. A review submitted with a callback_url stores the URL and secret in the database without data loss to existing reviews
+  2. When a review reaches COMPLETE state, the platform POSTs a HMAC-SHA256 signed payload to the callback_url
+  3. Failed callback deliveries retry 3 times with exponential backoff, and the admin receives a Telegram notification after all retries exhaust
+  4. Callback URLs pointing to non-RFC1918 addresses are rejected at submission time
+  5. Telegram Bot token and allowed chat IDs are configurable via settings without code changes
+**Plans**: TBD
+
+Plans:
+- [ ] 08-01: TBD
+- [ ] 08-02: TBD
+
+### Phase 09: Telegram Review Bot
+**Goal**: Reviewers can approve or reject reviews entirely within Telegram, with inline buttons and status feedback
+**Depends on**: Phase 08 (callback infrastructure for notification on failure)
+**Requirements**: TG-01, TG-02, TG-03, TG-04, TG-05, TG-06, TG-07
+**Success Criteria** (what must be TRUE):
+  1. Telegram Bot starts automatically with FastAPI and stops gracefully on shutdown, sharing the event loop
+  2. When a review enters APPROVING state, the bot sends an InlineKeyboard message with approve/reject buttons to allowed chat IDs
+  3. Reviewer taps approve or reject and the review state transitions accordingly, with the message updated to show the final decision
+  4. Reviews still in APPROVING state beyond the configured timeout trigger a reminder notification
+  5. Review notification messages show previous approval decisions with timestamps
+**UI hint**: yes
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: TBD
+- [ ] 09-02: TBD
+
+### Phase 10: kais-gold-team Integration
+**Goal**: GPU tasks in kais-gold-team are automatically intercepted for review before dispatch, and resume on approval or fail on rejection
+**Depends on**: Phase 08 (callback delivery)
+**Requirements**: GT-01, GT-02, GT-03, GT-04, GT-05, GT-06
+**Success Criteria** (what must be TRUE):
+  1. Control node submits a review before dispatching a GPU task, including task type, GPU requirements, and requesting user as metadata
+  2. High-risk GPU engines (Blender/FaceFusion) are automatically routed to HUMAN review; low-risk engines (TTS/SFX) are AUTO-approved
+  3. Control node exposes /callback/review_result endpoint that receives approval/rejection from the review platform
+  4. On approval callback, Guardian scheduling resumes for the approved task without manual intervention
+  5. On rejection callback, the task is marked failed with the rejection reason and the user is notified via Telegram
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+- [ ] 10-02: TBD
+
+### Phase 11: kais-movie-agent Integration
+**Goal**: Movie-agent pipeline review gates use the remote review platform instead of local interactive review, with automatic resume or rollback
+**Depends on**: Phase 08 (callback delivery)
+**Requirements**: MA-01, MA-02, MA-03, MA-04, MA-05, MA-06, MA-07
+**Success Criteria** (what must be TRUE):
+  1. Node.js ReviewPlatformClient module can submit reviews, query status, and authenticate against the review platform REST API
+  2. All 7 pipeline review gates call the review platform instead of launching local interactive-review.js servers
+  3. Pipeline pauses after review submission and waits for callback approval/rejection before proceeding
+  4. On approval callback, the pipeline auto-resumes to the next production phase
+  5. On rejection callback, the pipeline rolls back to the previous phase using the existing git checkpoint mechanism
+  6. Review notifications include material preview images (scene renders, storyboard frames) sent as Telegram photo messages
+**Plans**: TBD
+
+Plans:
+- [ ] 11-01: TBD
+- [ ] 11-02: TBD
+
+### Phase 12: Dual Bot Coordination & E2E
+**Goal**: All review notifications flow through a single channel (review-platform Bot), and the complete integration works end-to-end across both external systems
+**Depends on**: Phase 09, Phase 10, Phase 11
+**Requirements**: E2E-01, E2E-02, E2E-03, E2E-04
+**Success Criteria** (what must be TRUE):
+  1. Gold-team Bot forwards review-related messages to the review-platform Bot so reviewers see all reviews in one place
+  2. End-to-end flow works for gold-team: task submitted -> review created -> Telegram approval -> callback delivered -> task execution resumes
+  3. End-to-end flow works for movie-agent: phase review submitted -> Telegram approval -> callback delivered -> pipeline resumes
+  4. Rejection flows work end-to-end: review rejected -> callback delivered -> gold-team marks task failed / movie-agent rolls back
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
 
 ## Progress
 
@@ -41,3 +130,8 @@ _None — run `/gsd:new-milestone` to plan the next milestone._
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
+| 08. Schema & Callback Infrastructure | v1.2 | 0/? | Not started | - |
+| 09. Telegram Review Bot | v1.2 | 0/? | Not started | - |
+| 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
+| 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
+| 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |
