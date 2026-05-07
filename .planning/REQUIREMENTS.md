@@ -47,7 +47,7 @@
 - [ ] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
 - [ ] **MA-05**: On approval callback, pipeline auto-resumes to next phase
 - [ ] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
-- [ ] **MA-07**: Review notification includes material preview images (scene renders, storyboard frames) sent as Telegram photo messages
+- [x] **MA-07**: Review notification includes material preview images (scene renders, storyboard frames) sent as Telegram photo messages
 
 ### Dual Bot Coordination & E2E
 
@@ -110,7 +110,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MA-04 | Phase 11 | Pending |
 | MA-05 | Phase 11 | Pending |
 | MA-06 | Phase 11 | Pending |
-| MA-07 | Phase 11 | Pending |
+| MA-07 | Phase 11 | Complete |
 | E2E-01 | Phase 12 | Pending |
 | E2E-02 | Phase 12 | Pending |
 | E2E-03 | Phase 12 | Pending |
