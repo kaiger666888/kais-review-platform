@@ -102,8 +102,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md — Node.js ReviewPlatformClient, pipeline _runRemoteReview replacement, callback server with HMAC + resume/rollback (MA-01, MA-02, MA-03, MA-04, MA-05, MA-06)
+- [ ] 11-02-PLAN.md — Telegram sendPhoto for preview images in APPROVING notification (MA-07)
 
 ### Phase 12: Dual Bot Coordination & E2E
 **Goal**: All review notifications flow through a single channel (review-platform Bot), and the complete integration works end-to-end across both external systems
@@ -133,5 +133,5 @@ Plans:
 | 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 10. kais-gold-team Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
+| 11. kais-movie-agent Integration | v1.2 | 0/2 | Planned | - |
 | 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |
