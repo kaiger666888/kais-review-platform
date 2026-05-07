@@ -33,7 +33,7 @@
 
 - [x] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection (completed 2026-05-07)
 - [x] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process (completed 2026-05-07)
-- [ ] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval
+- [x] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval (completed 2026-05-07)
 - [ ] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images
 - [ ] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows
 
@@ -86,7 +86,7 @@ Plans:
 
 Plans:
 - [x] 10-01-PLAN.md -- Risk routing policy (gold_team_risk.yaml) + ReviewPlatformClient module for gold-team (GT-01, GT-02, GT-03)
-- [ ] 10-02-PLAN.md -- Guardian review interception, callback endpoint, polling + crash recovery (GT-01, GT-04, GT-05, GT-06)
+- [x] 10-02-PLAN.md -- Guardian review interception, callback endpoint, polling + crash recovery (GT-01, GT-04, GT-05, GT-06)
 
 ### Phase 11: kais-movie-agent Integration
 **Goal**: Movie-agent pipeline review gates use the remote review platform instead of local interactive review, with automatic resume or rollback
@@ -132,6 +132,6 @@ Plans:
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
 | 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 10. kais-gold-team Integration | v1.2 | 1/2 | In Progress|  |
+| 10. kais-gold-team Integration | v1.2 | 2/2 | Complete   | 2026-05-07 |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
 | 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |
