@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Integration Tests & Tech Debt
-status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-05-07T05:09:15.231Z"
+status: verifying
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-05-07T05:18:13.369Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 
 Phase: 06 (API + Event Integration Tests) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-07
 
 Progress: [░░░░░░░░░░] 0%
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P02 | 8min | 1 tasks | 5 files |
 | Phase 06 P01 | 10min | 2 tasks | 4 files |
 | Phase 06 P03 | 10min | 1 tasks | 1 files |
+| Phase 06 P02 | 18min | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Recent decisions affecting current work:
 - [Phase 06]: Patch emit_state_change to no-op during integration tests -- SSE/webhook tested separately, avoids async_session_factory conflicts
 - [Phase 06]: Pre-load default YAML policy in conftest since ASGITransport bypasses FastAPI lifespan startup
 - [Phase 06]: Webhook HTTP CRUD tests require auth_headers fixture (endpoints use get_current_client dependency)
+- [Phase 06]: FastAPI 0.136 SSE pattern: endpoint must be async generator with response_class=EventSourceResponse, NOT function returning EventSourceResponse
+- [Phase 06]: SSE integration tests use event_manager queue manipulation (ASGITransport cannot stream SSE responses)
+- [Phase 06]: Heartbeat tested by calling SSE generator directly with patched asyncio.wait_for to trigger TimeoutError
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07T05:09:15.229Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-05-07T05:18:13.366Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None

@@ -26,12 +26,12 @@ Requirements for integration tests and tech debt fixes. Each maps to roadmap pha
 
 ### SSE Integration Tests (SSE)
 
-- [ ] **SSE-01**: TestClient can connect to /events/stream and receive state change events
-- [ ] **SSE-02**: Approving a review triggers an SSE event pushed to connected clients
-- [ ] **SSE-03**: SSE connection receives heartbeat keep-alive messages
-- [ ] **SSE-04**: SSE connection cleanup works after client disconnect
-- [ ] **SSE-05**: Multiple SSE clients connected simultaneously all receive the same event
-- [ ] **SSE-06**: Slow SSE client (full queue) is dropped without affecting other clients
+- [x] **SSE-01**: TestClient can connect to /events/stream and receive state change events
+- [x] **SSE-02**: Approving a review triggers an SSE event pushed to connected clients
+- [x] **SSE-03**: SSE connection receives heartbeat keep-alive messages
+- [x] **SSE-04**: SSE connection cleanup works after client disconnect
+- [x] **SSE-05**: Multiple SSE clients connected simultaneously all receive the same event
+- [x] **SSE-06**: Slow SSE client (full queue) is dropped without affecting other clients
 
 ### Webhook Integration Tests (HOOK)
 
@@ -104,12 +104,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-08 | Phase 06 | Complete |
 | TEST-09 | Phase 06 | Complete |
 | TEST-10 | Phase 06 | Complete |
-| SSE-01 | Phase 06 | Pending |
-| SSE-02 | Phase 06 | Pending |
-| SSE-03 | Phase 06 | Pending |
-| SSE-04 | Phase 06 | Pending |
-| SSE-05 | Phase 06 | Pending |
-| SSE-06 | Phase 06 | Pending |
+| SSE-01 | Phase 06 | Complete |
+| SSE-02 | Phase 06 | Complete |
+| SSE-03 | Phase 06 | Complete |
+| SSE-04 | Phase 06 | Complete |
+| SSE-05 | Phase 06 | Complete |
+| SSE-06 | Phase 06 | Complete |
 | HOOK-01 | Phase 06 | Complete |
 | HOOK-02 | Phase 06 | Complete |
 | HOOK-03 | Phase 06 | Complete |
