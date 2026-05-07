@@ -1,5 +1,7 @@
 """Tests for web authentication: login page, login form, dashboard redirect."""
 
+from unittest.mock import patch, AsyncMock
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -27,11 +29,16 @@ async def test_unauthenticated_dashboard_redirects():
 @pytest.mark.asyncio
 async def test_authenticated_dashboard_renders(valid_cookie):
     """GET / with valid access_token cookie returns 200 (dashboard renders)."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/", cookies=valid_cookie, follow_redirects=False)
+    # Mock _fetch_reviews to avoid database dependency in auth-focused test
+    with patch("app.web.routes._fetch_reviews", new_callable=AsyncMock) as mock_fetch:
+        mock_fetch.return_value = ([], False, None)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/", cookies=valid_cookie, follow_redirects=False
+            )
     assert response.status_code == 200
-    assert "Kai" in response.text or "Review" in response.text
+    assert "Review" in response.text
 
 
 @pytest.mark.asyncio

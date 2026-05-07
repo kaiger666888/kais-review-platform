@@ -1,13 +1,15 @@
-"""Template auth: cookie-based JWT and one-time token deep link route."""
+"""Template auth: cookie-based JWT, login page, and one-time token deep link route."""
 
-from fastapi import APIRouter, Cookie, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 
 from app.core.auth import consume_review_token, create_jwt, decode_jwt, AuthenticationError
 from app.core.config import get_settings
 from app.core.dependencies import get_redis
 
 router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
 
 
 async def get_template_user(
@@ -22,6 +24,34 @@ async def get_template_user(
     except AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return payload.get("client", "unknown")
+
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: str | None = None):
+    """Render login form page."""
+    return templates.TemplateResponse(request, "pages/login.html", {
+        "error": error,
+    })
+
+
+@router.post("/login")
+async def login_submit(request: Request, api_key: str = Form(...)):
+    """Validate API key, set JWT cookie, redirect to dashboard."""
+    settings = get_settings()
+    if api_key != settings.api_key:
+        return templates.TemplateResponse(request, "pages/login.html", {
+            "error": "Invalid API key",
+        }, status_code=200)
+    jwt_token = create_jwt("admin", settings.jwt_secret, expires_minutes=15)
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        key="access_token",
+        value=jwt_token,
+        httponly=True,
+        max_age=900,
+        samesite="lax",
+    )
+    return response
 
 
 @router.get("/t/{token}")

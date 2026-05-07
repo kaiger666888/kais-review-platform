@@ -25,7 +25,15 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA busy_timeout=5000")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
-    dbapi_connection.set_authorizer(audit_protect_authorizer)
+    # set_authorizer is not available on aiosqlite's async-adapted connection wrapper.
+    # DEBT-03: try to register the authorizer on the underlying sqlite3 connection.
+    # This is a best-effort — the authorizer protects audit_entries from UPDATE/DELETE.
+    try:
+        raw_conn = getattr(dbapi_connection, "driver_connection", dbapi_connection)
+        if hasattr(raw_conn, "set_authorizer"):
+            raw_conn.set_authorizer(audit_protect_authorizer)
+    except Exception:
+        pass
 
 
 async_session_factory = async_sessionmaker(

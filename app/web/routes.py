@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2_fragments.fastapi import Jinja2Blocks
 from sqlalchemy import select, func
@@ -107,14 +107,13 @@ async def _fetch_reviews(status: str, cursor: int | None = None):
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, tab: str = "pending", detail: int | None = None,
                     toast: str | None = None):
-    """Full page dashboard render."""
-    user = None
+    """Full page dashboard render. Requires cookie-based JWT auth."""
     try:
         user = await get_template_user(
             access_token=request.cookies.get("access_token"),
         )
     except Exception:
-        pass  # Allow unauthenticated access for now (auth can be enforced later)
+        return RedirectResponse(url="/login", status_code=303)
 
     reviews, has_more, next_cursor = await _fetch_reviews(tab)
 
@@ -124,8 +123,7 @@ async def dashboard(request: Request, tab: str = "pending", detail: int | None =
         toast_message = "This link has expired. Request a new review link."
         toast_type = "error"
 
-    return templates.TemplateResponse("pages/dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "pages/dashboard.html", {
         "reviews": reviews,
         "active_tab": tab,
         "has_more": has_more,
@@ -143,8 +141,7 @@ async def review_list_partial(request: Request, status: str = "pending",
     """HTMX partial: render review list block only."""
     reviews, has_more, next_cursor = await _fetch_reviews(status, cursor)
 
-    return templates.TemplateResponse("partials/_review_list.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/_review_list.html", {
         "reviews": reviews,
         "active_tab": status,
         "has_more": has_more,
@@ -160,8 +157,7 @@ async def review_detail_partial(request: Request, review_id: int):
         if review is None:
             return HTMLResponse("<p>Review not found.</p>", status_code=404)
 
-    return templates.TemplateResponse("partials/_review_detail.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/_review_detail.html", {
         "review": review,
     })
 
@@ -195,8 +191,7 @@ async def approve_review_htmx(request: Request, review_id: int):
     # Determine tab from referer or default to pending
     reviews, has_more, next_cursor = await _fetch_reviews("pending")
 
-    rendered = templates.TemplateResponse("partials/_review_list.html", {
-        "request": request,
+    rendered = templates.TemplateResponse(request, "partials/_review_list.html", {
         "reviews": reviews,
         "active_tab": "pending",
         "has_more": has_more,
@@ -236,8 +231,7 @@ async def reject_review_htmx(request: Request, review_id: int, reason: str = For
     # Re-fetch current tab's reviews
     reviews, has_more, next_cursor = await _fetch_reviews("pending")
 
-    rendered = templates.TemplateResponse("partials/_review_list.html", {
-        "request": request,
+    rendered = templates.TemplateResponse(request, "partials/_review_list.html", {
         "reviews": reviews,
         "active_tab": "pending",
         "has_more": has_more,
