@@ -35,10 +35,10 @@ Requirements for integration tests and tech debt fixes. Each maps to roadmap pha
 
 ### Webhook Integration Tests (HOOK)
 
-- [ ] **HOOK-01**: Webhook delivers to configured URL with correct HMAC signature header
-- [ ] **HOOK-02**: Webhook retries on connection failure with exponential backoff
-- [ ] **HOOK-03**: Webhook marks delivery as failed after max retries exhausted
-- [ ] **HOOK-04**: Webhook only fires for matching source_system filter when configured
+- [x] **HOOK-01**: Webhook delivers to configured URL with correct HMAC signature header
+- [x] **HOOK-02**: Webhook retries on connection failure with exponential backoff
+- [x] **HOOK-03**: Webhook marks delivery as failed after max retries exhausted
+- [x] **HOOK-04**: Webhook only fires for matching source_system filter when configured
 
 ### Docker Integration Tests (DOCK)
 
@@ -110,10 +110,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SSE-04 | Phase 06 | Pending |
 | SSE-05 | Phase 06 | Pending |
 | SSE-06 | Phase 06 | Pending |
-| HOOK-01 | Phase 06 | Pending |
-| HOOK-02 | Phase 06 | Pending |
-| HOOK-03 | Phase 06 | Pending |
-| HOOK-04 | Phase 06 | Pending |
+| HOOK-01 | Phase 06 | Complete |
+| HOOK-02 | Phase 06 | Complete |
+| HOOK-03 | Phase 06 | Complete |
+| HOOK-04 | Phase 06 | Complete |
 | DOCK-01 | Phase 07 | Pending |
 | DOCK-02 | Phase 07 | Pending |
 | DOCK-03 | Phase 07 | Pending |

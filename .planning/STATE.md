@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Integration Tests & Tech Debt
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-05-07T04:56:49.206Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-05-07T05:09:15.231Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 06 (API + Event Integration Tests) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-05-07
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P01 | 5min | 2 tasks | 4 files |
 | Phase 05 P02 | 8min | 1 tasks | 5 files |
 | Phase 06 P01 | 10min | 2 tasks | 4 files |
+| Phase 06 P03 | 10min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,7 @@ Recent decisions affecting current work:
 - [Phase 06]: Session-per-request pattern for SQLite integration tests: each API request gets its own AsyncSession from test engine factory to avoid re-entrant commit conflicts
 - [Phase 06]: Patch emit_state_change to no-op during integration tests -- SSE/webhook tested separately, avoids async_session_factory conflicts
 - [Phase 06]: Pre-load default YAML policy in conftest since ASGITransport bypasses FastAPI lifespan startup
+- [Phase 06]: Webhook HTTP CRUD tests require auth_headers fixture (endpoints use get_current_client dependency)
 
 ### Pending Todos
 
@@ -92,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07T04:56:49.203Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-05-07T05:09:15.229Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None

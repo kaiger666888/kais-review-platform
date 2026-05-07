@@ -55,7 +55,7 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Integration test fixtures + API flow tests (TEST-01 through TEST-10)
 - [ ] 06-02-PLAN.md — SSE integration tests (SSE-01 through SSE-06)
-- [ ] 06-03-PLAN.md — Webhook integration tests (HOOK-01 through HOOK-04)
+- [x] 06-03-PLAN.md — Webhook integration tests (HOOK-01 through HOOK-04)
 
 ### Phase 07: Docker Stack Integration Tests
 **Goal**: Full Docker Compose deployment verified as a black-box system through Nginx
@@ -80,5 +80,5 @@ Phases execute in numeric order: 5 -> 6 -> 7
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete    | 2026-05-07 |
-| 06. API + Event Integration Tests | v1.1 | 1/3 | In Progress|  |
+| 06. API + Event Integration Tests | v1.1 | 2/3 | In Progress|  |
 | 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
