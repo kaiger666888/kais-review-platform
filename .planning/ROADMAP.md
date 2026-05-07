@@ -50,12 +50,12 @@ Plans:
   3. A developer can run pytest and verify that webhooks deliver with HMAC signatures, retry on failure with backoff, and stop after max retries
   4. Edge cases return correct HTTP status codes: 401 without auth, 404 for missing reviews, 409 on conflicting transitions, 422 on invalid state changes
   5. Multiple concurrent review submissions maintain independent state machines (no cross-contamination)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
-- [ ] 06-03: TBD
+- [ ] 06-01-PLAN.md — Integration test fixtures + API flow tests (TEST-01 through TEST-10)
+- [ ] 06-02-PLAN.md — SSE integration tests (SSE-01 through SSE-06)
+- [ ] 06-03-PLAN.md — Webhook integration tests (HOOK-01 through HOOK-04)
 
 ### Phase 07: Docker Stack Integration Tests
 **Goal**: Full Docker Compose deployment verified as a black-box system through Nginx
