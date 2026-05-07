@@ -39,13 +39,17 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ### Active
 
-- [ ] API 端到端集成测试覆盖所有核心流程
-- [ ] SSE 实时推送集成测试
-- [ ] Webhook 投递 + 重试集成测试
-- [ ] Docker Compose 全栈黑盒测试
-- [ ] create_review_token 端点补全
-- [ ] Web 模板路由认证修复
-- [ ] audit_protect_authorizer 注册修复
+None — all v1.1 requirements validated.
+
+### Validated in v1.1
+
+- ✓ API 端到端集成测试覆盖所有核心流程 — v1.1 Phase 06
+- ✓ SSE 实时推送集成测试 — v1.1 Phase 06
+- ✓ Webhook 投递 + 重试集成测试 — v1.1 Phase 06
+- ✓ Docker Compose 全栈黑盒测试 — v1.1 Phase 07
+- ✓ create_review_token 端点补全 — v1.1 Phase 05
+- ✓ Web 模板路由认证修复 — v1.1 Phase 05
+- ✓ audit_protect_authorizer 注册修复 — v1.1 Phase 05
 
 ### Out of Scope
 
@@ -106,4 +110,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 after v1.1 milestone start*
+*Last updated: 2026-05-07 after v1.1 Phase 07 completion — all v1.1 requirements validated*
