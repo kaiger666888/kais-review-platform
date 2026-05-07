@@ -32,6 +32,8 @@ class ReviewCreateRequest(BaseModel):
     source_system: str = Field(min_length=1)
     priority: str = Field(default="normal", pattern=r"^(low|normal|high|critical)$")
     risk_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    callback_url: str | None = Field(default=None, min_length=1)
+    callback_secret: str | None = Field(default=None, min_length=1)
 
 
 class ApproveRequest(BaseModel):
@@ -94,6 +96,7 @@ class ReviewResponse(BaseModel):
     risk_score: float | None
     state: str
     disposition: str | None
+    callback_url: str | None = None
     version: int
     created_at: datetime
     updated_at: datetime

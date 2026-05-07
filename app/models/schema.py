@@ -20,6 +20,8 @@ class Review(Base):
     risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     state: Mapped[str] = mapped_column(String, nullable=False, default="PENDING")
     disposition: Mapped[str | None] = mapped_column(String, nullable=True)
+    callback_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    callback_secret: Mapped[str | None] = mapped_column(String, nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
