@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Integration Tests & Tech Debt
-status: verifying
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-05-07T08:17:41.612Z"
+milestone: v1.2
+milestone_name: External System Integration
+status: defining_requirements
+stopped_at: ""
+last_updated: "2026-05-07T10:00:00.000Z"
 last_activity: 2026-05-07
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 07 — docker-stack-integration-tests
+**Current focus:** v1.2 — External System Integration
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-07
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-07 — Milestone v1.2 started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,9 +36,9 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity:**
 
-- Total plans completed: 12 (v1.0)
-- Average duration: ~4.5min
-- Total execution time: ~0.9 hours
+- Total plans completed: 18 (v1.0 + v1.1)
+- Average duration: ~5min
+- Total execution time: ~1.5 hours
 
 **By Phase:**
 
@@ -48,19 +48,14 @@ Progress: [░░░░░░░░░░] 0%
 | 02 (v1.0) | 2 | 10min | 5.0min |
 | 03 (v1.0) | 3 | 10min | 3.3min |
 | 04 (v1.0) | 2 | 3min | 1.5min |
+| 05 (v1.1) | 2 | 13min | 6.5min |
+| 06 (v1.1) | 3 | 38min | 12.7min |
+| 07 (v1.1) | 1 | 4min | 4.0min |
 
 **Recent Trend:**
 
-- Last 5 plans: 5min, 1min, 4min, 2min, 1min
+- Last 5 plans: 10min, 10min, 18min, 4min, 4min
 - Trend: Stable
-
-*Updated after each plan completion*
-| Phase 05 P01 | 5min | 2 tasks | 4 files |
-| Phase 05 P02 | 8min | 1 tasks | 5 files |
-| Phase 06 P01 | 10min | 2 tasks | 4 files |
-| Phase 06 P03 | 10min | 1 tasks | 1 files |
-| Phase 06 P02 | 18min | 1 tasks | 4 files |
-| Phase 07 P01 | 4min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -69,6 +64,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.2 milestone]: Two systems both integrated (kais-gold-team + kais-movie-agent) in this milestone
+- [v1.2 milestone]: Code changes on both sides — review-platform AND kais-* systems
+- [v1.2 milestone]: Dual Bot collaboration — gold-team Bot forwards to review-platform Bot
+- [v1.2 milestone]: Full callback automation — approval triggers auto-resume in kais-* systems
+- [v1.2 milestone]: Cross-machine LAN deployment (192.168.71.x)
 - [v1.1 roadmap]: Tech debt fixes before integration tests -- tests will verify the fixes work
 - [v1.1 roadmap]: SSE/HOOK/TEST combined into Phase 06 (all TestClient-based, share fixtures, no Docker dependency)
 - [v1.1 roadmap]: Docker tests isolated in Phase 07 (requires running stack, separate test runner)
@@ -101,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07T07:51:19.995Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-05-07T08:17:41.612Z
+Stopped at: Completed v1.1 milestone
 Resume file: None

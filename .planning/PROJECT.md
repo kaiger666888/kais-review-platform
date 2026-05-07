@@ -12,9 +12,18 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 **Shipped:** v1.1 Integration Tests & Tech Debt (2026-05-07)
 **Status:** All v1.0 + v1.1 requirements validated. Platform fully tested end-to-end.
-**Next:** Planning next milestone — run `/gsd:new-milestone`
-
 **Stats:** 7 phases, 18 plans, 7,145 LOC Python + 398 LOC Bash, 170 tests passing
+
+## Current Milestone: v1.2 External System Integration
+
+**Goal:** 将 kais-gold-team 和 kais-movie-agent 接入审核平台，实现 Telegram + 移动端双通道审核，审批通过后全自动回调恢复执行。
+
+**Target features:**
+1. Review Platform Telegram Bot — 新建独立 Telegram Bot，接收审核通知，提供 InlineKeyboard 审批按钮
+2. kais-gold-team 审核拦截 — control_node 在 GPU 任务调度前提交审核，高风险走 HUMAN，低风险 AUTO 放行，审批通过后回调自动继续执行
+3. kais-movie-agent 审核门替换 — 替换 `interactive-review.js` 本地审核为 review-platform API 调用，7 个制作阶段的审核门接入远程审核
+4. 双 Bot 协作 — gold-team Bot 转发审核请求到 review-platform Bot，统一审批入口
+5. 全回调自动化 — 审批通过 → webhook 回调 kais-* → 自动恢复 pipeline/guardian 执行
 
 ## Requirements
 
@@ -34,7 +43,11 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ### Active
 
-None — awaiting next milestone planning.
+- [ ] Review Platform Telegram Bot 接收审核通知，InlineKeyboard 审批
+- [ ] kais-gold-team GPU 任务审核拦截（control_node 提交审核 → 策略路由 → 回调自动恢复）
+- [ ] kais-movie-agent 7 个制作阶段审核门替换为远程审核 API 调用
+- [ ] 双 Bot 协作（gold-team Bot → review-platform Bot）
+- [ ] 全回调自动化闭环（审批 → webhook → kais-* 自动恢复执行）
 
 ### Validated in v1.1
 
@@ -111,4 +124,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 after v1.1 milestone completion*
+*Last updated: 2026-05-07 after v1.2 milestone started*
