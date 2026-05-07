@@ -389,11 +389,14 @@ class TestCallbackDeliveryRetry:
                 mock_structlog.get_logger.return_value = mock_logger
                 result = await deliver_review_callback(ctx, review_id, {"review_id": review_id})
 
-                # Verify telegram_admin_notification_pending was logged
+                # Verify telegram admin notification was logged (sent or skipped)
                 warning_calls = [call for call in mock_logger.warning.call_args_list]
                 telegram_calls = [
                     c for c in warning_calls
-                    if len(c[0]) > 0 and c[0][0] == "telegram_admin_notification_pending"
+                    if len(c[0]) > 0 and c[0][0] in (
+                        "telegram_admin_notification_sent",
+                        "telegram_admin_notification_skipped",
+                    )
                 ]
                 assert len(telegram_calls) >= 1
 

@@ -162,15 +162,112 @@ async def deliver_webhook(ctx: dict, webhook_config_id: int, payload: dict) -> d
 
 
 async def _notify_telegram_admin(review_id: int, callback_url: str, error: str) -> None:
-    """Log Telegram admin notification intent. Actual delivery in Phase 09."""
+    """Send Telegram admin notification about callback delivery failure.
+
+    Sends actual Telegram message to all allowed chat IDs. If bot is not
+    configured (application is None), logs a warning and returns.
+    """
     logger = structlog.get_logger()
+    try:
+        from app.main import app
+        from app.bot.lifecycle import parse_allowed_chat_ids
+        from app.core.config import get_settings
+
+        bot_app = getattr(app.state, 'bot_application', None)
+        if bot_app is None:
+            logger.warning("telegram_admin_notification_skipped", reason="bot_not_configured", review_id=review_id)
+            return
+
+        settings = get_settings()
+        chat_ids = parse_allowed_chat_ids(settings.telegram_allowed_chat_ids)
+        message = (
+            f"⚠️ 回调投递失败\n"
+            f"审核ID: {review_id}\n"
+            f"回调URL: {callback_url}\n"
+            f"错误: {error}"
+        )
+        for chat_id in chat_ids:
+            try:
+                await bot_app.bot.send_message(chat_id=chat_id, text=message)
+            except Exception as e:
+                logger.error("telegram_admin_send_failed", chat_id=chat_id, error=str(e))
+    except Exception as e:
+        logger.error("telegram_admin_notification_error", error=str(e))
+    # Keep the log entry for debugging
     logger.warning(
-        "telegram_admin_notification_pending",
+        "telegram_admin_notification_sent",
         review_id=review_id,
         callback_url=callback_url,
         error=error,
-        message=f"Callback delivery failed for review {review_id} to {callback_url}: {error}",
     )
+
+
+async def check_timeout_reminders(ctx: dict) -> list[int]:
+    """Send reminder notifications for reviews approaching timeout in APPROVING state.
+
+    Reviews in APPROVING state that have exceeded 80% of the configured timeout
+    threshold receive a reminder notification to all allowed Telegram chat IDs.
+
+    Args:
+        ctx: arq context dict with 'bot_application' key.
+
+    Returns:
+        List of review IDs that received reminder notifications.
+    """
+    logger = structlog.get_logger()
+    from app.core.config import get_settings
+    from app.core.database import async_session_factory
+    from app.models.schema import Review
+    from app.models.schemas import ReviewState
+
+    settings = get_settings()
+    timeout_seconds = settings.review_timeout_minutes * 60
+    reminder_threshold = timeout_seconds * 0.8  # Remind at 80% of timeout
+    reminded: list[int] = []
+
+    bot_app = ctx.get("bot_application")
+    if bot_app is None:
+        return reminded
+
+    chat_ids_str = settings.telegram_allowed_chat_ids
+    if not chat_ids_str:
+        return reminded
+
+    from app.bot.lifecycle import parse_allowed_chat_ids
+    chat_ids = parse_allowed_chat_ids(chat_ids_str)
+
+    async with async_session_factory() as session:
+        cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=reminder_threshold)
+        query = select(Review).where(
+            Review.state == ReviewState.APPROVING.value,
+            Review.updated_at < cutoff_time,
+        )
+        result = await session.execute(query)
+        approaching_timeout = result.scalars().all()
+
+        for review in approaching_timeout:
+            updated_at_utc = review.updated_at
+            if updated_at_utc.tzinfo is None:
+                updated_at_utc = updated_at_utc.replace(tzinfo=timezone.utc)
+            elapsed = (datetime.now(timezone.utc) - updated_at_utc).total_seconds()
+            remaining_minutes = int((timeout_seconds - elapsed) / 60)
+            message = (
+                f"⏰ 审核超时提醒\n"
+                f"审核ID: {review.id}\n"
+                f"类型: {review.type}\n"
+                f"来源: {review.source_system}\n"
+                f"剩余时间: {remaining_minutes} 分钟\n"
+                f"请尽快处理"
+            )
+            for chat_id in chat_ids:
+                try:
+                    await bot_app.bot.send_message(chat_id=chat_id, text=message)
+                except Exception as e:
+                    logger.error("timeout_reminder_send_failed", chat_id=chat_id, review_id=review.id, error=str(e))
+            reminded.append(review.id)
+            logger.info("timeout_reminder_sent", review_id=review.id, remaining_minutes=remaining_minutes)
+
+    return reminded
 
 
 async def deliver_review_callback(
@@ -271,13 +368,19 @@ async def deliver_review_callback(
 class WorkerSettings:
     """arq worker configuration."""
 
-    functions = [check_timeouts, deliver_webhook, deliver_review_callback]
+    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders]
     cron_jobs = [
         cron(check_timeouts, minute={0}),  # Run every hour at minute 0
+        cron(check_timeout_reminders, minute={0, 30}),  # Run every 30 minutes
     ]
 
     async def on_startup(ctx):
         ctx["http_client"] = httpx.AsyncClient(timeout=10.0)
+        try:
+            from app.main import app
+            ctx["bot_application"] = getattr(app.state, 'bot_application', None)
+        except Exception:
+            ctx["bot_application"] = None
 
     async def on_shutdown(ctx):
         await ctx["http_client"].aclose()

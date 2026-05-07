@@ -363,3 +363,231 @@ async def test_notification_skipped_when_review_not_in_db(
 
         # send_message should NOT be called since review is None
         mock_bot_application.bot.send_message.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Task 2 Tests: Timeout reminder and real _notify_telegram_admin delivery
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Test 9: check_timeout_reminders sends reminder for approaching-timeout reviews
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_check_timeout_reminders_sends_reminder(mock_bot_application):
+    """check_timeout_reminders sends notification for reviews approaching timeout."""
+    from datetime import timedelta
+
+    # Review that has been in APPROVING for 85% of the timeout threshold
+    timeout_seconds = 1440 * 60  # 24 hours = 86400 seconds
+    elapsed_seconds = timeout_seconds * 0.85
+    now = datetime.now(timezone.utc)
+    updated_at = now - timedelta(seconds=elapsed_seconds)
+
+    mock_review = MagicMock()
+    mock_review.id = 55
+    mock_review.type = "movie_review"
+    mock_review.source_system = "kais-movie-agent"
+    mock_review.updated_at = updated_at
+
+    # Mock DB query result
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = [mock_review]
+    mock_result.scalars.return_value = mock_scalars
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("app.core.database.async_session_factory", mock_session_factory),
+        patch("app.core.config.get_settings") as mock_settings,
+        patch("app.bot.lifecycle.parse_allowed_chat_ids", return_value=[111, 222]),
+    ):
+        settings = MagicMock()
+        settings.review_timeout_minutes = 1440
+        settings.telegram_allowed_chat_ids = "111,222"
+        mock_settings.return_value = settings
+
+        from app.workers.tasks import check_timeout_reminders
+
+        ctx = {"bot_application": mock_bot_application}
+        result = await check_timeout_reminders(ctx)
+
+        assert 55 in result
+        # send_message called for each chat ID (2 chat IDs)
+        assert mock_bot_application.bot.send_message.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Test 10: Reminder notification sent to all allowed chat IDs
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_reminder_sent_to_all_allowed_chat_ids(mock_bot_application):
+    """Reminder notification should be sent to all allowed chat IDs."""
+    from datetime import timedelta
+
+    timeout_seconds = 1440 * 60
+    elapsed_seconds = timeout_seconds * 0.85
+    now = datetime.now(timezone.utc)
+    updated_at = now - timedelta(seconds=elapsed_seconds)
+
+    mock_review = MagicMock()
+    mock_review.id = 77
+    mock_review.type = "gold_team_review"
+    mock_review.source_system = "kais-gold-team"
+    mock_review.updated_at = updated_at
+
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = [mock_review]
+    mock_result.scalars.return_value = mock_scalars
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("app.core.database.async_session_factory", mock_session_factory),
+        patch("app.core.config.get_settings") as mock_settings,
+        patch("app.bot.lifecycle.parse_allowed_chat_ids", return_value=[100, 200, 300]),
+    ):
+        settings = MagicMock()
+        settings.review_timeout_minutes = 1440
+        settings.telegram_allowed_chat_ids = "100,200,300"
+        mock_settings.return_value = settings
+
+        from app.workers.tasks import check_timeout_reminders
+
+        ctx = {"bot_application": mock_bot_application}
+        result = await check_timeout_reminders(ctx)
+
+        assert 77 in result
+        # 3 chat IDs, 1 review = 3 send_message calls
+        assert mock_bot_application.bot.send_message.call_count == 3
+        # Verify chat IDs used
+        calls = mock_bot_application.bot.send_message.call_args_list
+        chat_ids = {call.kwargs["chat_id"] for call in calls}
+        assert chat_ids == {100, 200, 300}
+
+
+# ---------------------------------------------------------------------------
+# Test 11: _notify_telegram_admin sends actual message to allowed chat IDs
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_notify_telegram_admin_sends_actual_message(mock_bot_application):
+    """_notify_telegram_admin sends actual Telegram message (not just log)."""
+    mock_fastapi = MagicMock()
+    mock_fastapi.state.bot_application = mock_bot_application
+
+    with (
+        patch("app.main.app", mock_fastapi),
+        patch("app.core.config.get_settings") as mock_settings,
+        patch("app.bot.lifecycle.parse_allowed_chat_ids", return_value=[111]),
+    ):
+        settings = MagicMock()
+        settings.telegram_allowed_chat_ids = "111"
+        mock_settings.return_value = settings
+
+        from app.workers.tasks import _notify_telegram_admin
+
+        await _notify_telegram_admin(42, "https://example.com/callback", "Connection refused")
+
+        mock_bot_application.bot.send_message.assert_called_once()
+        call_kwargs = mock_bot_application.bot.send_message.call_args.kwargs
+        assert call_kwargs["chat_id"] == 111
+        assert "42" in call_kwargs["text"]
+        assert "Connection refused" in call_kwargs["text"]
+
+
+# ---------------------------------------------------------------------------
+# Test 12: _notify_telegram_admin is no-op when bot is not configured
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_notify_telegram_admin_noop_when_bot_none():
+    """_notify_telegram_admin should be no-op when bot is None."""
+    mock_fastapi = MagicMock()
+    mock_fastapi.state.bot_application = None
+
+    with (
+        patch("app.main.app", mock_fastapi),
+        patch("app.core.config.get_settings") as mock_settings,
+    ):
+        settings = MagicMock()
+        settings.telegram_allowed_chat_ids = "111"
+        mock_settings.return_value = settings
+
+        from app.workers.tasks import _notify_telegram_admin
+
+        # Should not raise
+        await _notify_telegram_admin(42, "https://example.com/callback", "error")
+
+
+# ---------------------------------------------------------------------------
+# Test 13: Reminder message includes review ID and timeout duration
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_reminder_message_includes_review_id_and_remaining_time(mock_bot_application):
+    """Reminder message should include review ID and remaining time in minutes."""
+    from datetime import timedelta
+
+    timeout_seconds = 1440 * 60  # 86400 seconds
+    elapsed_seconds = timeout_seconds * 0.85  # 85% elapsed
+    now = datetime.now(timezone.utc)
+    updated_at = now - timedelta(seconds=elapsed_seconds)
+
+    mock_review = MagicMock()
+    mock_review.id = 99
+    mock_review.type = "movie_review"
+    mock_review.source_system = "kais-movie-agent"
+    mock_review.updated_at = updated_at
+
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = [mock_review]
+    mock_result.scalars.return_value = mock_scalars
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("app.core.database.async_session_factory", mock_session_factory),
+        patch("app.core.config.get_settings") as mock_settings,
+        patch("app.bot.lifecycle.parse_allowed_chat_ids", return_value=[111]),
+    ):
+        settings = MagicMock()
+        settings.review_timeout_minutes = 1440
+        settings.telegram_allowed_chat_ids = "111"
+        mock_settings.return_value = settings
+
+        from app.workers.tasks import check_timeout_reminders
+
+        ctx = {"bot_application": mock_bot_application}
+        result = await check_timeout_reminders(ctx)
+
+        assert 99 in result
+        # Check message content
+        call_kwargs = mock_bot_application.bot.send_message.call_args.kwargs
+        text = call_kwargs["text"]
+        assert "99" in text  # review ID
+        assert "movie_review" in text  # review type
+        assert "kais-movie-agent" in text  # source system
+        assert "分钟" in text  # remaining time in minutes
