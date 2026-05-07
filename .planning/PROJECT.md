@@ -10,9 +10,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ## Current State
 
-**Shipped:** v1.2 Phase 10 — kais-gold-team Integration (2026-05-07)
-**Status:** Phases 08-10 complete (callback + Bot + gold-team). Phases 11-12 remaining.
-**Stats:** 10 phases, 24 plans, 260 tests passing
+**Shipped:** v1.2 Phase 11 — kais-movie-agent Integration (2026-05-07)
+**Status:** Phases 08-11 complete. Phase 12 (E2E) remaining.
+**Stats:** 11 phases, 26 plans, 260 tests passing
 
 ## Current Milestone: v1.2 External System Integration
 
@@ -43,9 +43,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ### Active
 
-- [ ] Review Platform Telegram Bot 接收审核通知，InlineKeyboard 审批
-- [ ] kais-gold-team GPU 任务审核拦截（control_node 提交审核 → 策略路由 → 回调自动恢复）
-- [ ] kais-movie-agent 7 个制作阶段审核门替换为远程审核 API 调用
+- [ ] Review Platform Telegram Bot 接收审核通知，InlineKeyboard 审批 — ✓ Validated in v1.2 Phase 09
+- [ ] kais-gold-team GPU 任务审核拦截（control_node 提交审核 → 策略路由 → 回调自动恢复） — ✓ Validated in v1.2 Phase 10
+- [ ] kais-movie-agent 6 个制作阶段审核门替换为远程审核 API 调用 — ✓ Validated in v1.2 Phase 11
 - [ ] 双 Bot 协作（gold-team Bot → review-platform Bot）
 - [ ] 全回调自动化闭环（审批 → webhook → kais-* 自动恢复执行）
 
