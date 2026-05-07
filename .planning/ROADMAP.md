@@ -85,7 +85,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md -- Risk routing policy (gold_team_risk.yaml) + ReviewPlatformClient module for gold-team (GT-01, GT-02, GT-03)
+- [x] 10-01-PLAN.md -- Risk routing policy (gold_team_risk.yaml) + ReviewPlatformClient module for gold-team (GT-01, GT-02, GT-03)
 - [ ] 10-02-PLAN.md -- Guardian review interception, callback endpoint, polling + crash recovery (GT-01, GT-04, GT-05, GT-06)
 
 ### Phase 11: kais-movie-agent Integration
@@ -132,6 +132,6 @@ Plans:
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
 | 08. Schema & Callback Infrastructure | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 09. Telegram Review Bot | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
+| 10. kais-gold-team Integration | v1.2 | 1/2 | In Progress|  |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |
 | 12. Dual Bot Coordination & E2E | v1.2 | 0/? | Not started | - |

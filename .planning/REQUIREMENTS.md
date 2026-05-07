@@ -32,9 +32,9 @@
 
 ### kais-gold-team Integration
 
-- [ ] **GT-01**: gold-team control_node submits review to review-platform before dispatching GPU task to worker
-- [ ] **GT-02**: Review submission includes task type, GPU resource requirements, and requesting user as metadata
-- [ ] **GT-03**: Risk score auto-calculated based on GPU engine type (Blender/FaceFusion = high, TTS/SFX = low)
+- [x] **GT-01**: gold-team control_node submits review to review-platform before dispatching GPU task to worker
+- [x] **GT-02**: Review submission includes task type, GPU resource requirements, and requesting user as metadata
+- [x] **GT-03**: Risk score auto-calculated based on GPU engine type (Blender/FaceFusion = high, TTS/SFX = low)
 - [ ] **GT-04**: gold-team adds callback endpoint `/callback/review_result` on control_node to receive approval/rejection
 - [ ] **GT-05**: On approval callback, control_node automatically resumes Guardian scheduling for the approved task
 - [ ] **GT-06**: On rejection callback, control_node marks task as failed with rejection reason and notifies user via Telegram
@@ -98,9 +98,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TG-05 | Phase 09 | Complete |
 | TG-06 | Phase 09 | Complete |
 | TG-07 | Phase 09 | Complete |
-| GT-01 | Phase 10 | Pending |
-| GT-02 | Phase 10 | Pending |
-| GT-03 | Phase 10 | Pending |
+| GT-01 | Phase 10 | Complete |
+| GT-02 | Phase 10 | Complete |
+| GT-03 | Phase 10 | Complete |
 | GT-04 | Phase 10 | Pending |
 | GT-05 | Phase 10 | Pending |
 | GT-06 | Phase 10 | Pending |
