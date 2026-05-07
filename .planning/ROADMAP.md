@@ -34,12 +34,11 @@
   1. Admin can call an API endpoint to generate a one-time review token that external systems (kais-movie-agent, kais-gold-team) can use
   2. Unauthenticated users visiting web template routes are redirected to login instead of seeing page content
   3. Attempting to UPDATE or DELETE from audit_entries table raises an authorization error at the SQLite connection level
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — Review token endpoint (DEBT-01) + audit authorizer verification test (DEBT-03)
+- [ ] 05-02-PLAN.md — Web auth enforcement: login page and dashboard redirect (DEBT-02)
 
 ### Phase 06: API + Event Integration Tests
 **Goal**: All core workflows verified end-to-end through the HTTP layer (not just unit tests)
@@ -80,6 +79,6 @@ Phases execute in numeric order: 5 -> 6 -> 7
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 05. Tech Debt Fixes | v1.1 | 0/3 | Not started | - |
+| 05. Tech Debt Fixes | v1.1 | 0/2 | Planning complete | - |
 | 06. API + Event Integration Tests | v1.1 | 0/3 | Not started | - |
 | 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
