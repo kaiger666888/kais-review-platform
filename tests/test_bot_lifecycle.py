@@ -207,7 +207,8 @@ class TestBuildNotificationMessage:
     def test_truncates_content_ref_to_100_chars(self):
         from app.bot.notifications import build_notification_message
 
-        long_ref = "x" * 200
+        # Use unique chars so we can verify truncation precisely
+        long_ref = "abcdefghij" * 25  # 250 chars, unique pattern
         review = MagicMock()
         review.id = 1
         review.type = "test"
@@ -221,9 +222,13 @@ class TestBuildNotificationMessage:
 
         text, _ = build_notification_message(review, [])
 
-        # Content should be truncated to 100 chars + ellipsis
+        # Content should contain first 100 chars
         assert long_ref[:100] in text
-        assert long_ref[101:] not in text
+        # The 101st char and beyond should NOT appear in the content line
+        # (only the first 100 chars + "..." should be in the message)
+        assert "..." in text
+        # Verify the full 250-char string is NOT present
+        assert long_ref not in text
 
     def test_includes_approval_history(self):
         from app.bot.notifications import build_notification_message

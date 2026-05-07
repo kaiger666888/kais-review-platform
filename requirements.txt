@@ -13,5 +13,6 @@ structlog==25.5.0
 httpx==0.28.1
 jinja2-fragments==1.8.0
 python-multipart==0.0.20
+python-telegram-bot==22.7
 pytest==8.3.5
 pytest-asyncio==0.24.0
