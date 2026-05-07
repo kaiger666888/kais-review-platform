@@ -42,13 +42,13 @@ Requirements for integration tests and tech debt fixes. Each maps to roadmap pha
 
 ### Docker Integration Tests (DOCK)
 
-- [ ] **DOCK-01**: API responds to /api/v1/health through Nginx reverse proxy
-- [ ] **DOCK-02**: Health check returns 200 with all dependencies healthy, 503 with degraded status
-- [ ] **DOCK-03**: Redis connectivity confirmed through API (state transitions, token operations)
-- [ ] **DOCK-04**: SSE connections work through Nginx with long-lived connection support
-- [ ] **DOCK-05**: Total container memory usage stays under 400MB limit
-- [ ] **DOCK-06**: API container filesystem is read_only (write attempts fail)
-- [ ] **DOCK-07**: API process runs as non-root user
+- [x] **DOCK-01**: API responds to /api/v1/health through Nginx reverse proxy
+- [x] **DOCK-02**: Health check returns 200 with all dependencies healthy, 503 with degraded status
+- [x] **DOCK-03**: Redis connectivity confirmed through API (state transitions, token operations)
+- [x] **DOCK-04**: SSE connections work through Nginx with long-lived connection support
+- [x] **DOCK-05**: Total container memory usage stays under 400MB limit
+- [x] **DOCK-06**: API container filesystem is read_only (write attempts fail)
+- [x] **DOCK-07**: API process runs as non-root user
 
 ### Tech Debt Fixes (DEBT)
 
@@ -114,13 +114,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOOK-02 | Phase 06 | Complete |
 | HOOK-03 | Phase 06 | Complete |
 | HOOK-04 | Phase 06 | Complete |
-| DOCK-01 | Phase 07 | Pending |
-| DOCK-02 | Phase 07 | Pending |
-| DOCK-03 | Phase 07 | Pending |
-| DOCK-04 | Phase 07 | Pending |
-| DOCK-05 | Phase 07 | Pending |
-| DOCK-06 | Phase 07 | Pending |
-| DOCK-07 | Phase 07 | Pending |
+| DOCK-01 | Phase 07 | Complete |
+| DOCK-02 | Phase 07 | Complete |
+| DOCK-03 | Phase 07 | Complete |
+| DOCK-04 | Phase 07 | Complete |
+| DOCK-05 | Phase 07 | Complete |
+| DOCK-06 | Phase 07 | Complete |
+| DOCK-07 | Phase 07 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 30 total

@@ -18,7 +18,7 @@
 
 - [x] **Phase 05: Tech Debt Fixes** - Fix 3 blocking issues: review token endpoint, web auth redirects, audit log protection (completed 2026-05-07)
 - [x] **Phase 06: API + Event Integration Tests** - TestClient-based tests for core API flows, SSE real-time push, webhook delivery with retry (completed 2026-05-07)
-- [ ] **Phase 07: Docker Stack Integration Tests** - Black-box tests against full Docker Compose deployment
+- [x] **Phase 07: Docker Stack Integration Tests** - Black-box tests against full Docker Compose deployment (completed 2026-05-07)
 
 ## Phase Details
 
@@ -69,7 +69,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Standalone bash script testing all 7 DOCK requirements against Docker Compose stack
+- [x] 07-01-PLAN.md — Standalone bash script testing all 7 DOCK requirements against Docker Compose stack
 
 ## Progress
 
@@ -80,4 +80,4 @@ Phases execute in numeric order: 5 -> 6 -> 7
 |-------|-----------|----------------|--------|-----------|
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete    | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete    | 2026-05-07 |
-| 07. Docker Stack Integration Tests | v1.1 | 0/1 | Not started | - |
+| 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete   | 2026-05-07 |
