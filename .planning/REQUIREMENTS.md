@@ -1,98 +1,72 @@
 # Requirements: Kai's Review Platform
 
-**Defined:** 2026-05-05
+**Defined:** 2026-05-07
 **Core Value:** 策略引擎驱动的审核路由 — 每个 AI 生产任务执行前必须通过策略评估
 
-## v1 Requirements
+## v1 Requirements (Complete)
 
-### Authentication
+All v1 requirements shipped and verified in milestone v1.0. See archived requirements in `.planning/milestones/v1.0-REQUIREMENTS.md`.
 
-- [x] **AUTH-01**: System can issue short-lived JWT tokens (15min) for API access
-- [x] **AUTH-02**: System can generate one-time review tokens (32-char, unguessable, time-limited) for approval links
-- [x] **AUTH-03**: API endpoints enforce JWT authentication on protected routes
-- [x] **AUTH-04**: One-time tokens are invalidated after single use (atomic operation)
+## v1.1 Requirements
 
-### Policy Engine
+Requirements for integration tests and tech debt fixes. Each maps to roadmap phases.
 
-- [x] **POLC-01**: System evaluates YAML-based policy rules for each review submission
-- [x] **POLC-02**: Policy rules route items to AUTO/HUMAN/AI_AUDIT/BLOCK based on configurable conditions
-- [x] **POLC-03**: Risk-tier routing supports threshold-based classification (low → auto, medium → AI, high → human)
-- [x] **POLC-04**: Policies are validated against JSON Schema before activation
-- [x] **POLC-05**: Policy CRUD via API (create, read, update, delete with version tracking)
-- [x] **POLC-06**: Policy changes are logged in audit trail
+### API Integration Tests (TEST)
 
-### State Machine
+- [ ] **TEST-01**: TestClient can submit a review and receive correct disposition (AUTO/HUMAN/BLOCK) based on policy
+- [ ] **TEST-02**: TestClient can approve a review in APPROVING state, transitioning to COMPLETE with APPROVED disposition
+- [ ] **TEST-03**: TestClient can reject a review in APPROVING state, transitioning to COMPLETE with REJECTED disposition and reason
+- [ ] **TEST-04**: Every state transition through API creates an immutable audit log entry
+- [ ] **TEST-05**: TestClient can query review by ID and get full state with audit trail
+- [ ] **TEST-06**: API returns 401 for protected endpoints without valid JWT
+- [ ] **TEST-07**: API returns 409 on concurrent conflicting state transitions
+- [ ] **TEST-08**: API returns 422/400 for invalid state transition attempts (e.g., approve a PENDING review)
+- [ ] **TEST-09**: API returns 404 for non-existent review queries
+- [ ] **TEST-10**: Multiple reviews submitted concurrently maintain independent state machines
 
-- [x] **SM-01**: Review items follow a 4-state directed graph (PENDING → POLICY_EVAL → APPROVING → COMPLETE)
-- [x] **SM-02**: State transitions are persisted with checkpoint to SQLite
-- [x] **SM-03**: Concurrent state transitions are protected by optimistic locking (version column)
-- [x] **SM-04**: State machine supports reject/escalate/expire transitions at each state
-- [x] **SM-05**: Timeout-based auto-escalation (AI review 5min → human review 24h)
+### SSE Integration Tests (SSE)
 
-### Review API
+- [ ] **SSE-01**: TestClient can connect to /events/stream and receive state change events
+- [ ] **SSE-02**: Approving a review triggers an SSE event pushed to connected clients
+- [ ] **SSE-03**: SSE connection receives heartbeat keep-alive messages
+- [ ] **SSE-04**: SSE connection cleanup works after client disconnect
+- [ ] **SSE-05**: Multiple SSE clients connected simultaneously all receive the same event
+- [ ] **SSE-06**: Slow SSE client (full queue) is dropped without affecting other clients
 
-- [x] **REV-01**: External systems can submit review items via REST API (POST /api/v1/reviews)
-- [x] **REV-02**: Review submission includes: type, content_ref, metadata, source_system, priority
-- [x] **REV-03**: Submitters receive immediate response with review_id and routing decision
-- [x] **REV-04**: Reviewers can approve items with optional comment (POST /api/v1/reviews/{id}/approve)
-- [x] **REV-05**: Reviewers can reject items with mandatory reason (POST /api/v1/reviews/{id}/reject)
-- [x] **REV-06**: System queries review status by ID (GET /api/v1/reviews/{id})
-- [x] **REV-07**: System lists reviews with filters (status, type, source, date range) and pagination
+### Webhook Integration Tests (HOOK)
 
-### Event Bus
+- [ ] **HOOK-01**: Webhook delivers to configured URL with correct HMAC signature header
+- [ ] **HOOK-02**: Webhook retries on connection failure with exponential backoff
+- [ ] **HOOK-03**: Webhook marks delivery as failed after max retries exhausted
+- [ ] **HOOK-04**: Webhook only fires for matching source_system filter when configured
 
-- [x] **EVNT-01**: System pushes real-time review status changes via SSE (GET /api/v1/stream)
-- [x] **EVNT-02**: SSE connections include heartbeat-based cleanup for zombie connections
-- [x] **EVNT-03**: System sends Webhook callbacks to registered external systems on status change
-- [x] **EVNT-04**: Webhook delivery uses retry with exponential backoff (max 3 retries)
-- [x] **EVNT-05**: Webhook targets are configurable per source system (kais-movie-agent, kais-gold-team)
+### Docker Integration Tests (DOCK)
 
-### Audit Trail
+- [ ] **DOCK-01**: API responds to /api/v1/health through Nginx reverse proxy
+- [ ] **DOCK-02**: Health check returns 200 with all dependencies healthy, 503 with degraded status
+- [ ] **DOCK-03**: Redis connectivity confirmed through API (state transitions, token operations)
+- [ ] **DOCK-04**: SSE connections work through Nginx with long-lived connection support
+- [ ] **DOCK-05**: Total container memory usage stays under 400MB limit
+- [ ] **DOCK-06**: API container filesystem is read_only (write attempts fail)
+- [ ] **DOCK-07**: API process runs as non-root user
 
-- [x] **AUDT-01**: Every state transition creates an immutable audit log entry in SQLite
-- [x] **AUDT-02**: Audit entries include: timestamp, review_id, previous_state, new_state, actor, action, metadata
-- [x] **AUDT-03**: Audit log is append-only (no update or delete operations)
-- [x] **AUDT-04**: System queries audit history for a review item (GET /api/v1/audit/{review_id})
-- [x] **AUDT-05**: System queries audit log with filters (date range, action type, actor)
+### Tech Debt Fixes (DEBT)
 
-### Frontend
-
-- [x] **UI-01**: Mobile-first review dashboard showing pending/approved/rejected review lists
-- [x] **UI-02**: Review detail page with content preview and approve/reject action buttons
-- [x] **UI-03**: Dashboard receives real-time updates via SSE (new reviews appear automatically)
-- [x] **UI-04**: One-time token deep links open review detail directly for quick approval
-- [x] **UI-05**: Responsive layout optimized for mobile phone screens (primary target)
-- [x] **UI-06**: HTMX server-rendered with Alpine.js for client-side interactivity
-
-### Deployment
-
-- [x] **DEPL-01**: Docker Compose with 4 services (api, nginx, redis, optional dozzle)
-- [x] **DEPL-02**: Total container memory usage under 400MB
-- [x] **DEPL-03**: Nginx reverse proxy with SSE support and rate limiting
-- [x] **DEPL-04**: SQLite data persisted via bind mount with WAL mode
-- [x] **DEPL-05**: Redis data persisted for state machine and task queue
-- [x] **DEPL-06**: Docker security hardening (read_only, cap_drop ALL, non-root user)
-- [x] **DEPL-07**: Health check endpoints for all services with auto-restart
+- [ ] **DEBT-01**: Admin API endpoint exists to generate one-time review tokens for external systems
+- [ ] **DEBT-02**: Web template routes redirect unauthenticated users instead of silently serving data
+- [ ] **DEBT-03**: audit_protect_authorizer is registered on SQLite connection, blocking UPDATE/DELETE on audit_entries
 
 ## v2 Requirements
 
-### AI Scoring Plugin Bus
+### Performance Testing
 
-- **AISC-01**: Pluggable metric interface for AI scoring models (CLIP, aesthetic scoring)
-- **AISC-02**: Weighted score combination with configurable thresholds
-- **AISC-03**: AI audit results logged alongside human decisions
+- **PERF-01**: Load test with 100 concurrent review submissions
+- **PERF-02**: SSE connection scaling test (50+ concurrent connections)
 
-### Advanced Integrations
+### CI/CD
 
-- **INTG-01**: Telegram/Enterprise WeChat bot for review notifications
-- **INTG-02**: Git-synced policy file management
-- **INTG-03**: Advanced backup with Git versioning
-
-### Monitoring
-
-- **MON-01**: Dozzle web-based log viewer
-- **MON-02**: Automated backup script with hourly SQLite snapshots
-- **MON-03**: Merkle Root anchoring for audit trail integrity verification
+- **CICD-01**: Integration tests run in CI pipeline on every PR
+- **CICD-02**: Docker integration tests run nightly against deployed environment
 
 ## Out of Scope
 
@@ -107,6 +81,9 @@
 | Native mobile app | PWA covers mobile use case |
 | Video streaming review | v1 only handles preview images/thumbnails |
 | Visual workflow builder | Hardcoded 4-state graph covers actual review flow |
+| Frontend E2E (browser automation) | HTMX pages covered by API tests; browser tests fragile and overkill for SSR |
+| Performance/load testing | v1.1 focuses on correctness; perf deferred to v2 |
+| CI/CD pipeline integration | Infrastructure concern, separate from testing milestone |
 
 ## Traceability
 
@@ -114,57 +91,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1: Core Engine | Complete |
-| AUTH-02 | Phase 1: Core Engine | Complete |
-| AUTH-03 | Phase 1: Core Engine | Complete |
-| AUTH-04 | Phase 1: Core Engine | Complete |
-| POLC-01 | Phase 1: Core Engine | Complete |
-| POLC-02 | Phase 1: Core Engine | Complete |
-| POLC-03 | Phase 1: Core Engine | Complete |
-| POLC-04 | Phase 1: Core Engine | Complete |
-| POLC-05 | Phase 1: Core Engine | Complete |
-| POLC-06 | Phase 1: Core Engine | Complete |
-| SM-01 | Phase 1: Core Engine | Complete |
-| SM-02 | Phase 1: Core Engine | Complete |
-| SM-03 | Phase 1: Core Engine | Complete |
-| SM-04 | Phase 1: Core Engine | Complete |
-| SM-05 | Phase 1: Core Engine | Complete |
-| REV-01 | Phase 1: Core Engine | Complete |
-| REV-02 | Phase 1: Core Engine | Complete |
-| REV-03 | Phase 1: Core Engine | Complete |
-| REV-04 | Phase 1: Core Engine | Complete |
-| REV-05 | Phase 1: Core Engine | Complete |
-| REV-06 | Phase 1: Core Engine | Complete |
-| REV-07 | Phase 1: Core Engine | Complete |
-| EVNT-01 | Phase 2: Real-Time Events | Complete |
-| EVNT-02 | Phase 2: Real-Time Events | Complete |
-| EVNT-03 | Phase 2: Real-Time Events | Complete |
-| EVNT-04 | Phase 2: Real-Time Events | Complete |
-| EVNT-05 | Phase 2: Real-Time Events | Complete |
-| AUDT-01 | Phase 1: Core Engine | Complete |
-| AUDT-02 | Phase 1: Core Engine | Complete |
-| AUDT-03 | Phase 1: Core Engine | Complete |
-| AUDT-04 | Phase 1: Core Engine | Complete |
-| AUDT-05 | Phase 1: Core Engine | Complete |
-| UI-01 | Phase 3: Review Frontend | Complete |
-| UI-02 | Phase 3: Review Frontend | Complete |
-| UI-03 | Phase 3: Review Frontend | Complete |
-| UI-04 | Phase 3: Review Frontend | Complete |
-| UI-05 | Phase 3: Review Frontend | Complete |
-| UI-06 | Phase 3: Review Frontend | Complete |
-| DEPL-01 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-02 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-03 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-04 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-05 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-06 | Phase 4: Deployment & Hardening | Complete |
-| DEPL-07 | Phase 4: Deployment & Hardening | Complete |
+| TEST-01 | — | Pending |
+| TEST-02 | — | Pending |
+| TEST-03 | — | Pending |
+| TEST-04 | — | Pending |
+| TEST-05 | — | Pending |
+| TEST-06 | — | Pending |
+| TEST-07 | — | Pending |
+| TEST-08 | — | Pending |
+| TEST-09 | — | Pending |
+| TEST-10 | — | Pending |
+| SSE-01 | — | Pending |
+| SSE-02 | — | Pending |
+| SSE-03 | — | Pending |
+| SSE-04 | — | Pending |
+| SSE-05 | — | Pending |
+| SSE-06 | — | Pending |
+| HOOK-01 | — | Pending |
+| HOOK-02 | — | Pending |
+| HOOK-03 | — | Pending |
+| HOOK-04 | — | Pending |
+| DOCK-01 | — | Pending |
+| DOCK-02 | — | Pending |
+| DOCK-03 | — | Pending |
+| DOCK-04 | — | Pending |
+| DOCK-05 | — | Pending |
+| DOCK-06 | — | Pending |
+| DOCK-07 | — | Pending |
+| DEBT-01 | — | Pending |
+| DEBT-02 | — | Pending |
+| DEBT-03 | — | Pending |
 
 **Coverage:**
-- v1 requirements: 44 total
-- Mapped to phases: 44
-- Unmapped: 0
+- v1.1 requirements: 30 total
+- Mapped to phases: 0
+- Unmapped: 30 ⚠️
 
 ---
-*Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 after roadmap creation*
+*Requirements defined: 2026-05-07*
+*Last updated: 2026-05-07 after initial definition*
