@@ -52,7 +52,7 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Add callback columns to Review model, Pydantic schemas, RFC1918 validator, Telegram settings, migration script
+- [x] 08-01-PLAN.md — Add callback columns to Review model, Pydantic schemas, RFC1918 validator, Telegram settings, migration script
 - [ ] 08-02-PLAN.md — deliver_review_callback arq task with HMAC signing/retry, wire emit_state_change, integration tests
 
 ### Phase 09: Telegram Review Bot
@@ -130,7 +130,7 @@ Plans:
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 1/1 | Complete | 2026-05-07 |
-| 08. Schema & Callback Infrastructure | v1.2 | 0/2 | Planning complete | - |
+| 08. Schema & Callback Infrastructure | v1.2 | 1/2 | In Progress|  |
 | 09. Telegram Review Bot | v1.2 | 0/? | Not started | - |
 | 10. kais-gold-team Integration | v1.2 | 0/? | Not started | - |
 | 11. kais-movie-agent Integration | v1.2 | 0/? | Not started | - |

@@ -7,17 +7,17 @@
 
 ### Database & Config Extension
 
-- [ ] **DB-01**: Review model supports per-review `callback_url` field for external system callbacks
-- [ ] **DB-02**: Review model supports per-review `callback_secret` field for HMAC-SHA256 callback signatures
-- [ ] **DB-03**: Settings model supports Telegram Bot configuration (token, allowed chat IDs, review timeout)
-- [ ] **DB-04**: Database migration script adds new columns to existing Review table without data loss
+- [x] **DB-01**: Review model supports per-review `callback_url` field for external system callbacks
+- [x] **DB-02**: Review model supports per-review `callback_secret` field for HMAC-SHA256 callback signatures
+- [x] **DB-03**: Settings model supports Telegram Bot configuration (token, allowed chat IDs, review timeout)
+- [x] **DB-04**: Database migration script adds new columns to existing Review table without data loss
 
 ### Callback Delivery
 
 - [ ] **CB-01**: New arq task `deliver_review_callback` delivers review result to callback_url when review reaches COMPLETE state
 - [ ] **CB-02**: Callback payloads are HMAC-SHA256 signed using per-review callback_secret
 - [ ] **CB-03**: Callback delivery retries on failure (3 attempts, exponential backoff: 1s/5s/30s)
-- [ ] **CB-04**: Callback URL validated as RFC1918 private address only (SSRF mitigation for LAN deployment)
+- [x] **CB-04**: Callback URL validated as RFC1918 private address only (SSRF mitigation for LAN deployment)
 - [ ] **CB-05**: Telegram admin notification when all callback retry attempts fail
 
 ### Telegram Bot Core
@@ -82,14 +82,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DB-01 | Phase 08 | Pending |
-| DB-02 | Phase 08 | Pending |
-| DB-03 | Phase 08 | Pending |
-| DB-04 | Phase 08 | Pending |
+| DB-01 | Phase 08 | Complete |
+| DB-02 | Phase 08 | Complete |
+| DB-03 | Phase 08 | Complete |
+| DB-04 | Phase 08 | Complete |
 | CB-01 | Phase 08 | Pending |
 | CB-02 | Phase 08 | Pending |
 | CB-03 | Phase 08 | Pending |
-| CB-04 | Phase 08 | Pending |
+| CB-04 | Phase 08 | Complete |
 | CB-05 | Phase 08 | Pending |
 | TG-01 | Phase 09 | Pending |
 | TG-02 | Phase 09 | Pending |
