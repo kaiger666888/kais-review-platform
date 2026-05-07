@@ -66,11 +66,10 @@ Plans:
   2. Redis-dependent features (state transitions, token operations) work correctly through the containerized stack
   3. SSE connections work through Nginx with long-lived connection support (no premature timeout)
   4. Total container memory usage stays under 400MB, API container filesystem is read-only, and API process runs as non-root
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01-PLAN.md — Standalone bash script testing all 7 DOCK requirements against Docker Compose stack
 
 ## Progress
 
@@ -81,4 +80,4 @@ Phases execute in numeric order: 5 -> 6 -> 7
 |-------|-----------|----------------|--------|-----------|
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete    | 2026-05-07 |
 | 06. API + Event Integration Tests | v1.1 | 3/3 | Complete    | 2026-05-07 |
-| 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
+| 07. Docker Stack Integration Tests | v1.1 | 0/1 | Not started | - |
