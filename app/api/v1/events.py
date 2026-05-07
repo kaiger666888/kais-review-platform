@@ -3,6 +3,10 @@
 Provides GET /api/v1/events/stream -- a Server-Sent Events endpoint that
 pushes review_status events to connected browsers without polling.
 Connections are JWT-authenticated and cleaned up on disconnect.
+
+FastAPI 0.136 pattern: async generator yielding ServerSentEvent with
+response_class=EventSourceResponse on the route decorator. FastAPI handles
+SSE wire-format encoding and inserts keep-alive pings automatically.
 """
 
 import asyncio
@@ -17,11 +21,17 @@ from app.core.events import event_manager
 router = APIRouter(tags=["events"])
 
 
-async def _event_generator(request: Request, client: str):
-    """Generate SSE events for a single connection.
+@router.get("/api/v1/events/stream", response_class=EventSourceResponse)
+async def sse_stream(
+    request: Request,
+    client: str = Depends(get_current_client),
+):
+    """SSE endpoint for real-time review status updates.
 
-    Yields review_status events when broadcast, or heartbeat comments
-    every 30 seconds to detect zombie connections.
+    Requires JWT authentication. Yields review_status events when
+    review state changes occur. FastAPI inserts keep-alive pings
+    automatically every 15s. Connections are cleaned up when the
+    generator exits (client disconnect or queue.get cancelled).
     """
     queue = event_manager.create_connection()
     try:
@@ -41,18 +51,3 @@ async def _event_generator(request: Request, client: str):
                 yield ServerSentEvent(comment="heartbeat")
     finally:
         event_manager.remove_connection(queue)
-
-
-@router.get("/api/v1/events/stream")
-async def sse_stream(
-    request: Request,
-    client: str = Depends(get_current_client),
-):
-    """SSE endpoint for real-time review status updates.
-
-    Requires JWT authentication. Yields review_status events when
-    review state changes occur, with heartbeat comments every 30s.
-    Zombie connections are cleaned up via request.is_disconnected()
-    and the 30s heartbeat timeout.
-    """
-    return EventSourceResponse(_event_generator(request, client))

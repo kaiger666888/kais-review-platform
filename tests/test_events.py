@@ -138,7 +138,7 @@ class TestEmitStateChangeBroadcastsToSSE:
         mock_app.state.arq_pool = None
 
         with patch("app.core.events.event_manager", manager):
-            with patch("app.main.app", mock_app):
+            with patch.dict("sys.modules", {"app.main": MagicMock(app=mock_app)}):
                 # Should not raise
                 await emit_state_change(
                     review_id=1,

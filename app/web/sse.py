@@ -7,6 +7,9 @@ EventSource API can connect without custom headers.
 This is the template-route counterpart to /api/v1/events/stream
 which requires Bearer JWT auth. Both share the same event_manager
 singleton and broadcast pipeline.
+
+FastAPI 0.136 pattern: async generator yielding ServerSentEvent with
+response_class=EventSourceResponse on the route decorator.
 """
 
 import asyncio
@@ -22,12 +25,29 @@ from app.core.events import event_manager
 router = APIRouter(tags=["sse"])
 
 
-async def _event_generator(request: Request):
-    """Generate SSE events for a single cookie-authenticated connection.
+@router.get("/events/stream", response_class=EventSourceResponse)
+async def sse_stream(
+    request: Request,
+    access_token: str | None = Cookie(None),
+):
+    """SSE endpoint for real-time review status updates (cookie auth).
 
-    Yields review_status events when broadcast, or heartbeat comments
-    every 30 seconds to detect zombie connections.
+    Reads JWT from httpOnly cookie set during one-time token exchange.
+    EventSource API cannot set Bearer headers, so cookie auth is required
+    for browser-initiated SSE connections.
+
+    Yields review_status events when review state changes occur.
+    FastAPI inserts keep-alive pings automatically every 15s.
     """
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    settings = get_settings()
+    try:
+        decode_jwt(access_token, settings.jwt_secret)
+    except AuthenticationError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
     queue = event_manager.create_connection()
     try:
         while True:
@@ -46,29 +66,3 @@ async def _event_generator(request: Request):
                 yield ServerSentEvent(comment="heartbeat")
     finally:
         event_manager.remove_connection(queue)
-
-
-@router.get("/events/stream")
-async def sse_stream(
-    request: Request,
-    access_token: str | None = Cookie(None),
-):
-    """SSE endpoint for real-time review status updates (cookie auth).
-
-    Reads JWT from httpOnly cookie set during one-time token exchange.
-    EventSource API cannot set Bearer headers, so cookie auth is required
-    for browser-initiated SSE connections.
-
-    Yields review_status events when review state changes occur,
-    with heartbeat comments every 30s for zombie detection.
-    """
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    settings = get_settings()
-    try:
-        decode_jwt(access_token, settings.jwt_secret)
-    except AuthenticationError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    return EventSourceResponse(_event_generator(request))
