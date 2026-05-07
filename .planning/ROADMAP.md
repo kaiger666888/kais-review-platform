@@ -80,5 +80,5 @@ Phases execute in numeric order: 5 -> 6 -> 7
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 05. Tech Debt Fixes | v1.1 | 2/2 | Complete    | 2026-05-07 |
-| 06. API + Event Integration Tests | v1.1 | 3/3 | Complete   | 2026-05-07 |
+| 06. API + Event Integration Tests | v1.1 | 3/3 | Complete    | 2026-05-07 |
 | 07. Docker Stack Integration Tests | v1.1 | 0/2 | Not started | - |
