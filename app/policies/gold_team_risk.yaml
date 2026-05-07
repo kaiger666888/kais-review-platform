@@ -1,0 +1,47 @@
+name: gold_team_risk_routing
+version: "1.0"
+rules:
+  - name: high_risk_gpu_engines
+    priority: 1
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-gold-team"
+        - field: metadata.task_type
+          operator: in
+          value:
+            - blender_render
+            - face_swap
+            - face_enhance
+            - frame_enhance
+            - lip_sync_ff
+            - colorize
+            - age_modify
+            - face_edit
+            - bg_remove
+            - face_pipeline
+            - custom_script
+    disposition: HUMAN
+
+  - name: low_risk_gpu_engines
+    priority: 2
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-gold-team"
+        - field: metadata.task_type
+          operator: in
+          value:
+            - tts_generation
+            - sfx_generation
+            - vfx_audio_generation
+            - music_generation
+            - music_cover
+            - music_remix
+            - music_repaint
+            - music_extract
+    disposition: AUTO
