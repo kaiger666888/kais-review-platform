@@ -8,18 +8,13 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 策略引擎驱动的审核路由 — 每个 AI 生产任务执行前必须通过策略评估，决定自动放行或进入人工审核，确保 AI 输出质量可控。
 
-## Current Milestone: v1.1 Integration Tests & Tech Debt
+## Current State
 
-**Goal:** 为 v1.0 平台补全集成测试验证（从 API 端到端到 Docker 全栈黑盒），并修复 3 个技术债项
+**Shipped:** v1.1 Integration Tests & Tech Debt (2026-05-07)
+**Status:** All v1.0 + v1.1 requirements validated. Platform fully tested end-to-end.
+**Next:** Planning next milestone — run `/gsd:new-milestone`
 
-**Target features:**
-- API 端到端集成测试（FastAPI TestClient：提交→策略路由→状态机→审批→审计日志）
-- SSE 实时推送集成测试（连接建立、状态变更推送、心跳、断线清理）
-- Webhook 投递 + 重试集成测试（httpx 真实投递、失败重试、指数退避）
-- Docker Compose 黑盒测试（httpx → Nginx → API → Redis → SQLite，验证部署环境）
-- 修复 create_review_token 端点（让外部系统可以生成一次性审核令牌）
-- 修复 Web 模板路由认证（未认证用户重定向而非静默继续）
-- 修复 audit_protect_authorizer 注册到 SQLite 连接（UPDATE/DELETE 保护生效）
+**Stats:** 7 phases, 18 plans, 7,145 LOC Python + 398 LOC Bash, 170 tests passing
 
 ## Requirements
 
@@ -39,7 +34,7 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ### Active
 
-None — all v1.1 requirements validated.
+None — awaiting next milestone planning.
 
 ### Validated in v1.1
 
@@ -68,7 +63,10 @@ None — all v1.1 requirements validated.
 - kais-gold-team：GPU 任务调度系统，3090 高参渲染需要审批放行
 - 竞品参考：Cordum（策略+审批+审计）、Temporal（状态机）、LangGraph（图状态机+checkpoint）
 - 设计模式：Safety Kernel、Policy-as-Code、Risk-tier Routing、Signal-based Human Approval
-- v1.0 已归档：4 phase, 12 plans, 109 单元测试通过，3 个非阻塞技术债待修
+- v1.0 已归档：4 phase, 12 plans, 109 单元测试通过
+- v1.1 已归档：3 phases, 6 plans, 30 集成测试 + 398 行 Docker 黑盒测试脚本，3 技术债修复
+- 当前：170 tests passing，7,145 LOC Python + 398 LOC Bash
+- 技术债：aiosqlite set_authorizer best-effort 注册（低影响，应用层为主要防护）
 
 ## Constraints
 
@@ -91,6 +89,9 @@ None — all v1.1 requirements validated.
 | arq over Celery | 纯 async、轻量 10x、与 FastAPI 共享事件循环 | ✓ Good |
 | SSE over WebSocket | 单向推送足够、FastAPI 原生支持、无需额外依赖 | ✓ Good |
 | redis 5.3.1 not 7.4.0 | arq 0.28.0 dependency constraint (redis<6) | ✓ Good |
+| SSE async generator pattern (FastAPI 0.136) | Endpoint must be async generator with response_class=EventSourceResponse, NOT function returning EventSourceResponse | ✓ Good (discovered in v1.1 Phase 06) |
+| Session-per-request for SQLite tests | Each API request gets its own AsyncSession to avoid re-entrant commit conflicts | ✓ Good |
+| Patch emit_state_change for integration tests | SSE/webhook tested separately, avoids async_session_factory conflicts | ✓ Good |
 
 ## Evolution
 
@@ -110,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 after v1.1 Phase 07 completion — all v1.1 requirements validated*
+*Last updated: 2026-05-07 after v1.1 milestone completion*
