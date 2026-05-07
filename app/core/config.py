@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     host: str = "0.0.0.0"
     port: int = 8000
+    telegram_bot_token: str = ""
+    telegram_allowed_chat_ids: str = ""  # Comma-separated chat IDs, e.g. "123456,789012"
+    review_timeout_minutes: int = 1440  # 24 hours default for APPROVING state timeout
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import get_current_client
 from app.core.database import get_db
 from app.core.policy import get_policy_engine
+from app.core.validation import validate_callback_url
 from app.core.state_machine import (
     InvalidTransitionError,
     StateConflictError,
@@ -54,6 +55,7 @@ def _review_response(review: Review) -> ReviewResponse:
         risk_score=review.risk_score,
         state=review.state,
         disposition=review.disposition,
+        callback_url=review.callback_url,
         version=review.version,
         created_at=review.created_at,
         updated_at=review.updated_at,
@@ -82,6 +84,16 @@ async def submit_review(
     Returns 202 Accepted with review_id, state, and routing decision.
     """
     # a. Create Review record in PENDING state
+    # Validate callback URL if provided (CB-04: RFC1918 SSRF mitigation)
+    if request.callback_url:
+        try:
+            validate_callback_url(request.callback_url)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(e),
+            )
+
     review = Review(
         type=request.type,
         content_ref=request.content_ref,
@@ -92,6 +104,8 @@ async def submit_review(
         state=ReviewState.PENDING.value,
         disposition=None,
         version=1,
+        callback_url=request.callback_url,
+        callback_secret=request.callback_secret,
     )
     db.add(review)
     await db.commit()
