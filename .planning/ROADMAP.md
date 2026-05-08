@@ -29,13 +29,15 @@
 
 ## Active Milestone
 
-**v1.2 External System Integration** — Phases 08-12
+**v1.2 External System Integration** — Phases 08-14
 
 - [x] **Phase 08: Schema & Callback Infrastructure** — Database migration for callback fields + arq callback delivery task with HMAC signing, retry, and SSRF protection (completed 2026-05-07)
 - [x] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process (completed 2026-05-07)
 - [x] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval (completed 2026-05-07)
 - [x] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images (completed 2026-05-07)
 - [x] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows (completed 2026-05-08)
+- [ ] **Phase 13: Cross-System Protocol Alignment** — Fix 4 broken cross-system contracts: callback payload disposition_action, auth token field name, HMAC header naming, pipeline.js CLI entry point (gap closure from v1.2 audit)
+- [ ] **Phase 14: E2E Callback Verification** — Remove emit_state_change patch, verify real callback delivery end-to-end for gold-team and movie-agent (gap closure from v1.2 audit)
 
 ## Phase Details
 
@@ -120,6 +122,37 @@ Plans:
 - [x] 12-01-PLAN.md — Document single-channel coordination pattern + shared E2E test fixtures (E2E-01)
 - [x] 12-02-PLAN.md — 6 E2E integration tests: approval/rejection flows for gold-team and movie-agent + callback retry/HMAC (E2E-02, E2E-03, E2E-04)
 
+### Phase 13: Cross-System Protocol Alignment
+**Goal**: Fix 4 broken cross-system protocol contracts discovered during milestone audit — callback payload field, auth token name, HMAC header, and pipeline CLI entry point
+**Depends on**: Phase 08, Phase 10, Phase 11
+**Gap Closure**: Fixes GT-01, GT-04, MA-04, MA-05, MA-06 from v1.2 audit
+**Requirements**: GT-01, GT-04, MA-04, MA-05, MA-06
+**Success Criteria** (what must be TRUE):
+  1. Gold-team review_check.py reads `data["access_token"]` (not `data["token"]`) from auth endpoint — auth no longer crashes
+  2. Callback payload includes `disposition_action` field ("approve"/"reject") that external systems can use to determine outcome
+  3. HMAC header name is consistent between review-platform sender and gold-team receiver (`X-Callback-Signature`)
+  4. `lib/pipeline.js` has a CLI entry point so `node lib/pipeline.js resume <phase>` actually resumes the pipeline
+**Plans**: 2 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Review-platform contract fixes: add disposition_action to callback payload, align HMAC header naming (GT-04, MA-04, MA-05, MA-06)
+- [ ] 13-02-PLAN.md — External system contract fixes: review_check.py auth token field, pipeline.js CLI entry point (GT-01, MA-05)
+
+### Phase 14: E2E Callback Verification
+**Goal**: E2E tests exercise the real callback delivery path instead of patching emit_state_change, verifying end-to-end flows across system boundaries
+**Depends on**: Phase 13 (protocol alignment)
+**Gap Closure**: Fixes E2E-02, E2E-03, E2E-04 from v1.2 audit
+**Requirements**: E2E-02, E2E-03, E2E-04
+**Success Criteria** (what must be TRUE):
+  1. E2E tests do NOT patch emit_state_change — callback delivery task runs during tests
+  2. Gold-team E2E: review submitted → approved → callback payload received with correct disposition_action and HMAC signature
+  3. Movie-agent E2E: review submitted → approved → callback payload received with correct disposition_action
+  4. Rejection E2E: review rejected → callback payload has disposition_action="reject"
+**Plans**: 1 plan
+
+Plans:
+- [ ] 14-01-PLAN.md — Fix E2E test fixtures, add callback delivery assertions, verify HMAC signatures for both systems
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -136,3 +169,5 @@ Plans:
 | 10. kais-gold-team Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 11. kais-movie-agent Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 12. Dual Bot Coordination & E2E | v1.2 | 2/2 | Complete    | 2026-05-08 |
+| 13. Cross-System Protocol Alignment | v1.2 | 0/2 | Gap Closure | — |
+| 14. E2E Callback Verification | v1.2 | 0/1 | Gap Closure | — |

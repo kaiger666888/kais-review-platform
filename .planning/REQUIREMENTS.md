@@ -32,10 +32,10 @@
 
 ### kais-gold-team Integration
 
-- [x] **GT-01**: gold-team control_node submits review to review-platform before dispatching GPU task to worker
+- [ ] **GT-01**: gold-team control_node submits review to review-platform before dispatching GPU task to worker
 - [x] **GT-02**: Review submission includes task type, GPU resource requirements, and requesting user as metadata
 - [x] **GT-03**: Risk score auto-calculated based on GPU engine type (Blender/FaceFusion = high, TTS/SFX = low)
-- [x] **GT-04**: gold-team adds callback endpoint `/callback/review_result` on control_node to receive approval/rejection
+- [ ] **GT-04**: gold-team adds callback endpoint `/callback/review_result` on control_node to receive approval/rejection
 - [x] **GT-05**: On approval callback, control_node automatically resumes Guardian scheduling for the approved task
 - [x] **GT-06**: On rejection callback, control_node marks task as failed with rejection reason and notifies user via Telegram
 
@@ -44,17 +44,17 @@
 - [x] **MA-01**: Node.js HTTP client module (`ReviewPlatformClient`) for calling review-platform REST API (submit, query, auth)
 - [x] **MA-02**: Pipeline review gates replaced: `interactive-review.js` submits to review-platform instead of launching local HTTP server
 - [x] **MA-03**: Pipeline pauses after review submission, waiting for callback approval/rejection
-- [x] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
-- [x] **MA-05**: On approval callback, pipeline auto-resumes to next phase
-- [x] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
+- [ ] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
+- [ ] **MA-05**: On approval callback, pipeline auto-resumes to next phase
+- [ ] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
 - [x] **MA-07**: Review notification includes material preview images (scene renders, storyboard frames) sent as Telegram photo messages
 
 ### Dual Bot Coordination & E2E
 
 - [x] **E2E-01**: gold-team Bot forwards review-related messages to review-platform Bot (single review notification channel)
-- [x] **E2E-02**: End-to-end test: gold-team task → review submission → Telegram approval → callback → task execution resumes
-- [x] **E2E-03**: End-to-end test: movie-agent phase → review submission → Telegram approval → callback → pipeline resumes
-- [x] **E2E-04**: End-to-end test: review rejection → callback → gold-team marks task failed / movie-agent rolls back
+- [ ] **E2E-02**: End-to-end test: gold-team task → review submission → Telegram approval → callback → task execution resumes
+- [ ] **E2E-03**: End-to-end test: movie-agent phase → review submission → Telegram approval → callback → pipeline resumes
+- [ ] **E2E-04**: End-to-end test: review rejection → callback → gold-team marks task failed / movie-agent rolls back
 
 ## Future Requirements
 
@@ -98,29 +98,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TG-05 | Phase 09 | Complete |
 | TG-06 | Phase 09 | Complete |
 | TG-07 | Phase 09 | Complete |
-| GT-01 | Phase 10 | Complete |
+| GT-01 | Phase 10, Phase 13 | Complete → Gap (auth token) |
 | GT-02 | Phase 10 | Complete |
 | GT-03 | Phase 10 | Complete |
-| GT-04 | Phase 10 | Complete |
+| GT-04 | Phase 10, Phase 13 | Complete → Gap (HMAC header) |
 | GT-05 | Phase 10 | Complete |
 | GT-06 | Phase 10 | Complete |
 | MA-01 | Phase 11 | Complete |
 | MA-02 | Phase 11 | Complete |
 | MA-03 | Phase 11 | Complete |
-| MA-04 | Phase 11 | Complete |
-| MA-05 | Phase 11 | Complete |
-| MA-06 | Phase 11 | Complete |
+| MA-04 | Phase 11, Phase 13 | Complete → Gap (payload contract) |
+| MA-05 | Phase 11, Phase 13 | Complete → Gap (payload + CLI) |
+| MA-06 | Phase 11, Phase 13 | Complete → Gap (payload contract) |
 | MA-07 | Phase 11 | Complete |
 | E2E-01 | Phase 12 | Complete |
-| E2E-02 | Phase 12 | Complete |
-| E2E-03 | Phase 12 | Complete |
-| E2E-04 | Phase 12 | Complete |
+| E2E-02 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
+| E2E-03 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
+| E2E-04 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
 
 **Coverage:**
 - v1.2 requirements: 33 total
 - Mapped to phases: 33
+- Satisfied: 25
+- Gap closure pending: 8 (GT-01, GT-04, MA-04, MA-05, MA-06, E2E-02, E2E-03, E2E-04)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-07*
-*Last updated: 2026-05-07 after roadmap creation*
+*Last updated: 2026-05-08 after v1.2 audit gap closure planning*
