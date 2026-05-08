@@ -10,9 +10,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 
 ## Current State
 
-**Shipped:** v1.2 Phase 11 — kais-movie-agent Integration (2026-05-07)
-**Status:** Phases 08-11 complete. Phase 12 (E2E) remaining.
-**Stats:** 11 phases, 26 plans, 260 tests passing
+**Shipped:** v1.2 Phase 12 — Dual Bot Coordination & E2E (2026-05-08)
+**Status:** All phases complete. Milestone v1.2 ready for audit.
+**Stats:** 12 phases, 28 plans, 266 tests passing
 
 ## Current Milestone: v1.2 External System Integration
 
@@ -46,8 +46,8 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 - [ ] Review Platform Telegram Bot 接收审核通知，InlineKeyboard 审批 — ✓ Validated in v1.2 Phase 09
 - [ ] kais-gold-team GPU 任务审核拦截（control_node 提交审核 → 策略路由 → 回调自动恢复） — ✓ Validated in v1.2 Phase 10
 - [ ] kais-movie-agent 6 个制作阶段审核门替换为远程审核 API 调用 — ✓ Validated in v1.2 Phase 11
-- [ ] 双 Bot 协作（gold-team Bot → review-platform Bot）
-- [ ] 全回调自动化闭环（审批 → webhook → kais-* 自动恢复执行）
+- [ ] 双 Bot 协作（gold-team Bot → review-platform Bot） — ✓ Validated in v1.2 Phase 12
+- [ ] 全回调自动化闭环（审批 → webhook → kais-* 自动恢复执行） — ✓ Validated in v1.2 Phase 12
 
 ### Validated in v1.1
 
@@ -78,7 +78,7 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 - 设计模式：Safety Kernel、Policy-as-Code、Risk-tier Routing、Signal-based Human Approval
 - v1.0 已归档：4 phase, 12 plans, 109 单元测试通过
 - v1.1 已归档：3 phases, 6 plans, 30 集成测试 + 398 行 Docker 黑盒测试脚本，3 技术债修复
-- 当前：170 tests passing，7,145 LOC Python + 398 LOC Bash
+- 当前：266 tests passing，7,500+ LOC Python
 - 技术债：aiosqlite set_authorizer best-effort 注册（低影响，应用层为主要防护）
 
 ## Constraints
@@ -124,4 +124,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 after v1.2 milestone started*
+*Last updated: 2026-05-08 after Phase 12 completion*
