@@ -16,6 +16,9 @@ import pytest
 import pytest_asyncio
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
+from aiohttp import web
+
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -169,3 +172,85 @@ async def client(db_engine, mock_redis):
     app.dependency_overrides.clear()
     app.state.redis = orig_redis
     app.state.arq_pool = orig_arq_pool
+
+
+# ---------------------------------------------------------------------------
+# E2E shared fixtures for dual-bot coordination tests (Phase 12)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def e2e_gold_team_review_payload():
+    """Provide a gold-team review submission payload for E2E tests."""
+    return {
+        "title": "E2E: GPU Render Task",
+        "source_system": "kais-gold-team",
+        "task_type": "gpu_render",
+        "callback_url": "http://192.168.71.140:8900/callback/review_result",
+        "callback_secret": "e2e-test-secret-gold-team",
+        "metadata": {
+            "task_type": "gpu_render",
+            "gpu_engine": "blender",
+            "requesting_user": "test_user",
+        },
+    }
+
+
+@pytest.fixture
+def e2e_movie_agent_review_payload():
+    """Provide a movie-agent review submission payload for E2E tests."""
+    return {
+        "title": "E2E: Storyboard Review",
+        "source_system": "kais-movie-agent",
+        "task_type": "storyboard",
+        "callback_url": "http://192.168.71.38:8766/callback",
+        "callback_secret": "e2e-test-secret-movie-agent",
+        "metadata": {
+            "pipeline_phase": "storyboard",
+            "project": "test-project",
+        },
+    }
+
+
+@pytest_asyncio.fixture
+async def mock_callback_server():
+    """Provide a mock aiohttp callback server that records POST requests.
+
+    Starts a local HTTP server on a random port with a single POST /callback
+    handler. The handler records received payloads and their X-Callback-Signature
+    headers for assertion in tests.
+
+    Yields:
+        tuple[str, list[dict]]: (base_url, received_callbacks)
+            base_url: e.g. "http://127.0.0.1:12345"
+            received_callbacks: list of {"headers": dict, "body": dict}
+    """
+    received: list[dict] = []
+
+    async def handle_callback(request: web.Request) -> web.Response:
+        """Record incoming callback with headers and body."""
+        body = await request.json()
+        received.append(
+            {
+                "headers": dict(request.headers),
+                "body": body,
+            }
+        )
+        return web.json_response({"status": "ok"})
+
+    app = web.Application()
+    app.router.add_post("/callback", handle_callback)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+
+    # Retrieve the actual port assigned by the OS
+    # site._server.sockets[0].getsockname() returns (host, port)
+    actual_port = site._server.sockets[0].getsockname()[1]
+    base_url = f"http://127.0.0.1:{actual_port}"
+
+    yield base_url, received
+
+    await runner.cleanup()
