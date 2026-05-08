@@ -35,7 +35,7 @@
 - [x] **Phase 09: Telegram Review Bot** — Complete Telegram Bot (polling mode, InlineKeyboard approve/reject, timeout reminder, history) running inside FastAPI process (completed 2026-05-07)
 - [x] **Phase 10: kais-gold-team Integration** — Control node review interception, risk-based routing, callback endpoint, auto-resume on approval (completed 2026-05-07)
 - [x] **Phase 11: kais-movie-agent Integration** — Node.js HTTP client, 7 review gate replacements, callback endpoint, rollback on rejection, preview images (completed 2026-05-07)
-- [ ] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows
+- [x] **Phase 12: Dual Bot Coordination & E2E** — Gold-team Bot forwards to review-platform Bot, end-to-end tests covering all integration flows (completed 2026-05-08)
 
 ## Phase Details
 
@@ -118,7 +118,7 @@ Plans:
 
 Plans:
 - [x] 12-01-PLAN.md — Document single-channel coordination pattern + shared E2E test fixtures (E2E-01)
-- [ ] 12-02-PLAN.md — 6 E2E integration tests: approval/rejection flows for gold-team and movie-agent + callback retry/HMAC (E2E-02, E2E-03, E2E-04)
+- [x] 12-02-PLAN.md — 6 E2E integration tests: approval/rejection flows for gold-team and movie-agent + callback retry/HMAC (E2E-02, E2E-03, E2E-04)
 
 ## Progress
 
@@ -135,4 +135,4 @@ Plans:
 | 09. Telegram Review Bot | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 10. kais-gold-team Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
 | 11. kais-movie-agent Integration | v1.2 | 2/2 | Complete    | 2026-05-07 |
-| 12. Dual Bot Coordination & E2E | v1.2 | 1/2 | In Progress|  |
+| 12. Dual Bot Coordination & E2E | v1.2 | 2/2 | Complete   | 2026-05-08 |

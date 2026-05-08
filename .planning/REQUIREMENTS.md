@@ -52,9 +52,9 @@
 ### Dual Bot Coordination & E2E
 
 - [x] **E2E-01**: gold-team Bot forwards review-related messages to review-platform Bot (single review notification channel)
-- [ ] **E2E-02**: End-to-end test: gold-team task → review submission → Telegram approval → callback → task execution resumes
-- [ ] **E2E-03**: End-to-end test: movie-agent phase → review submission → Telegram approval → callback → pipeline resumes
-- [ ] **E2E-04**: End-to-end test: review rejection → callback → gold-team marks task failed / movie-agent rolls back
+- [x] **E2E-02**: End-to-end test: gold-team task → review submission → Telegram approval → callback → task execution resumes
+- [x] **E2E-03**: End-to-end test: movie-agent phase → review submission → Telegram approval → callback → pipeline resumes
+- [x] **E2E-04**: End-to-end test: review rejection → callback → gold-team marks task failed / movie-agent rolls back
 
 ## Future Requirements
 
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MA-06 | Phase 11 | Complete |
 | MA-07 | Phase 11 | Complete |
 | E2E-01 | Phase 12 | Complete |
-| E2E-02 | Phase 12 | Pending |
-| E2E-03 | Phase 12 | Pending |
-| E2E-04 | Phase 12 | Pending |
+| E2E-02 | Phase 12 | Complete |
+| E2E-03 | Phase 12 | Complete |
+| E2E-04 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 33 total
