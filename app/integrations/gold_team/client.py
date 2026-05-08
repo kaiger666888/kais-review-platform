@@ -105,6 +105,17 @@ class ReviewPlatformClient:
     Authenticates via API key exchange for JWT, then submits reviews
     with gold-team metadata including task_type, GPU requirements,
     and requesting user information.
+
+    Coordination Pattern:
+        Gold-team submits reviews via ReviewPlatformClient -> review-platform API.
+        The review-platform Telegram Bot sends ALL review notifications to reviewers,
+        regardless of source_system. Gold-team does NOT need its own Telegram Bot.
+        Reviewers see gold-team and movie-agent reviews in the same Telegram channel.
+        On approval/rejection, the review-platform delivers callback to gold-team's
+        callback_url (http://192.168.71.140:8900/callback/review_result).
+
+        No forwarding bridge is needed -- the review-platform Bot acts as the single
+        notification channel for all source systems (kais-gold-team, kais-movie-agent).
     """
 
     def __init__(
