@@ -62,11 +62,11 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
   3. Application connects to PostgreSQL via asyncpg, all existing V1 integration tests pass against the new database (or V1 code is cleanly removed)
   4. Settings class loads git_repo_url, postgres_url, minio_endpoint, openclaw_event_url, capability_token_secret from environment
   5. requirements.txt includes asyncpg, gitpython, minio and excludes aiosqlite
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 15-01: Shot Card data model + PostgreSQL schema
-- [ ] 15-02: Docker Compose expansion + config/dependency updates
+- [ ] 15-01-PLAN.md — Shot Card data model (ShotCard + AuditEntry SQLAlchemy models, Pydantic schemas, PostgreSQL async engine, Alembic migration, TimescaleDB init)
+- [ ] 15-02-PLAN.md — Docker Compose expansion + config/dependency updates (PostgreSQL + MinIO containers, V2 Settings, requirements.txt, Dockerfile, start.sh)
 
 ### Phase 16: Shot Card Aggregation
 **Goal**: Node outputs from an AI pipeline progressively assemble into Shot Cards, with visual bundles displaying first and audio appending when ready
@@ -189,7 +189,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 15. Foundation | v2.0 | 0/2 | Not started | - |
+| 15. Foundation | v2.0 | 0/2 | Planned | - |
 | 16. Shot Card Aggregation | v2.0 | 0/2 | Not started | - |
 | 17. GitOps Policy Engine | v2.0 | 0/2 | Not started | - |
 | 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
