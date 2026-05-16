@@ -113,6 +113,7 @@ class ReviewCreateRequest(BaseModel):
 class TokenRequest(BaseModel):
     api_key: str
     client_id: str
+    role: str = "reviewer"  # Default role for backward compatibility
 
 
 class PolicyCreateRequest(BaseModel):

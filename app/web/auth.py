@@ -14,8 +14,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 async def get_template_user(
     access_token: str | None = Cookie(None),
-) -> str:
-    """FastAPI dependency: read JWT from httpOnly cookie, return client identity."""
+) -> dict:
+    """FastAPI dependency: read JWT from httpOnly cookie, return dict with client and role."""
     if not access_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     settings = get_settings()
@@ -23,7 +23,10 @@ async def get_template_user(
         payload = decode_jwt(access_token, settings.jwt_secret)
     except AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return payload.get("client", "unknown")
+    return {
+        "client": payload.get("client", "unknown"),
+        "role": payload.get("role", "reviewer"),
+    }
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -42,7 +45,7 @@ async def login_submit(request: Request, api_key: str = Form(...)):
         return templates.TemplateResponse(request, "pages/login.html", {
             "error": "Invalid API key",
         }, status_code=200)
-    jwt_token = create_jwt("admin", settings.jwt_secret, expires_minutes=15)
+    jwt_token = create_jwt("admin", settings.jwt_secret, expires_minutes=15, role="admin")
     response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(
         key="access_token",
@@ -74,7 +77,7 @@ async def token_deep_link(token: str, request: Request):
         return RedirectResponse(url="/?toast=token_expired", status_code=303)
 
     # Create JWT and set as httpOnly cookie
-    jwt_token = create_jwt("reviewer", settings.jwt_secret, expires_minutes=15)
+    jwt_token = create_jwt("reviewer", settings.jwt_secret, expires_minutes=15, role="reviewer")
     response = RedirectResponse(
         url=f"/?detail={review_id}",
         status_code=303,
