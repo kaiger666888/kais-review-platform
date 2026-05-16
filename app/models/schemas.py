@@ -179,6 +179,17 @@ class ABTestPairResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# --- Shot Card Action Models ---
+
+
+class ShotCardApproveRequest(BaseModel):
+    comment: str | None = None
+
+
+class ShotCardRejectRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+
+
 # --- Batch Operation Models ---
 
 

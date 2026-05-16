@@ -328,3 +328,116 @@ async def shot_card_detail_partial(request: Request, shot_card_id: int):
     return templates.TemplateResponse(request, "partials/_decision_panel.html", {
         "shot": shot_card,
     })
+
+
+async def _fetch_shot_queue(
+    project: str | None = None,
+    scene: str | None = None,
+    risk: str | None = None,
+    cursor: int | None = None,
+):
+    """Fetch shot cards for the workstation queue with cursor-based pagination."""
+    PAGE_SIZE = 30
+    async with async_session_factory() as session:
+        query = select(ShotCard).order_by(ShotCard.id.asc()).limit(PAGE_SIZE + 1)
+
+        if cursor:
+            query = query.where(ShotCard.id > cursor)
+        if project:
+            query = query.where(ShotCard.project_id == project)
+        if risk:
+            query = query.where(ShotCard.audit_status == risk)
+        if scene:
+            query = query.where(
+                ShotCard.narrative_context["scene"].astext == scene
+            )
+
+        result = await session.execute(query)
+        shots = list(result.scalars().all())
+
+        has_more = len(shots) > PAGE_SIZE
+        shots = shots[:PAGE_SIZE]
+        next_cursor = shots[-1].id if has_more and shots else None
+
+        project_result = await session.execute(
+            select(distinct(ShotCard.project_id)).order_by(ShotCard.project_id)
+        )
+        projects = [row[0] for row in project_result.all()]
+
+    return shots, has_more, next_cursor, projects
+
+
+@router.post("/shot-cards/{shot_card_id}/approve", response_class=HTMLResponse)
+async def approve_shot_card_htmx(request: Request, shot_card_id: int):
+    """HTMX form handler: approve shot card, return updated queue with toast trigger."""
+    async with async_session_factory() as session:
+        shot_card = await session.get(ShotCard, shot_card_id)
+        if shot_card is None:
+            return HTMLResponse(
+                "<p>Shot card not found.</p>", status_code=404,
+                headers={"HX-Trigger": json.dumps({"showToast": {"message": "Shot card not found", "type": "error"}})},
+            )
+
+        if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+            return HTMLResponse(
+                f"<p>Cannot approve: status is {shot_card.audit_status}</p>", status_code=409,
+                headers={"HX-Trigger": json.dumps({"showToast": {"message": f"Cannot approve: status is {shot_card.audit_status}", "type": "error"}})},
+            )
+
+        shot_card.audit_status = AuditStatus.APPROVED
+        await session.commit()
+
+    # Re-fetch shot queue
+    shots, has_more, next_cursor, projects = await _fetch_shot_queue()
+
+    rendered = templates.TemplateResponse(request, "partials/_shot_queue_list.html", {
+        "shots": shots,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "projects": projects,
+        "current_project": None,
+        "current_scene": None,
+        "current_risk": None,
+    })
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": "Shot card approved", "type": "success"},
+    })
+    return rendered
+
+
+@router.post("/shot-cards/{shot_card_id}/reject", response_class=HTMLResponse)
+async def reject_shot_card_htmx(request: Request, shot_card_id: int, reason: str = Form(...)):
+    """HTMX form handler: reject shot card with reason, return updated queue with toast trigger."""
+    async with async_session_factory() as session:
+        shot_card = await session.get(ShotCard, shot_card_id)
+        if shot_card is None:
+            return HTMLResponse(
+                "<p>Shot card not found.</p>", status_code=404,
+                headers={"HX-Trigger": json.dumps({"showToast": {"message": "Shot card not found", "type": "error"}})},
+            )
+
+        if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+            return HTMLResponse(
+                f"<p>Cannot reject: status is {shot_card.audit_status}</p>", status_code=409,
+                headers={"HX-Trigger": json.dumps({"showToast": {"message": f"Cannot reject: status is {shot_card.audit_status}", "type": "error"}})},
+            )
+
+        shot_card.audit_status = AuditStatus.REJECTED
+        await session.commit()
+
+    # Re-fetch shot queue
+    shots, has_more, next_cursor, projects = await _fetch_shot_queue()
+
+    rendered = templates.TemplateResponse(request, "partials/_shot_queue_list.html", {
+        "shots": shots,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "projects": projects,
+        "current_project": None,
+        "current_scene": None,
+        "current_risk": None,
+    })
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": "Shot card rejected", "type": "success"},
+    })
+    return rendered

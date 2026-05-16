@@ -4,22 +4,28 @@ POST /api/v1/shot-cards/events/node-completed  -- Mock event ingestion (dev/test
 GET  /api/v1/shot-cards                         -- List Shot Cards (paginated)
 GET  /api/v1/shot-cards/{shot_card_id}          -- Get Shot Card by ID
 GET  /api/v1/shot-cards/by-shot/{shot_id}       -- Get Shot Card by natural key
+POST /api/v1/shot-cards/{shot_card_id}/approve  -- Approve a Shot Card
+POST /api/v1/shot-cards/{shot_card_id}/reject   -- Reject a Shot Card
 """
 
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import get_current_client
 from app.core.database import get_db
 from app.core.event_types import NodeCompletedEvent
 from app.models.schemas import (
     ApiResponse,
     PaginatedResponse,
+    ShotCardApproveRequest,
+    ShotCardRejectRequest,
     ShotCardResponse,
 )
-from app.models.shot_card import ShotCard
+from app.models.shot_card import ShotCard, AuditStatus
 from app.services.aggregator import ShotCardAggregator
 
 router = APIRouter(prefix="/api/v1/shot-cards", tags=["shot-cards"])
@@ -184,6 +190,110 @@ async def get_shot_card_by_shot_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shot Card with shot_id '{shot_id}' not found",
         )
+
+    return ApiResponse(
+        data=_shot_card_response(shot_card).model_dump(),
+        meta={"request_id": _request_id()},
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /{shot_card_id}/approve -- Approve Shot Card
+# ---------------------------------------------------------------------------
+
+
+logger = structlog.get_logger(__name__)
+
+
+@router.post(
+    "/{shot_card_id}/approve",
+    response_model=ApiResponse[ShotCardResponse],
+)
+async def approve_shot_card(
+    shot_card_id: int,
+    request: ShotCardApproveRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+):
+    """Approve a Shot Card.
+
+    Transitions audit_status from awaiting_audit to approved.
+    Requires JWT authentication.
+    """
+    shot_card = await db.get(ShotCard, shot_card_id)
+    if shot_card is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shot Card {shot_card_id} not found",
+        )
+
+    if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Shot Card is not in awaiting_audit state, current: {shot_card.audit_status}",
+        )
+
+    shot_card.audit_status = AuditStatus.APPROVED
+    await db.commit()
+    await db.refresh(shot_card)
+
+    logger.info(
+        "shot_card_approved",
+        shot_card_id=shot_card_id,
+        actor=f"client:{client}",
+        comment=request.comment if request else None,
+    )
+
+    return ApiResponse(
+        data=_shot_card_response(shot_card).model_dump(),
+        meta={"request_id": _request_id()},
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /{shot_card_id}/reject -- Reject Shot Card
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{shot_card_id}/reject",
+    response_model=ApiResponse[ShotCardResponse],
+)
+async def reject_shot_card(
+    shot_card_id: int,
+    request: ShotCardRejectRequest,
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+):
+    """Reject a Shot Card.
+
+    Requires a mandatory reason (min_length=1, max_length=500).
+    Transitions audit_status from awaiting_audit to rejected.
+    Requires JWT authentication.
+    """
+    shot_card = await db.get(ShotCard, shot_card_id)
+    if shot_card is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shot Card {shot_card_id} not found",
+        )
+
+    if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Shot Card is not in awaiting_audit state, current: {shot_card.audit_status}",
+        )
+
+    shot_card.audit_status = AuditStatus.REJECTED
+    await db.commit()
+    await db.refresh(shot_card)
+
+    logger.info(
+        "shot_card_rejected",
+        shot_card_id=shot_card_id,
+        actor=f"client:{client}",
+        reason=request.reason,
+    )
 
     return ApiResponse(
         data=_shot_card_response(shot_card).model_dump(),
