@@ -96,7 +96,70 @@ class Provenance(BaseModel):
     execution_id: str | None = None
 
 
-# --- Request Models ---
+# --- V1 Legacy Request Models (backward compat) ---
+
+
+class ReviewCreateRequest(BaseModel):
+    type: str = Field(min_length=1, max_length=50)
+    content_ref: str = Field(min_length=1)
+    metadata: dict | None = None
+    source_system: str = Field(min_length=1)
+    priority: str = Field(default="normal", pattern=r"^(low|normal|high|critical)$")
+    risk_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    callback_url: str | None = Field(default=None, min_length=1)
+    callback_secret: str | None = Field(default=None, min_length=1)
+
+
+class TokenRequest(BaseModel):
+    api_key: str
+    client_id: str
+
+
+class PolicyCreateRequest(BaseModel):
+    name: str
+    content: str
+
+
+class PolicyUpdateRequest(BaseModel):
+    content: str
+
+
+class WebhookCreateRequest(BaseModel):
+    url: str = Field(min_length=1)
+    secret: str = Field(min_length=1)
+    source_system: str = Field(min_length=1)
+
+
+class WebhookUpdateRequest(BaseModel):
+    url: str | None = None
+    secret: str | None = None
+    source_system: str | None = None
+    is_active: bool | None = None
+
+
+class WebhookResponse(BaseModel):
+    id: int
+    url: str
+    secret: str
+    source_system: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PolicyResponse(BaseModel):
+    name: str
+    version: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- V2 Request Models ---
 
 
 class ShotCardCreate(BaseModel):
@@ -109,7 +172,40 @@ class ShotCardCreate(BaseModel):
     provenance: Provenance | None = None
 
 
-# --- Response Models ---
+# --- V1 Legacy Response Models (backward compat) ---
+
+
+class ReviewResponse(BaseModel):
+    id: int
+    type: str
+    content_ref: str
+    metadata: dict | None
+    source_system: str
+    priority: str
+    risk_score: float | None
+    state: str
+    disposition: str | None
+    callback_url: str | None = None
+    version: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReviewSubmitResponse(BaseModel):
+    review_id: int
+    state: str
+    routing: str | None
+
+
+class ReviewTokenResponse(BaseModel):
+    token: str
+    review_url: str
+    expires_at: datetime
+
+
+# --- V2 Response Models ---
 
 
 class ShotCardResponse(BaseModel):
@@ -134,7 +230,8 @@ class ShotCardResponse(BaseModel):
 
 class AuditEntryResponse(BaseModel):
     id: int
-    shot_card_id: int
+    shot_card_id: int | None = None
+    review_id: int | None = None
     action: str
     actor: str
     from_state: str | None
@@ -180,6 +277,16 @@ class ABTestPairResponse(BaseModel):
 
 
 # --- Shot Card Action Models ---
+
+
+class ApproveRequest(BaseModel):
+    """V1 legacy approve request — kept for backward compat with actions.py."""
+    comment: str | None = None
+
+
+class RejectRequest(BaseModel):
+    """V1 legacy reject request — kept for backward compat with actions.py."""
+    reason: str = Field(min_length=1, max_length=500)
 
 
 class ShotCardApproveRequest(BaseModel):
