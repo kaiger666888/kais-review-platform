@@ -1,7 +1,7 @@
 """Template route handlers for the mobile-first review dashboard."""
 
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -9,7 +9,8 @@ from fastapi.templating import Jinja2Templates
 from jinja2_fragments.fastapi import Jinja2Blocks
 from sqlalchemy import select, func, distinct
 
-from app.core.database import async_session_factory
+from app.core.config import get_settings
+from app.core.database import async_session_factory, get_db
 from app.core.state_machine import transition_state, StateConflictError, InvalidTransitionError
 from app.models.schemas import ReviewState
 from app.models.schema import Review, AuditEntry
@@ -566,5 +567,347 @@ async def mobile_pwa(request: Request):
         return RedirectResponse(url="/login", status_code=303)
 
     return templates.TemplateResponse(request, "pages/mobile.html", {
+        "user": user,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Audit Cockpit Routes
+# ---------------------------------------------------------------------------
+
+
+def _reject_ai_service(user: dict):
+    """Return True if user has ai_service role (should be rejected from audit pages)."""
+    return user.get("role") == "ai_service"
+
+
+@router.get("/audit-cockpit", response_class=HTMLResponse)
+async def audit_cockpit(request: Request):
+    """Desktop audit cockpit with timeline, stats, and policy diff."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    if _reject_ai_service(user):
+        return RedirectResponse(url="/login", status_code=303)
+
+    today = datetime.now(timezone.utc).date()
+    week_ago = today - timedelta(days=7)
+
+    return templates.TemplateResponse(request, "pages/audit_cockpit.html", {
+        "user": user,
+        "default_start_date": week_ago.isoformat(),
+        "default_end_date": today.isoformat(),
+    })
+
+
+@router.get("/partials/audit-stats", response_class=HTMLResponse)
+async def audit_stats_partial(
+    request: Request,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """HTMX partial: audit statistics panels."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    today = datetime.now(timezone.utc).date()
+    start = date.fromisoformat(start_date) if start_date else today - timedelta(days=7)
+    end = date.fromisoformat(end_date) if end_date else today
+
+    start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc)
+
+    async with async_session_factory() as session:
+        # Total decisions
+        total_result = await session.execute(
+            select(func.count()).select_from(AuditEntry)
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+        )
+        total_decisions = total_result.scalar() or 0
+
+        # Approved
+        approved_result = await session.execute(
+            select(func.count()).select_from(AuditEntry)
+            .where(
+                AuditEntry.action == "approve",
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+        )
+        approved = approved_result.scalar() or 0
+
+        # Rejected
+        rejected_result = await session.execute(
+            select(func.count()).select_from(AuditEntry)
+            .where(
+                AuditEntry.action == "reject",
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+        )
+        rejected = rejected_result.scalar() or 0
+
+        approval_rate = round(approved / total_decisions, 4) if total_decisions > 0 else 0.0
+
+        # Rejection reasons
+        reject_payloads_result = await session.execute(
+            select(AuditEntry.payload)
+            .where(AuditEntry.action == "reject", AuditEntry.created_at >= start_dt, AuditEntry.created_at <= end_dt)
+        )
+        reject_payloads = [row[0] for row in reject_payloads_result.all() if row[0]]
+        reason_counts: dict[str, int] = {}
+        policy_counts: dict[str, int] = {}
+        for p in reject_payloads:
+            reason = p.get("reason", "unspecified")
+            reason_counts[reason] = reason_counts.get(reason, 0) + 1
+            policy_name = p.get("policy_name")
+            if policy_name:
+                policy_counts[policy_name] = policy_counts.get(policy_name, 0) + 1
+
+        rejection_reasons = sorted(
+            [{"reason": k, "count": v} for k, v in reason_counts.items()],
+            key=lambda x: x["count"], reverse=True,
+        )[:10]
+        policy_hit_rates = sorted(
+            [{"policy": k, "count": v} for k, v in policy_counts.items()],
+            key=lambda x: x["count"], reverse=True,
+        )
+
+        # Daily throughput
+        daily_result = await session.execute(
+            select(func.date(AuditEntry.created_at).label("day"), func.count().label("cnt"))
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by(func.date(AuditEntry.created_at))
+            .order_by(func.date(AuditEntry.created_at))
+        )
+        daily_throughput = [
+            {"date": str(row[0]) if row[0] else "", "count": row[1]}
+            for row in daily_result.all()
+        ]
+
+        # Avg decision time (simplified)
+        avg_time = 0.0
+
+    stats = {
+        "total_decisions": total_decisions,
+        "approved": approved,
+        "rejected": rejected,
+        "approval_rate": approval_rate,
+        "avg_decision_time_minutes": avg_time,
+        "rejection_reasons": rejection_reasons,
+        "policy_hit_rates": policy_hit_rates,
+        "daily_throughput": daily_throughput,
+    }
+
+    return templates.TemplateResponse(request, "partials/_audit_stats.html", {
+        "stats": stats,
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "user": user,
+    })
+
+
+@router.get("/partials/audit-timeline", response_class=HTMLResponse)
+async def audit_timeline_partial(
+    request: Request,
+    cursor: int | None = None,
+    action: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """HTMX partial: audit timeline with chronological entries."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    limit = 30
+    async with async_session_factory() as session:
+        query = (
+            select(AuditEntry, Review.type, Review.source_system)
+            .join(Review, AuditEntry.review_id == Review.id, isouter=True)
+            .order_by(AuditEntry.id.desc())
+            .limit(limit + 1)
+        )
+
+        if cursor:
+            query = query.where(AuditEntry.id < cursor)
+        if action:
+            query = query.where(AuditEntry.action == action)
+        if start_date:
+            query = query.where(
+                AuditEntry.created_at >= datetime.fromisoformat(start_date)
+            )
+        if end_date:
+            query = query.where(
+                AuditEntry.created_at <= datetime.fromisoformat(end_date)
+            )
+
+        result = await session.execute(query)
+        rows = result.all()
+
+        has_more = len(rows) > limit
+        items = rows[:limit]
+        next_cursor = items[-1][0].id if has_more and items else None
+
+        entries = []
+        for entry, review_type, source_system in items:
+            entry_dict = {
+                "id": entry.id,
+                "review_id": entry.review_id,
+                "action": entry.action,
+                "actor": entry.actor,
+                "from_state": entry.from_state,
+                "to_state": entry.to_state,
+                "payload": entry.payload,
+                "created_at": entry.created_at,
+                "review_type": review_type,
+                "source_system": source_system,
+            }
+            entries.append(entry_dict)
+
+    return templates.TemplateResponse(request, "partials/_audit_timeline.html", {
+        "entries": entries,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "action_filter": action,
+        "start_date": start_date,
+        "end_date": end_date,
+        "user": user,
+    })
+
+
+@router.get("/partials/audit-policy-diff", response_class=HTMLResponse)
+async def audit_policy_diff_partial(
+    request: Request,
+    commit_1: str | None = None,
+    commit_2: str | None = None,
+):
+    """HTMX partial: policy version diff between two Git commits."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    if not commit_1 or not commit_2:
+        return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+            "user": user,
+        })
+
+    settings = get_settings()
+    if not settings.git_repo_url:
+        return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+            "error": "Git integration not configured.",
+            "user": user,
+        })
+
+    try:
+        from pathlib import Path
+        import git
+
+        local_path = Path(".policy_repo")
+        if not (local_path.exists() and (local_path / ".git").exists()):
+            return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+                "error": "Git policy repository not available.",
+                "user": user,
+            })
+
+        repo = git.Repo(str(local_path))
+
+        try:
+            c1 = repo.commit(commit_1)
+            c2 = repo.commit(commit_2)
+        except git.exc.GitCommandError as exc:
+            return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+                "error": f"Invalid commit SHA: {exc}",
+                "user": user,
+            })
+
+        def _get_policy_files(tree) -> dict[str, str]:
+            files = {}
+            try:
+                policies_dir = tree["policies"]
+                for blob in policies_dir:
+                    if blob.name.endswith((".yaml", ".yml")):
+                        try:
+                            files[blob.name] = blob.data_stream.read().decode("utf-8")
+                        except Exception:
+                            files[blob.name] = ""
+            except KeyError:
+                pass
+            return files
+
+        files_1 = _get_policy_files(c1.tree)
+        files_2 = _get_policy_files(c2.tree)
+
+        all_files = sorted(set(files_1.keys()) | set(files_2.keys()))
+        diffs = []
+        for fname in all_files:
+            content_1 = files_1.get(fname, "")
+            content_2 = files_2.get(fname, "")
+            diffs.append({
+                "file": fname,
+                "from": content_1,
+                "to": content_2,
+                "changed": content_1 != content_2,
+            })
+
+        return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+            "commit_1": commit_1,
+            "commit_2": commit_2,
+            "diffs": diffs,
+            "user": user,
+        })
+
+    except Exception as exc:
+        return templates.TemplateResponse(request, "partials/_audit_policy_diff.html", {
+            "error": f"Failed to compute policy diff: {exc}",
+            "user": user,
+        })
+
+
+@router.get("/mobile/audit", response_class=HTMLResponse)
+async def mobile_audit(request: Request):
+    """Mobile audit dashboard with stats summary and review waterfall."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    if _reject_ai_service(user):
+        return RedirectResponse(url="/login", status_code=303)
+
+    return templates.TemplateResponse(request, "pages/mobile_audit.html", {
         "user": user,
     })
