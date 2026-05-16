@@ -1,134 +1,118 @@
-# Phase 18 Research: Routing & Checkpoints
+# Research: Phase 18 — Approval Router with Priority Queues + Batch Approval
 
-**Researched:** 2026-05-16
-**Discovery Level:** Level 0 (all patterns established in codebase)
+**Date:** 2026-05-16
+**Status:** Complete
 
-## Existing Assets
+## Problem Statement
 
-### Policy Engine Output (Phase 17)
-- `ShotCardPolicyEngine.evaluate_with_stack()` returns `PolicyResult` with `disposition` (AUTO/HUMAN/AI_AUDIT/BLOCK)
-- Aggregator writes `routing_decision` (string: "AUTO"/"HUMAN"/"AI_AUDIT"/"BLOCK") and `policy_commit_sha` to ShotCard via `_write_provenance()`
-- `ShotCard.routing_decision` is a PostgreSQL ENUM column (`RoutingDecision` enum)
-- Aggregator already fires events via `event_manager.broadcast()` after progressive fill
+Currently reviews land in APPROVING state without any ordering. When multiple reviews are pending approval, reviewers see them in database insertion order (id-desc). High-priority and critical reviews should surface first.
 
-### Event System (Phase 16)
-- `EventManager` in `app/core/events.py`: singleton with asyncio.Queue per SSE connection, broadcast to all, slow-client eviction
-- `event_types.py`: Pydantic models for `NodeCompletedEvent`, `BundleReadyEvent`, `ShotCardUpdatedEvent`
-- Aggregator emits `shot_card_updated` (every fill) and `bundle_ready` (on bundle completion)
-- SSE endpoint in `app/api/routes/sse.py` feeds queue to `StreamingResponse`
+Additionally, approving/rejecting multiple reviews requires individual API calls — no batch operation exists. For reviewers handling bursts (e.g., gold-team dispatches 20 GPU tasks), this is tedious.
 
-### Redis Patterns (V1 established)
-- `app/main.py` startup: `aioredis.from_url(settings.redis_url, decode_responses=True)`
-- `app/core/auth.py`: one-time tokens with Lua atomic GET+DEL (`consume_review_token`)
-- `app.state.redis` accessible via `get_redis(request)` dependency
-- Settings already has `redis_url` configured
+## Current Architecture
 
-### State Machine (V1 pattern)
-- `app/core/state_machine.py`: 4-state (PENDING->POLICY_EVAL->APPROVING->COMPLETE) with optimistic locking
-- `transition_state()` with version checking, audit logging, and event emission
-- `VALID_TRANSITIONS` map pattern for state validation
+### Data Flow
+1. `POST /api/v1/reviews/` → PolicyEngine evaluates → routes to APPROVING
+2. `GET /api/v1/reviews/?status=APPROVING` → Lists reviews by id-desc (no priority sort)
+3. `POST /api/v1/reviews/{id}/approve` → One review at a time
+4. `POST /api/v1/reviews/{id}/reject` → One review at a time
 
-### Timeout Management (V1 pattern)
-- `app/workers/tasks.py`: `check_timeouts` cron (every hour), `TIMEOUT_THRESHOLDS` dict
-- `WorkerSettings` class with `cron_jobs` list using `arq.cron()`
-- `process_node_completion` arq task already registered for aggregation pipeline
+### Priority Field
+- `Review.priority`: `low`, `normal`, `high`, `critical` (validated in Pydantic)
+- Currently used for policy evaluation only (critical → HUMAN route)
+- NOT used for queue ordering in list_reviews endpoint
 
-### Config (Phase 15)
-- `Settings.review_timeout_minutes = 1440` (24h)
-- `Settings.ai_audit_timeout_minutes = 5`
-- Ready for immediate consumption by timeout manager
+### Database Indexes
+- `ix_reviews_state_created` on (state, created_at) — covers status filter but not priority ordering
 
-## Architecture Decisions
+## Design Decisions
 
-### 1. Approval Router
-- Three outlets: `desktop`, `mobile`, `ai_audit`
-- Routing decision comes from `ShotCard.routing_decision` (already set by Phase 17 aggregator)
-- HUMAN -> desktop OR mobile (for now, both go to desktop; mobile routing deferred to Phase 21)
-- AI_AUDIT -> AI outlet (scoring plugin bus stub in Phase 19)
-- AUTO -> immediate approval, no queue, ResumeCommand injected
-- BLOCK -> immediate rejection
-- Priority: derived from node_type in visual_bundle (GPU renders = high, previews = low)
-- Redis sorted sets for priority queues (score = priority weight + timestamp)
-- Batch approval: group by project_id + narrative_context.scene
+### 1. Priority Ordering in List Endpoint
+**Option A:** Modify `list_reviews` to sort by priority weight, then created_at when status=APPROVING
+**Option B:** New dedicated endpoint `/api/v1/reviews/approval-queue`
 
-### 2. Checkpoint Manager
-- RunState Snapshot: serialize ShotCard context (shot_id, execution_id, node completion state) to Redis hash
-- Key pattern: `checkpoint:{shot_id}` with TTL matching review timeout
-- ResumeCommand: Pydantic model with shot_id, execution_id, approved_at, approved_by
-- On approval: create ResumeCommand, emit event, store in Redis for OpenClaw mock consumption
-- On rejection: clear checkpoint, emit rejection event
+**Choice: Option A** — Simpler, backward-compatible. Add `sort` query parameter. Default `id-desc` for backward compat, `priority` for new callers. Priority sort uses weight mapping: critical=4, high=3, normal=2, low=1.
 
-### 3. Timeout Manager
-- Extend existing `check_timeouts` pattern from V1
-- New arq cron: `check_shot_card_timeouts`
-- Query ShotCards with `audit_status = 'awaiting_audit'` and routing_decision set, where updated_at exceeds threshold
-- HUMAN route: 24h timeout -> auto-reject
-- AI_AUDIT route: 5min timeout -> re-route to HUMAN
-- Use Settings values already in config.py
+### 2. Batch Approval/Reject
+**Option A:** New endpoint `POST /api/v1/reviews/batch/approve` with `{"review_ids": [1,2,3]}`
+**Option B:** Add `batch` flag to existing approve/reject endpoints with comma-separated IDs
 
-### 4. Event Bus Enhancement
-- Add per-outlet filtering to EventManager: connections register with outlet name
-- `broadcast_to_outlet(outlet, event_data)`: only deliver to connections subscribed to that outlet
-- New event types: `ShotCardRoutedEvent`, `ShotCardApprovedEvent`, `ShotCardRejectedEvent`, `ShotCardTimedOutEvent`
-- Keep backward compatibility: `broadcast()` still sends to all unregistered connections
+**Choice: Option A** — Cleaner separation, dedicated request/response schemas. Batch operations are semantically different from single operations (partial success, per-item errors).
 
-## Key Interfaces to Create
+### 3. Priority Queue Service
+**Option A:** Separate ApprovalRouter service class encapsulating priority logic
+**Option B:** Inline logic in endpoint handlers
+
+**Choice: Option A** — Testable in isolation, encapsulates priority weight mapping and queue retrieval logic. Placed in `app/services/approval_router.py`.
+
+### 4. Database Index for Priority Sort
+**Approving reviews sorted by priority weight** — SQLite can compute this with CASE expressions. No new index needed for expected volumes (<1000 pending reviews). If performance becomes an issue later, add a computed column.
+
+### 5. Batch Atomicity
+Each review in a batch is processed independently. Partial success is the model:
+- Some succeed → their state transitions complete
+- Some fail (wrong state, version conflict) → reported in response
+- Overall HTTP 207 Multi-Status returned
+
+## Priority Weight Mapping
 
 ```python
-# app/services/approval_router.py
-class ApprovalRouter:
-    async def route(shot_card: ShotCard) -> RoutingResult
-    async def enqueue(shot_card: ShotCard, outlet: str, priority: str) -> None
-    async def dequeue(outlet: str, limit: int) -> list[ShotCard]
-    async def batch_approve(shot_ids: list[str], actor: str) -> BatchResult
-
-# app/services/checkpoint_manager.py
-class CheckpointManager:
-    async def save_snapshot(shot_card: ShotCard) -> None
-    async def load_snapshot(shot_id: str) -> RunStateSnapshot | None
-    async def create_resume_command(shot_id: str, actor: str) -> ResumeCommand
-    async def clear_checkpoint(shot_id: str) -> None
-
-# app/services/timeout_manager.py (or extend workers/tasks.py)
-async def check_shot_card_timeouts(ctx: dict) -> list[str]
-
-# Enhanced EventManager
-class EventManager:
-    def create_connection(outlet: str | None = None) -> asyncio.Queue
-    async def broadcast_to_outlet(outlet: str, event_data: dict) -> None
+PRIORITY_WEIGHT = {"critical": 4, "high": 3, "normal": 2, "low": 1}
 ```
 
-## Redis Key Design
+## API Design
 
-| Key Pattern | Type | TTL | Purpose |
-|-------------|------|-----|---------|
-| `queue:desktop:high` | Sorted Set | None | High-priority desktop queue |
-| `queue:desktop:low` | Sorted Set | None | Low-priority desktop queue |
-| `queue:ai_audit` | Sorted Set | None | AI audit queue |
-| `checkpoint:{shot_id}` | Hash | 24h | RunState snapshot |
-| `resume:{execution_id}` | String (JSON) | 1h | ResumeCommand for OpenClaw pickup |
-| `timeout:shot:{shot_id}` | String | Per route type | Timeout tracking |
-
-## Dependency Analysis
-
+### Sort Parameter for List Endpoint
 ```
-Plan 01 (Approval Router):
-  needs: ShotCard model (Phase 15), routing_decision (Phase 17), Redis
-  creates: ApprovalRouter, RoutingResult, priority queues in Redis
+GET /api/v1/reviews/?status=APPROVING&sort=priority
+```
+Returns reviews sorted by priority weight (desc), then created_at (asc).
 
-Plan 02 (Checkpoint + Timeout):
-  needs: ShotCard model (Phase 15), Redis, config timeouts (Phase 15)
-  creates: CheckpointManager, RunStateSnapshot, ResumeCommand, shot card timeout cron
-  depends on: Plan 01 (router sets the timeout key when routing)
-
-Plan 03 (Event Bus):
-  needs: EventManager (existing), event types (Phase 16)
-  creates: Enhanced EventManager with outlet filtering, new event types
-  depends on: Plan 01 (routed event), Plan 02 (approved/rejected events)
+### Batch Approve
+```
+POST /api/v1/reviews/batch/approve
+{
+  "review_ids": [1, 2, 3],
+  "comment": "Batch approved"
+}
+```
+Response (207 Multi-Status):
+```json
+{
+  "data": {
+    "succeeded": [1, 2],
+    "failed": [{"review_id": 3, "error": "Review is not in APPROVING state"}],
+    "total": 3,
+    "success_count": 2,
+    "failure_count": 1
+  }
+}
 ```
 
-## Risk Assessment
+### Batch Reject
+```
+POST /api/v1/reviews/batch/reject
+{
+  "review_ids": [1, 2],
+  "reason": "Batch rejected"
+}
+```
 
-- **Priority derivation from node_type:** Need to inspect visual_bundle structure to determine GPU render vs preview. May need a heuristic (e.g., presence of video_clip = high priority, only keyframes = low)
-- **Batch approval atomicity:** Multiple ShotCards approved in one operation must all succeed or all fail. Use Redis pipeline + database transaction.
-- **Timeout cron frequency:** 5-minute AI timeout means cron must run at least every 60 seconds for timely escalation. Use `second={0}` or `minute=[*]` for AI, hourly for human.
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `app/services/approval_router.py` | Create | Priority weight mapping, queue query builder |
+| `app/models/schemas.py` | Modify | Add BatchApproveRequest, BatchRejectRequest, BatchResponse |
+| `app/api/v1/actions.py` | Modify | Add batch approve/reject endpoints |
+| `app/api/v1/reviews.py` | Modify | Add sort parameter with priority ordering |
+| `tests/test_approval_router.py` | Create | Unit + integration tests for approval router |
+| `tests/test_batch_actions.py` | Create | Tests for batch approve/reject endpoints |
+
+## Constraints Verified
+
+- **No new dependencies** — Uses existing SQLAlchemy, FastAPI, Pydantic
+- **SQLite compatible** — CASE expression for priority ordering works in SQLite
+- **Backward compatible** — Default sort is id-desc (existing behavior)
+- **< 400MB RAM** — No in-memory queues, database-driven ordering
+- **Audit trail** — Each batch item gets its own audit entry (no coalescing)

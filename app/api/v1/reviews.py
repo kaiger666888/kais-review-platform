@@ -8,7 +8,7 @@ GET  /api/v1/reviews       -- List reviews with filters and cursor pagination (R
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_client
@@ -30,6 +30,7 @@ from app.models.schemas import (
     ReviewState,
     ReviewSubmitResponse,
 )
+from app.services.approval_router import PRIORITY_WEIGHT
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["reviews"])
 
@@ -228,6 +229,7 @@ async def list_reviews(
     type_filter: str | None = Query(None, alias="type"),
     source: str | None = Query(None),
     priority: str | None = Query(None),
+    sort: str | None = Query(None, pattern=r"^(id_desc|priority)$"),
     cursor: int | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -235,10 +237,28 @@ async def list_reviews(
 ):
     """List reviews with optional filters and id-based cursor pagination.
 
-    Results are ordered by id descending (newest first).
+    Default ordering is id descending (newest first).
+    Use sort=priority to order by priority weight (critical first),
+    then by created_at ascending within the same priority tier.
     Cursor is an id value: reviews with id < cursor are returned.
     """
-    query = select(Review).order_by(Review.id.desc()).limit(limit + 1)
+    if sort == "priority":
+        # Priority ordering: critical=4, high=3, normal=2, low=1 desc, then created_at asc
+        priority_order = case(
+            *[
+                (Review.priority == p, w)
+                for p, w in sorted(PRIORITY_WEIGHT.items(), key=lambda x: -x[1])
+            ],
+            else_=0,
+        )
+        query = select(Review).order_by(
+            priority_order.desc(), Review.created_at.asc()
+        )
+    else:
+        # Default: id descending (backward compatible)
+        query = select(Review).order_by(Review.id.desc())
+
+    query = query.limit(limit + 1)
 
     if cursor:
         query = query.where(Review.id < cursor)
