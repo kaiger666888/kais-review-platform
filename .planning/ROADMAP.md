@@ -141,12 +141,12 @@ Plans:
   4. Multiple Shot Cards can be selected via Ctrl/Shift in the left panel and approved, rejected, or suspended in a single batch action
   5. Video playback streams from a media endpoint with timeline scrubbing; first/last frame thumbnails are auto-generated; candidate thumbnails in a grid allow one-click switching between draw results
 **UI hint**: yes
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] 20-01: 3-column layout + shot queue panel + decision panel
-- [ ] 20-02: Media preview infrastructure (video streaming, frame extraction, thumbnails)
-- [ ] 20-03: Keyboard shortcuts + dual-column comparison + batch operations + candidate array
+- [ ] 20-01-PLAN.md — 3-column layout, shot queue panel with cursor pagination + server-side filtering, decision panel with approve/reject, candidate thumbnail grid (UI-D-01, UI-D-05)
+- [ ] 20-02-PLAN.md — Media preview infrastructure: MinIO presigned URL endpoint, HTML5 video player with Canvas frame extraction, candidate grid with scores (MEDIA-01, MEDIA-02, MEDIA-03)
+- [ ] 20-03-PLAN.md — Keyboard shortcuts via Alpine.js @keydown.document, dual-column comparison view, batch selection (Ctrl/Shift) + batch operations, Git policy drawer (UI-D-02, UI-D-03, UI-D-04)
 
 ### Phase 21: Mobile PWA
 **Goal**: Reviewers can approve or reject Shot Cards on mobile with swipe gestures, even when offline, seeing narrative continuity between shots
