@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-05-16T08:23:35.958Z"
-last_activity: 2026-05-16 -- Phase 16 Plan 01 completed
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-05-16T08:31:49.625Z"
+last_activity: 2026-05-16
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 75
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 16 (shot-card-aggregation) -- EXECUTING
-Plan: 1 of 2 (completed)
-Status: Executing Phase 16 -- Plan 01 done, Plan 02 next
-Last activity: 2026-05-16 -- Phase 16 Plan 01 completed
+Plan: 2 of 2 (completed)
+Status: Ready to execute
+Last activity: 2026-05-16
 
 Progress: [████████░░] 75%
 
@@ -69,6 +69,7 @@ Progress: [████████░░] 75%
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 15 P02 | 2min | 2 tasks | 6 files |
 | Phase 16 P01 | 6min | 2 tasks | 5 files |
+| Phase 16 P02 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,8 @@ Recent decisions affecting current work:
 - [Phase 16]: visual_bundle check_bundle_complete requires keyframes.first AND prompt (not just keyframes)
 - [Phase 16]: Default min_audit_set is ['visual_bundle'] on new Shot Cards
 - [Phase 16]: _ensure_shot_card uses IntegrityError catch + re-query for concurrent creation safety
+- [Phase 16]: Event ingestion endpoint uses 200 OK (not 202) since aggregation is synchronous in mock mode
+- [Phase 16]: Aggregator tests use MagicMock pattern since V2 ShotCard model requires PostgreSQL (incompatible with SQLite test infra)
 
 ### Pending Todos
 
@@ -127,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T08:23:35.956Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-05-16T08:31:49.622Z
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None

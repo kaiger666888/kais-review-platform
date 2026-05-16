@@ -42,7 +42,7 @@
 Full rewrite from generic review queue to Shot Card-driven pipeline governance platform. PostgreSQL replaces SQLite, GitOps version control for policies, desktop 3-column workstation + mobile PWA card flow dual-frontend, AI audit Phase 0 stubs, tiered storage, Merkle Root audit anchoring.
 
 - [x] **Phase 15: Foundation** — Shot Card data model, PostgreSQL migration, Docker Compose expansion, config & dependency updates (completed 2026-05-16)
-- [ ] **Phase 16: Shot Card Aggregation** — Aggregator, topology collapser, progressive fill engine
+- [x] **Phase 16: Shot Card Aggregation** — Aggregator, topology collapser, progressive fill engine (completed 2026-05-16)
 - [ ] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking
 - [ ] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements
 - [ ] **Phase 19: AI Audit & Capability Tokens** — AI audit Phase 0 stubs, capability token issuance, model registry placeholders
@@ -76,11 +76,11 @@ Plans:
   1. An OpenClaw node completion event (mock) triggers aggregation into the correct Shot Card by shot_id, even when nodes complete out of order (video before image)
   2. Visual bundle fields appear on the Shot Card as soon as their source nodes complete; audio bundle fields append independently without blocking visual review
   3. The min_audit_set logic unlocks a Shot Card for review only when all required bundles are populated, and the unlock state is queryable via API
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 16-01-PLAN.md — Event types, topology collapser, progressive fill engine, aggregator orchestrator (SHOT-03, SHOT-04)
-- [ ] 16-02-PLAN.md — Shot Card API endpoints, arq task registration, aggregation pipeline tests (SHOT-02, SHOT-03, SHOT-04)
+- [x] 16-02-PLAN.md — Shot Card API endpoints, arq task registration, aggregation pipeline tests (SHOT-02, SHOT-03, SHOT-04)
 
 ### Phase 17: GitOps Policy Engine
 **Goal**: Policy decisions are driven by Git-versioned rule files, with every Shot Card carrying the exact policy commit SHA that evaluated it
@@ -190,7 +190,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
-| 16. Shot Card Aggregation | v2.0 | 1/2 | In Progress|  |
+| 16. Shot Card Aggregation | v2.0 | 2/2 | Complete   | 2026-05-16 |
 | 17. GitOps Policy Engine | v2.0 | 0/2 | Not started | - |
 | 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
 | 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
