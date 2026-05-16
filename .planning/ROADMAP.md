@@ -65,7 +65,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 **Plans:** 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md — Shot Card data model (ShotCard + AuditEntry SQLAlchemy models, Pydantic schemas, PostgreSQL async engine, Alembic migration, TimescaleDB init)
+- [x] 15-01-PLAN.md — Shot Card data model (ShotCard + AuditEntry SQLAlchemy models, Pydantic schemas, PostgreSQL async engine, Alembic migration, TimescaleDB init) -- completed 2026-05-16
 - [ ] 15-02-PLAN.md — Docker Compose expansion + config/dependency updates (PostgreSQL + MinIO containers, V2 Settings, requirements.txt, Dockerfile, start.sh)
 
 ### Phase 16: Shot Card Aggregation
