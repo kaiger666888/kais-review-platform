@@ -50,7 +50,7 @@
 - [ ] **UI-M-02**: 手势操作 — 左滑通过、右滑拒绝、上滑详情、双指放大
 - [ ] **UI-M-03**: 上下文条 — 卡片顶部显示场次、镜头编号、情绪曲线
 - [ ] **UI-M-04**: PWA 离线缓存 — Service Worker 缓存最近 20 条 Shot Card, manifest.json
-- [ ] **UI-M-05**: 移动端 API — Shot Card bundles 接口，分镜逐条分页，渐进加载
+- [x] **UI-M-05**: 移动端 API — Shot Card bundles 接口，分镜逐条分页，渐进加载
 
 ### AI Audit (AI)
 
@@ -129,7 +129,7 @@
 | UI-M-02 | Phase 21 | Pending |
 | UI-M-03 | Phase 21 | Pending |
 | UI-M-04 | Phase 21 | Pending |
-| UI-M-05 | Phase 21 | Pending |
+| UI-M-05 | Phase 21 | Complete |
 | AUDIT-01 | Phase 22 | Pending |
 | AUDIT-02 | Phase 22 | Pending |
 | AUDIT-03 | Phase 22 | Pending |

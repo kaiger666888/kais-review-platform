@@ -158,10 +158,10 @@ Plans:
   3. Service Worker caches the 20 most recent Shot Cards and manifest.json enables install-to-homescreen; the app loads cached cards when offline
   4. Mobile API endpoint returns Shot Card bundles (visual + audio + narrative) paginated shot-by-shot with progressive loading (visual first, audio async)
 **UI hint**: yes
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 21-01-PLAN.md — Mobile API endpoints: flat Shot Card bundles with cursor pagination, async audio loading, swipe-decision endpoint (UI-M-05)
+- [x] 21-01-PLAN.md — Mobile API endpoints: flat Shot Card bundles with cursor pagination, async audio loading, swipe-decision endpoint (UI-M-05)
 - [ ] 21-02-PLAN.md — PWA card flow: gesture controls via Alpine.js touch events, context bar, Service Worker offline cache, manifest.json, standalone dark-themed page (UI-M-01, UI-M-02, UI-M-03, UI-M-04)
 
 ### Phase 22: Audit & Compliance
@@ -195,5 +195,5 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
 | 19. AI Audit & Capability Tokens | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 20. Desktop Workstation | v2.0 | 1/3 | In Progress|  |
-| 21. Mobile PWA | v2.0 | 0/2 | Not started | - |
+| 21. Mobile PWA | v2.0 | 1/2 | In Progress|  |
 | 22. Audit & Compliance | v2.0 | 0/3 | Not started | - |
