@@ -141,10 +141,10 @@ Plans:
   4. Multiple Shot Cards can be selected via Ctrl/Shift in the left panel and approved, rejected, or suspended in a single batch action
   5. Video playback streams from a media endpoint with timeline scrubbing; first/last frame thumbnails are auto-generated; candidate thumbnails in a grid allow one-click switching between draw results
 **UI hint**: yes
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 20-01-PLAN.md — 3-column layout, shot queue panel with cursor pagination + server-side filtering, decision panel with approve/reject, candidate thumbnail grid (UI-D-01, UI-D-05)
+- [x] 20-01-PLAN.md — 3-column layout, shot queue panel with cursor pagination + server-side filtering, decision panel with approve/reject, candidate thumbnail grid (UI-D-01, UI-D-05)
 - [ ] 20-02-PLAN.md — Media preview infrastructure: MinIO presigned URL endpoint, HTML5 video player with Canvas frame extraction, candidate grid with scores (MEDIA-01, MEDIA-02, MEDIA-03)
 - [ ] 20-03-PLAN.md — Keyboard shortcuts via Alpine.js @keydown.document, dual-column comparison view, batch selection (Ctrl/Shift) + batch operations, Git policy drawer (UI-D-02, UI-D-03, UI-D-04)
 
@@ -194,6 +194,6 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
 | 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
 | 19. AI Audit & Capability Tokens | v2.0 | 2/2 | Complete    | 2026-05-16 |
-| 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |
+| 20. Desktop Workstation | v2.0 | 1/3 | In Progress|  |
 | 21. Mobile PWA | v2.0 | 0/2 | Not started | - |
 | 22. Audit & Compliance | v2.0 | 0/3 | Not started | - |

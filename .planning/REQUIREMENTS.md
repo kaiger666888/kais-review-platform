@@ -38,11 +38,11 @@
 
 ### Desktop Workstation (UI-D)
 
-- [ ] **UI-D-01**: 三栏工作台布局 — 左栏分镜队列（项目/场次/风险筛选）、中栏 Shot Card 预览（视频播放器/帧查看器/候选阵列）、右栏决策面板（叙事上下文/提示词/节点状态/决策按钮）
+- [x] **UI-D-01**: 三栏工作台布局 — 左栏分镜队列（项目/场次/风险筛选）、中栏 Shot Card 预览（视频播放器/帧查看器/候选阵列）、右栏决策面板（叙事上下文/提示词/节点状态/决策按钮）
 - [ ] **UI-D-02**: 键盘快捷键 — Space 播放/暂停, Y/N 通过/拒绝, J/K 切换 Shot, D Diff 对比, B 批量, G Git 策略, L 日志
 - [ ] **UI-D-03**: 双栏对比 — 首帧 vs 尾帧, 当前候选 vs 历史版本, 当前 vs 参考图
 - [ ] **UI-D-04**: 批量操作 — Ctrl/Shift 多选左栏 Shot，一键批量决策（通过/拒绝/挂起）
-- [ ] **UI-D-05**: 候选阵列 — 同一 Shot 多抽卡结果缩略图阵列，点击无缝切换
+- [x] **UI-D-05**: 候选阵列 — 同一 Shot 多抽卡结果缩略图阵列，点击无缝切换
 
 ### Mobile PWA (UI-M)
 
@@ -117,11 +117,11 @@
 | AI-03 | Phase 19 | Complete |
 | AI-04 | Phase 19 | Complete |
 | AI-05 | Phase 19 | Complete |
-| UI-D-01 | Phase 20 | Pending |
+| UI-D-01 | Phase 20 | Complete |
 | UI-D-02 | Phase 20 | Pending |
 | UI-D-03 | Phase 20 | Pending |
 | UI-D-04 | Phase 20 | Pending |
-| UI-D-05 | Phase 20 | Pending |
+| UI-D-05 | Phase 20 | Complete |
 | MEDIA-01 | Phase 20 | Pending |
 | MEDIA-02 | Phase 20 | Pending |
 | MEDIA-03 | Phase 20 | Pending |

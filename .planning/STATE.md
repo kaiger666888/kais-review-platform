@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 19-01-PLAN.md
-last_updated: "2026-05-16T15:40:40.305Z"
+status: executing
+stopped_at: Completed 20-01-PLAN.md
+last_updated: "2026-05-16T16:52:42.419Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 10
+  total_plans: 14
+  completed_plans: 11
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-08)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 19 — ai-audit-capability-tokens
+**Current focus:** Phase 20 — Desktop Workstation
 
 ## Current Position
 
-Phase: 20
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 20 (Desktop Workstation) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-05-16
 
 Progress: [##########] 100%
@@ -72,6 +72,7 @@ Progress: [##########] 100%
 | Phase 18 P03 | 7min | 2 tasks | 4 files |
 | Phase 19 P02 | 7min | 1 tasks | 5 files |
 | Phase 19 P01 | 16min | 2 tasks | 12 files |
+| Phase 20 P01 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Recent decisions affecting current work:
 - [Phase 19]: JSON type (not JSONB) in ORM models for SQLite test compatibility; migration uses JSONB for PostgreSQL
 - [Phase 19]: Shadow mode records AI scores alongside human decisions without affecting routing decisions
 - [Phase 19]: write_feedback is Phase 0 stub: structlog logging only, MinIO write deferred to future phase
+- [Phase 20]: OOB swap pattern for dual-panel update: single HTMX request updates both decision panel and media preview
+- [Phase 20]: HTMX wrapper routes for approve/reject instead of direct JSON API, enabling queue refresh + toast in single response
 
 ### Pending Todos
 
@@ -136,6 +139,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T15:32:55.538Z
-Stopped at: Completed 19-01-PLAN.md
+Last session: 2026-05-16T16:52:42.417Z
+Stopped at: Completed 20-01-PLAN.md
 Resume file: None
