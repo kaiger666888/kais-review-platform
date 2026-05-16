@@ -41,7 +41,7 @@
 
 Full rewrite from generic review queue to Shot Card-driven pipeline governance platform. PostgreSQL replaces SQLite, GitOps version control for policies, desktop 3-column workstation + mobile PWA card flow dual-frontend, AI audit Phase 0 stubs, tiered storage, Merkle Root audit anchoring.
 
-- [ ] **Phase 15: Foundation** — Shot Card data model, PostgreSQL migration, Docker Compose expansion, config & dependency updates
+- [x] **Phase 15: Foundation** — Shot Card data model, PostgreSQL migration, Docker Compose expansion, config & dependency updates (completed 2026-05-16)
 - [ ] **Phase 16: Shot Card Aggregation** — Aggregator, topology collapser, progressive fill engine
 - [ ] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking
 - [ ] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements
@@ -62,7 +62,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
   3. Application connects to PostgreSQL via asyncpg, all existing V1 integration tests pass against the new database (or V1 code is cleanly removed)
   4. Settings class loads git_repo_url, postgres_url, minio_endpoint, openclaw_event_url, capability_token_secret from environment
   5. requirements.txt includes asyncpg, gitpython, minio and excludes aiosqlite
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 15-01-PLAN.md — Shot Card data model (ShotCard + AuditEntry SQLAlchemy models, Pydantic schemas, PostgreSQL async engine, Alembic migration, TimescaleDB init) -- completed 2026-05-16
@@ -189,7 +189,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 15. Foundation | v2.0 | 0/2 | Planned | - |
+| 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
 | 16. Shot Card Aggregation | v2.0 | 0/2 | Not started | - |
 | 17. GitOps Policy Engine | v2.0 | 0/2 | Not started | - |
 | 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
