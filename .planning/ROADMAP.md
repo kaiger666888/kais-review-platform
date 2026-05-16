@@ -91,11 +91,11 @@ Plans:
   2. Multiple policies (global + project + temporary) are evaluated in stacked order with deterministic precedence, and the effective policy is logged
   3. Every Shot Card stores policy_commit_sha, workflow_version, and execution_id in its provenance field, and these are queryable in audit records
   4. Policy YAML files are read from a Git repo at a specific commit SHA, and changes to policy files in the repo are reflected on next evaluation without application restart
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 17-01: Enhanced policy engine (Shot Card input, policy stacking, narrative context)
-- [ ] 17-02: Git integration for policy-as-code + provenance tracking
+- [ ] 17-01-PLAN.md — ShotCardPolicyEngine with Shot Card evaluation, policy stacking, narrative context awareness + GitPolicyProvider with SHA-based caching (POL-01, POL-02)
+- [ ] 17-02-PLAN.md — Wire policy evaluation into aggregator pipeline with provenance writeback and audit entry creation (POL-01, POL-03)
 
 ### Phase 18: Routing & Checkpoints
 **Goal**: Shot Cards are dynamically routed to the correct review outlet with priority ordering, and pipeline execution state is preserved for resume after approval
