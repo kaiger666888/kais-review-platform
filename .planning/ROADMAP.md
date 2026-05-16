@@ -175,10 +175,10 @@ Plans:
   4. Users with admin role can manage policies, reviewer role can access desktop/mobile review, auditor role has read-only analytics access, and ai_service role can submit scores -- each role sees only authorized UI and API endpoints
   5. Desktop audit cockpit shows a timeline of review decisions, statistical panels (throughput, rejection reasons, policy hit rates), and policy version diff mode; mobile audit page shows dashboard stats and review history waterfall
 **UI hint**: yes
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 22-01-PLAN.md — Merkle Root anchoring + dual-write audit recorder + tiered storage lifecycle (AUDIT-01, AUDIT-02, DB-02, DB-03)
+- [x] 22-01-PLAN.md — Merkle Root anchoring + dual-write audit recorder + tiered storage lifecycle (AUDIT-01, AUDIT-02, DB-02, DB-03)
 - [x] 22-02-PLAN.md — Multi-role authentication: Role enum, JWT role claims, require_role dependencies, role-aware token exchange (AUTH-01)
 - [ ] 22-03-PLAN.md — Desktop audit cockpit + mobile audit dashboard: timeline, stats, policy diff, waterfall (AUDIT-03, AUDIT-04)
 
@@ -196,4 +196,4 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 19. AI Audit & Capability Tokens | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 20. Desktop Workstation | v2.0 | 1/3 | In Progress|  |
 | 21. Mobile PWA | v2.0 | 2/2 | Complete   | 2026-05-16 |
-| 22. Audit & Compliance | v2.0 | 1/3 | In Progress|  |
+| 22. Audit & Compliance | v2.0 | 2/3 | In Progress|  |

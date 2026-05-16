@@ -32,8 +32,8 @@
 ### Database & Storage (DB)
 
 - [ ] **DB-01**: PostgreSQL + TimescaleDB 迁移 — 替换 SQLite，hypertable 配置审计数据，asyncpg 驱动
-- [ ] **DB-02**: 分层存储架构 — 热存储 PostgreSQL (30d), 温存储 MinIO JSONL (1yr), 冷存储 WORM (永久)
-- [ ] **DB-03**: 数据生命周期管理 — arq cron 自动归档 worker，可配置保留策略
+- [x] **DB-02**: 分层存储架构 — 热存储 PostgreSQL (30d), 温存储 MinIO JSONL (1yr), 冷存储 WORM (永久)
+- [x] **DB-03**: 数据生命周期管理 — arq cron 自动归档 worker，可配置保留策略
 - [ ] **DB-04**: Docker Compose 扩展 — PostgreSQL 容器 (~200MB) + MinIO 容器 (~128MB)，总内存 < 1GB
 
 ### Desktop Workstation (UI-D)
@@ -62,8 +62,8 @@
 
 ### Audit & Compliance (AUDIT)
 
-- [ ] **AUDIT-01**: Merkle Root 锚定 — 每日审计日志 Merkle Root 写入 Git，防篡改校验
-- [ ] **AUDIT-02**: 双写审计记录器 — 实时写入 PostgreSQL + 异步归档到 MinIO
+- [x] **AUDIT-01**: Merkle Root 锚定 — 每日审计日志 Merkle Root 写入 Git，防篡改校验
+- [x] **AUDIT-02**: 双写审计记录器 — 实时写入 PostgreSQL + 异步归档到 MinIO
 - [ ] **AUDIT-03**: 桌面审计驾驶舱 — 时间轴视图、统计面板（吞吐量/拒绝原因/策略命中）、策略版本 Diff 模式
 - [ ] **AUDIT-04**: 移动端审计页 — Dashboard 统计、瀑布流审核历史、详情页
 
@@ -130,13 +130,13 @@
 | UI-M-03 | Phase 21 | Complete |
 | UI-M-04 | Phase 21 | Complete |
 | UI-M-05 | Phase 21 | Complete |
-| AUDIT-01 | Phase 22 | Pending |
-| AUDIT-02 | Phase 22 | Pending |
+| AUDIT-01 | Phase 22 | Complete |
+| AUDIT-02 | Phase 22 | Complete |
 | AUDIT-03 | Phase 22 | Pending |
 | AUDIT-04 | Phase 22 | Pending |
 | AUTH-01 | Phase 22 | Complete |
-| DB-02 | Phase 22 | Pending |
-| DB-03 | Phase 22 | Pending |
+| DB-02 | Phase 22 | Complete |
+| DB-03 | Phase 22 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 42 total
