@@ -1,0 +1,36 @@
+<!-- Mobile Context Bar: shows scene, shot number, emotion curve for current card -->
+<div class="fixed top-0 inset-x-0 z-40 bg-gray-800 border-b border-gray-700 px-4 py-2"
+     style="padding-top: env(safe-area-inset-top);">
+  <div class="flex items-center justify-between h-8">
+    <!-- Left: Scene name -->
+    <span class="text-white text-sm font-bold truncate max-w-[40%]"
+          x-text="cards.length > 0 ? (cards[currentIndex].scene || 'Unknown scene') : '--'">
+    </span>
+
+    <!-- Center: Shot number badge -->
+    <span class="text-gray-300 text-xs font-mono bg-gray-700 px-2 py-0.5 rounded"
+          x-text="cards.length > 0 ? ('Shot ' + (currentIndex + 1) + '/' + cards.length) : '--'">
+    </span>
+
+    <!-- Right: Emotion curve label -->
+    <span class="text-xs px-2 py-0.5 rounded"
+          :class="{
+            'bg-green-900 text-green-300': cards.length > 0 && cards[currentIndex].emotion_curve && cards[currentIndex].emotion_curve.toLowerCase().includes('positive'),
+            'bg-yellow-900 text-yellow-300': cards.length > 0 && cards[currentIndex].emotion_curve && (cards[currentIndex].emotion_curve.toLowerCase().includes('neutral') || cards[currentIndex].emotion_curve.toLowerCase().includes('calm')),
+            'bg-red-900 text-red-300': cards.length > 0 && cards[currentIndex].emotion_curve && (cards[currentIndex].emotion_curve.toLowerCase().includes('negative') || cards[currentIndex].emotion_curve.toLowerCase().includes('tension')),
+            'bg-gray-700 text-gray-400': cards.length > 0 && cards[currentIndex].emotion_curve && !['positive','neutral','calm','negative','tension'].some(function(e) { return cards[currentIndex].emotion_curve.toLowerCase().includes(e); }),
+            'bg-gray-700 text-gray-500': cards.length === 0 || !cards[currentIndex].emotion_curve
+          }"
+          x-text="cards.length > 0 && cards[currentIndex].emotion_curve ? cards[currentIndex].emotion_curve : '--'">
+    </span>
+  </div>
+
+  <!-- Continuity tags (below main bar) -->
+  <template x-if="cards.length > 0 && cards[currentIndex].continuity_tags && cards[currentIndex].continuity_tags.length > 0">
+    <div class="flex flex-wrap gap-1 mt-1">
+      <template x-for="tag in cards[currentIndex].continuity_tags" :key="tag">
+        <span class="text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded" x-text="tag"></span>
+      </template>
+    </div>
+  </template>
+</div>
