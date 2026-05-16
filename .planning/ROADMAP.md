@@ -94,7 +94,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — ShotCardPolicyEngine with Shot Card evaluation, policy stacking, narrative context awareness + GitPolicyProvider with SHA-based caching (POL-01, POL-02)
+- [x] 17-01-PLAN.md — ShotCardPolicyEngine with Shot Card evaluation, policy stacking, narrative context awareness + GitPolicyProvider with SHA-based caching (POL-01, POL-02) -- completed 2026-05-16
 - [ ] 17-02-PLAN.md — Wire policy evaluation into aggregator pipeline with provenance writeback and audit entry creation (POL-01, POL-03)
 
 ### Phase 18: Routing & Checkpoints
@@ -191,7 +191,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 |-------|-----------|----------------|--------|-----------|
 | 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
 | 16. Shot Card Aggregation | v2.0 | 2/2 | Complete    | 2026-05-16 |
-| 17. GitOps Policy Engine | v2.0 | 0/2 | Not started | - |
+| 17. GitOps Policy Engine | v2.0 | 1/2 | In progress | - |
 | 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
 | 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
 | 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |

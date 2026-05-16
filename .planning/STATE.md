@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-05-16T08:32:49.408Z"
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-05-16T11:30:27Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 8
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 0
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+  percent: 31
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-07)
+See: .planning/PROJECT.md (updated 2026-05-16)
 
-**Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 16 — shot-card-aggregation
+**Core value:** Shot Card-driven pipeline governance -- every AI production task must pass policy evaluation before execution
+**Current focus:** Phase 17 — gitops-policy-engine
 
 ## Current Position
 
 Phase: 17
-Plan: Not started
-Status: Executing Phase 16
+Plan: 01 complete, 02 next
+Status: Plan 17-01 complete
 Last activity: 2026-05-16
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████░░░░░░] 31%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 12 P01 | 4min | 2 tasks | 3 files |
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 15 P02 | 2min | 2 tasks | 6 files |
+| Phase 17 P01 | 12min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ Recent decisions affecting current work:
 - [Phase 15]: PostgreSQL default URL uses Docker service name 'postgres' not localhost
 - [Phase 15]: MinIO exposes API (9000) and Console (9001) internally only
 - [Phase 15]: init-db.sql mounted via docker-entrypoint-initdb.d, not copied into API image
+- [Phase 17]: Re-added Disposition enum to schemas.py for V1 policy.py backward compatibility
+- [Phase 17]: ShotCardPolicyEngine inherits from V1 PolicyEngine rather than replacing it
+- [Phase 17]: GitPolicyProvider uses MockTree/MockBlob patterns for test isolation from GitPython
 
 ### Pending Todos
 
@@ -122,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T07:35:26.050Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-05-16T11:30:27Z
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None
