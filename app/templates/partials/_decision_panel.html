@@ -123,63 +123,9 @@
   {% endif %}
 </div>
 
-<!-- Media Preview OOB swap -->
+<!-- Media Preview OOB swap — includes the full media player partial -->
 <div id="media-preview" hx-swap-oob="true">
-  {% if shot.visual_bundle and shot.visual_bundle.get('video_clip') %}
-  <div class="flex-1 flex flex-col gap-3">
-    <div class="relative bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-      <span class="text-gray-500 text-sm">Video: {{ shot.visual_bundle.video_clip.get('duration', '?') }}s</span>
-    </div>
-    {% if shot.visual_bundle.get('candidates') %}
-    <div class="grid grid-cols-3 gap-2">
-      {% for cand in shot.visual_bundle.get('candidates', []) %}
-      <div class="relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 cursor-pointer">
-        {% if cand.get('keyframes', {}).get('first', {}).get('url') %}
-        <img class="w-full h-12 object-cover" src="{{ cand['keyframes']['first']['url'] }}" alt="Candidate {{ loop.index }}" />
-        {% else %}
-        <div class="w-full h-12 bg-gray-700 flex items-center justify-center text-gray-500 text-xs">C{{ loop.index }}</div>
-        {% endif %}
-        <span class="absolute bottom-0 right-0 text-xs bg-black/60 px-1">{{ loop.index }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% elif shot.visual_bundle and shot.visual_bundle.get('keyframes') %}
-  <div class="flex-1 flex flex-col gap-3">
-    {% set kf = shot.visual_bundle.get('keyframes', {}) %}
-    <div class="grid grid-cols-2 gap-2">
-      {% if kf.get('first', {}).get('url') %}
-      <div class="rounded overflow-hidden border border-gray-700">
-        <img class="w-full aspect-video object-cover" src="{{ kf['first']['url'] }}" alt="First frame" />
-        <div class="text-xs text-gray-500 text-center py-1">First Frame</div>
-      </div>
-      {% endif %}
-      {% if kf.get('last', {}).get('url') %}
-      <div class="rounded overflow-hidden border border-gray-700">
-        <img class="w-full aspect-video object-cover" src="{{ kf['last']['url'] }}" alt="Last frame" />
-        <div class="text-xs text-gray-500 text-center py-1">Last Frame</div>
-      </div>
-      {% endif %}
-    </div>
-    {% if shot.visual_bundle.get('candidates') %}
-    <div class="grid grid-cols-3 gap-2">
-      {% for cand in shot.visual_bundle.get('candidates', []) %}
-      <div class="relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 cursor-pointer">
-        {% if cand.get('keyframes', {}).get('first', {}).get('url') %}
-        <img class="w-full h-12 object-cover" src="{{ cand['keyframes']['first']['url'] }}" alt="Candidate {{ loop.index }}" />
-        {% else %}
-        <div class="w-full h-12 bg-gray-700 flex items-center justify-center text-gray-500 text-xs">C{{ loop.index }}</div>
-        {% endif %}
-        <span class="absolute bottom-0 right-0 text-xs bg-black/60 px-1">{{ loop.index }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% else %}
-  <div class="flex-1 flex items-center justify-center text-gray-500 text-sm">No media available</div>
-  {% endif %}
+  {% include "partials/_media_player.html" %}
 </div>
 
 {% else %}
