@@ -6,6 +6,7 @@ from sqlalchemy import text
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.ab_tests import router as ab_tests_router
 from app.api.v1.actions import router as actions_router
@@ -94,6 +95,9 @@ app = FastAPI(
     title="Kai's Review Platform",
     version="1.0.0",
 )
+
+# Mount static files for PWA (manifest, service worker, icons)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Register API routers
 app.include_router(ab_tests_router)

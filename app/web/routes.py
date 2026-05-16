@@ -548,3 +548,23 @@ async def batch_reject_shot_cards_htmx(request: Request):
         "showToast": {"message": msg, "type": "success" if rejected_count > 0 else "warning"},
     })
     return rendered
+
+
+# ---------------------------------------------------------------------------
+# Mobile PWA Routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/mobile", response_class=HTMLResponse)
+async def mobile_pwa(request: Request):
+    """Mobile PWA card flow for Shot Card review."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    return templates.TemplateResponse(request, "pages/mobile.html", {
+        "user": user,
+    })

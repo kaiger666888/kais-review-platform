@@ -1,0 +1,22 @@
+{
+  "name": "Kai's Review Platform",
+  "short_name": "Review",
+  "description": "Shot Card review for AI pipeline governance",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#1f2937",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
