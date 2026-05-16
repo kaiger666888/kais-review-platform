@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Desktop Workstation - Kai's Review Platform{% endblock %}
+
+{% block content %}
+<div x-data="workstationState()"
+     class="h-screen flex flex-col bg-gray-900"
+     style="margin: -8px; padding-bottom: 0;">
+
+  <!-- Top header bar -->
+  <header class="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4 shrink-0">
+    <h1 class="text-gray-200 text-sm font-semibold">Desktop Workstation</h1>
+    <span class="ml-3 text-gray-500 text-xs" x-text="activeShotId ? 'Shot #' + activeShotId : ''"></span>
+    <!-- Batch toolbar (visible when batch mode active and items selected) -->
+    <template x-if="batchMode && selectedItems.length > 0">
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-yellow-400 text-xs" x-text="selectedItems.length + ' selected'"></span>
+        <button class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-500">Approve</button>
+        <button class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-500">Reject</button>
+      </div>
+    </template>
+  </header>
+
+  <!-- 3-column grid -->
+  <div class="flex-1 grid grid-cols-[25fr_45fr_30fr] overflow-hidden">
+
+    <!-- LEFT: Shot Queue -->
+    <div class="border-r border-gray-700 flex flex-col overflow-hidden"
+         x-show="!leftCollapsed">
+      <!-- Filter controls -->
+      {% include "partials/_shot_queue_filters.html" %}
+      <!-- Shot list (HTMX infinite scroll) -->
+      <div id="shot-queue-list" class="flex-1 overflow-y-auto"
+           hx-get="/partials/shot-queue"
+           hx-trigger="load"
+           hx-target="#shot-queue-list"
+           hx-swap="innerHTML">
+      </div>
+    </div>
+
+    <!-- CENTER: Media Preview -->
+    <div class="flex flex-col overflow-hidden p-4">
+      <div id="media-preview" class="flex-1 flex items-center justify-center">
+        <span class="text-gray-500 text-sm">Select a shot card to preview</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Decision Panel -->
+    <div class="border-l border-gray-700 flex flex-col overflow-y-auto p-4">
+      <div id="decision-panel">
+        <span class="text-gray-500 text-sm">No shot selected</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function workstationState() {
+  return {
+    activeShotId: null,
+    activeShot: null,
+    selectedItems: [],
+    lastClickedIndex: null,
+    showComparison: false,
+    showPolicy: false,
+    batchMode: false,
+    leftCollapsed: false,
+    rightCollapsed: false,
+    allShots: [],
+    selectedCandidate: 0,
+
+    selectShot(shotId) {
+      this.activeShotId = shotId;
+    },
+  };
+}
+</script>
+{% endblock %}

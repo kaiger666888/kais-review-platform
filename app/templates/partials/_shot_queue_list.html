@@ -1,0 +1,17 @@
+{% if shots %}
+  {% for shot in shots %}
+    {% include "partials/_shot_queue_card.html" %}
+  {% endfor %}
+
+  {% if has_more %}
+  <div hx-get="/partials/shot-queue?cursor={{ next_cursor }}{% if current_project %}&project={{ current_project }}{% endif %}{% if current_scene %}&scene={{ current_scene }}{% endif %}{% if current_risk %}&risk={{ current_risk }}{% endif %}"
+       hx-trigger="intersect once"
+       hx-swap="afterend"
+       hx-target="this"
+       class="p-4 text-center text-gray-500 text-xs">
+    Loading more...
+  </div>
+  {% endif %}
+{% else %}
+  <div class="p-4 text-center text-gray-500 text-sm">No shot cards found</div>
+{% endif %}

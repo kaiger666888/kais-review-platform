@@ -7,12 +7,13 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2_fragments.fastapi import Jinja2Blocks
-from sqlalchemy import select, func
+from sqlalchemy import select, func, distinct
 
 from app.core.database import async_session_factory
 from app.core.state_machine import transition_state, StateConflictError, InvalidTransitionError
 from app.models.schemas import ReviewState
 from app.models.schema import Review, AuditEntry
+from app.models.shot_card import ShotCard, AuditStatus
 from app.web.auth import get_template_user
 
 router = APIRouter()
@@ -241,3 +242,89 @@ async def reject_review_htmx(request: Request, review_id: int, reason: str = For
         "showToast": {"message": "Review rejected", "type": "success"},
     })
     return rendered
+
+
+# ---------------------------------------------------------------------------
+# Desktop Workstation Routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/workstation", response_class=HTMLResponse)
+async def workstation(request: Request):
+    """Desktop workstation for efficient Shot Card review."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    return templates.TemplateResponse(request, "pages/workstation.html", {
+        "user": user,
+    })
+
+
+@router.get("/partials/shot-queue", response_class=HTMLResponse)
+async def shot_queue_partial(
+    request: Request,
+    project: str | None = None,
+    scene: str | None = None,
+    risk: str | None = None,
+    cursor: int | None = None,
+):
+    """HTMX partial: Shot card queue with filters and cursor-based pagination."""
+    PAGE_SIZE = 30
+    async with async_session_factory() as session:
+        query = select(ShotCard).order_by(ShotCard.id.asc()).limit(PAGE_SIZE + 1)
+
+        if cursor:
+            query = query.where(ShotCard.id > cursor)
+        if project:
+            query = query.where(ShotCard.project_id == project)
+        if risk:
+            query = query.where(ShotCard.audit_status == risk)
+        if scene:
+            query = query.where(
+                ShotCard.narrative_context["scene"].astext == scene
+            )
+
+        result = await session.execute(query)
+        shots = list(result.scalars().all())
+
+        has_more = len(shots) > PAGE_SIZE
+        shots = shots[:PAGE_SIZE]
+        next_cursor = shots[-1].id if has_more and shots else None
+
+        # Fetch distinct project IDs for filter dropdown
+        project_result = await session.execute(
+            select(distinct(ShotCard.project_id)).order_by(ShotCard.project_id)
+        )
+        projects = [row[0] for row in project_result.all()]
+
+    return templates.TemplateResponse(request, "partials/_shot_queue_list.html", {
+        "shots": shots,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "projects": projects,
+        "current_project": project,
+        "current_scene": scene,
+        "current_risk": risk,
+    })
+
+
+@router.get("/partials/shot-card-detail/{shot_card_id}", response_class=HTMLResponse)
+async def shot_card_detail_partial(request: Request, shot_card_id: int):
+    """HTMX partial: Shot card detail for center and right panels.
+
+    Returns the decision panel content as the primary response,
+    plus an OOB swap element for #media-preview to update the center panel.
+    """
+    async with async_session_factory() as session:
+        shot_card = await session.get(ShotCard, shot_card_id)
+
+    if shot_card is None:
+        return HTMLResponse("<p>Shot card not found.</p>", status_code=404)
+
+    return templates.TemplateResponse(request, "partials/_decision_panel.html", {
+        "shot": shot_card,
+    })
