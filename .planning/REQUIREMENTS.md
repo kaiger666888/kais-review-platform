@@ -46,10 +46,10 @@
 
 ### Mobile PWA (UI-M)
 
-- [ ] **UI-M-01**: 卡片流布局 — 纵向滑动切换分镜（叙事连续性），横向滑动切换候选，首帧/尾帧始终可见
-- [ ] **UI-M-02**: 手势操作 — 左滑通过、右滑拒绝、上滑详情、双指放大
-- [ ] **UI-M-03**: 上下文条 — 卡片顶部显示场次、镜头编号、情绪曲线
-- [ ] **UI-M-04**: PWA 离线缓存 — Service Worker 缓存最近 20 条 Shot Card, manifest.json
+- [x] **UI-M-01**: 卡片流布局 — 纵向滑动切换分镜（叙事连续性），横向滑动切换候选，首帧/尾帧始终可见
+- [x] **UI-M-02**: 手势操作 — 左滑通过、右滑拒绝、上滑详情、双指放大
+- [x] **UI-M-03**: 上下文条 — 卡片顶部显示场次、镜头编号、情绪曲线
+- [x] **UI-M-04**: PWA 离线缓存 — Service Worker 缓存最近 20 条 Shot Card, manifest.json
 - [x] **UI-M-05**: 移动端 API — Shot Card bundles 接口，分镜逐条分页，渐进加载
 
 ### AI Audit (AI)
@@ -125,10 +125,10 @@
 | MEDIA-01 | Phase 20 | Pending |
 | MEDIA-02 | Phase 20 | Pending |
 | MEDIA-03 | Phase 20 | Pending |
-| UI-M-01 | Phase 21 | Pending |
-| UI-M-02 | Phase 21 | Pending |
-| UI-M-03 | Phase 21 | Pending |
-| UI-M-04 | Phase 21 | Pending |
+| UI-M-01 | Phase 21 | Complete |
+| UI-M-02 | Phase 21 | Complete |
+| UI-M-03 | Phase 21 | Complete |
+| UI-M-04 | Phase 21 | Complete |
 | UI-M-05 | Phase 21 | Complete |
 | AUDIT-01 | Phase 22 | Pending |
 | AUDIT-02 | Phase 22 | Pending |

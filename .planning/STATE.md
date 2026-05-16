@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 21-01-PLAN.md
-last_updated: "2026-05-16T17:18:42.444Z"
+status: verifying
+stopped_at: Completed 21-02-PLAN.md
+last_updated: "2026-05-16T17:25:01.052Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 Phase: 20 (Desktop Workstation) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-16
 
 Progress: [##########] 100%
@@ -74,6 +74,7 @@ Progress: [##########] 100%
 | Phase 19 P01 | 16min | 2 tasks | 12 files |
 | Phase 20 P01 | 5min | 2 tasks | 8 files |
 | Phase 21 P01 | 3min | 2 tasks | 3 files |
+| Phase 21 P02 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,10 @@ Recent decisions affecting current work:
 - [Phase 20]: HTMX wrapper routes for approve/reject instead of direct JSON API, enabling queue refresh + toast in single response
 - [Phase 21]: SwipeDecisionRequest uses Pydantic body model with Literal action field, not Query params
 - [Phase 21]: Default page size 10 for mobile endpoint (vs 20 desktop) to minimize payload on constrained networks
+- [Phase 21]: Standalone PWA page (no base.html) for full viewport gesture control
+- [Phase 21]: Swipe threshold 80px for gesture classification (sensitivity vs false-positive balance)
+- [Phase 21]: Service Worker network-first for API, cache-first for page shell
+- [Phase 21]: Cards removed from local array after swipe decision -- mobile shows only actionable cards
 
 ### Pending Todos
 
@@ -142,6 +147,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T17:18:42.442Z
-Stopped at: Completed 21-01-PLAN.md
+Last session: 2026-05-16T17:25:01.050Z
+Stopped at: Completed 21-02-PLAN.md
 Resume file: None

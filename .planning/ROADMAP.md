@@ -47,7 +47,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 - [x] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements (completed 2026-05-16)
 - [x] **Phase 19: AI Audit & Capability Tokens** — AI audit Phase 0 stubs, capability token issuance, model registry placeholders (completed 2026-05-16)
 - [ ] **Phase 20: Desktop Workstation** — 3-column UI, keyboard shortcuts, dual-column comparison, batch operations, candidate array, media preview
-- [ ] **Phase 21: Mobile PWA** — Card flow layout, gesture controls, offline caching, mobile API endpoints
+- [x] **Phase 21: Mobile PWA** — Card flow layout, gesture controls, offline caching, mobile API endpoints (completed 2026-05-16)
 - [ ] **Phase 22: Audit & Compliance** — Merkle Root anchoring, dual-write audit recorder, tiered storage, data lifecycle, multi-role auth, audit cockpit dashboards
 
 ## Phase Details
@@ -158,11 +158,11 @@ Plans:
   3. Service Worker caches the 20 most recent Shot Cards and manifest.json enables install-to-homescreen; the app loads cached cards when offline
   4. Mobile API endpoint returns Shot Card bundles (visual + audio + narrative) paginated shot-by-shot with progressive loading (visual first, audio async)
 **UI hint**: yes
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 21-01-PLAN.md — Mobile API endpoints: flat Shot Card bundles with cursor pagination, async audio loading, swipe-decision endpoint (UI-M-05)
-- [ ] 21-02-PLAN.md — PWA card flow: gesture controls via Alpine.js touch events, context bar, Service Worker offline cache, manifest.json, standalone dark-themed page (UI-M-01, UI-M-02, UI-M-03, UI-M-04)
+- [x] 21-02-PLAN.md — PWA card flow: gesture controls via Alpine.js touch events, context bar, Service Worker offline cache, manifest.json, standalone dark-themed page (UI-M-01, UI-M-02, UI-M-03, UI-M-04)
 
 ### Phase 22: Audit & Compliance
 **Goal**: Every decision is tamper-evident via Merkle Root anchoring, tiered storage manages data lifecycle automatically, and multi-role auth controls access across the platform
@@ -195,5 +195,5 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
 | 19. AI Audit & Capability Tokens | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 20. Desktop Workstation | v2.0 | 1/3 | In Progress|  |
-| 21. Mobile PWA | v2.0 | 1/2 | In Progress|  |
+| 21. Mobile PWA | v2.0 | 2/2 | Complete   | 2026-05-16 |
 | 22. Audit & Compliance | v2.0 | 0/3 | Not started | - |
