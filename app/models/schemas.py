@@ -144,6 +144,32 @@ class ErrorResponse(BaseModel):
     detail: str | None = None
 
 
+# --- Batch Operation Models ---
+
+
+class BatchApproveRequest(BaseModel):
+    review_ids: list[int] = Field(min_length=1, max_length=100)
+    comment: str | None = None
+
+
+class BatchRejectRequest(BaseModel):
+    review_ids: list[int] = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class BatchItemResult(BaseModel):
+    review_id: int
+    status: str  # "success" or "failed"
+    error: str | None = None
+
+
+class BatchResponse(BaseModel):
+    total: int
+    success_count: int
+    failure_count: int
+    items: list[BatchItemResult]
+
+
 # --- Generic Envelope Models ---
 
 T = TypeVar("T")
