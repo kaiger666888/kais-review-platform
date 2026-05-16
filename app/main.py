@@ -7,6 +7,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
 
+from app.api.v1.ab_tests import router as ab_tests_router
 from app.api.v1.actions import router as actions_router
 from app.api.v1.audit_api import router as audit_router
 from app.api.v1.auth import router as auth_router
@@ -93,6 +94,7 @@ app = FastAPI(
 )
 
 # Register API routers
+app.include_router(ab_tests_router)
 app.include_router(auth_router)
 app.include_router(reviews_router)
 app.include_router(actions_router)

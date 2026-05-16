@@ -150,6 +150,35 @@ class ErrorResponse(BaseModel):
     detail: str | None = None
 
 
+# --- A/B Test Models ---
+
+
+class ABTestCreateRequest(BaseModel):
+    """Request body for creating an A/B test batch."""
+
+    shot_ids: list[str] = Field(min_length=1, max_length=100)
+
+
+class ABTestCreateResponse(BaseModel):
+    """Response for A/B test batch creation."""
+
+    batch_id: str
+    total: int
+
+
+class ABTestPairResponse(BaseModel):
+    """Response for a single A/B test pair."""
+
+    id: int
+    batch_id: str
+    shot_id: str
+    ai_score: dict | None
+    human_decision: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # --- Batch Operation Models ---
 
 
