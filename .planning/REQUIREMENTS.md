@@ -54,11 +54,11 @@
 
 ### AI Audit (AI)
 
-- [ ] **AI-01**: AI 审计 Phase 0 — 评分插件总线返回空向量（美学/一致性/合规/技术质量/音频匹配度），路由 fallback 到人工
-- [ ] **AI-02**: 影子模式 — AI 评分持续运行但不影响决策，记录结果用于训练
-- [ ] **AI-03**: 模型注册中心（占位） — 空注册表，标记 model_unavailable
-- [ ] **AI-04**: 反馈闭环（占位） — 人工审核结果入冷存储，作为未来训练信号
-- [ ] **AI-05**: A/B 测试接口（占位） — 预留数据格式，同一批 Shot Card 并行送 AI 和人工
+- [x] **AI-01**: AI 审计 Phase 0 — 评分插件总线返回空向量（美学/一致性/合规/技术质量/音频匹配度），路由 fallback 到人工
+- [x] **AI-02**: 影子模式 — AI 评分持续运行但不影响决策，记录结果用于训练
+- [x] **AI-03**: 模型注册中心（占位） — 空注册表，标记 model_unavailable
+- [x] **AI-04**: 反馈闭环（占位） — 人工审核结果入冷存储，作为未来训练信号
+- [x] **AI-05**: A/B 测试接口（占位） — 预留数据格式，同一批 Shot Card 并行送 AI 和人工
 
 ### Audit & Compliance (AUDIT)
 
@@ -112,11 +112,11 @@
 | CHKP-02 | Phase 18 | Complete |
 | EVT-01 | Phase 18 | Complete |
 | ROUT-02 | Phase 19 | Complete |
-| AI-01 | Phase 19 | Pending |
-| AI-02 | Phase 19 | Pending |
-| AI-03 | Phase 19 | Pending |
-| AI-04 | Phase 19 | Pending |
-| AI-05 | Phase 19 | Pending |
+| AI-01 | Phase 19 | Complete |
+| AI-02 | Phase 19 | Complete |
+| AI-03 | Phase 19 | Complete |
+| AI-04 | Phase 19 | Complete |
+| AI-05 | Phase 19 | Complete |
 | UI-D-01 | Phase 20 | Pending |
 | UI-D-02 | Phase 20 | Pending |
 | UI-D-03 | Phase 20 | Pending |
