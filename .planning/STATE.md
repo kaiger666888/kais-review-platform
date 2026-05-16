@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: verifying
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-05-08T09:14:26.981Z"
-last_activity: 2026-05-08
+milestone: v1.3
+milestone_name: routing-checkpoints
+status: executing
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-05-16T12:12:11Z"
+last_activity: 2026-05-16
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
-  percent: 0
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 1
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-07)
+See: .planning/PROJECT.md (updated 2026-05-08)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 12 — dual-bot-coordination-e2e
+**Current focus:** Phase 18 — routing-checkpoints
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-08
+Phase: 18
+Plan: 01 complete
+Status: Plan complete — 18-01-PLAN.md executed
+Last activity: 2026-05-16
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P01 | 7min | 2 tasks | 3 files |
 | Phase 12 P01 | 4min | 2 tasks | 3 files |
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
+| Phase 18 P01 | 13min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,10 @@ Recent decisions affecting current work:
 - [Phase 12]: No forwarding bridge needed -- review-platform Bot is single notification channel for all source systems (documented in gold-team client)
 - [Phase 12]: aiohttp chosen for mock callback server (native server mode with AppRunner/TCPSite)
 - [Phase 12]: Audit trail verification (action field) is authoritative for approve/reject decisions, not disposition field which stores routing decision (HUMAN/AUTO/BLOCK)
+- [Phase 18]: Priority sort uses SQLAlchemy CASE expression for SQLite compatibility (no new index needed)
+- [Phase 18]: Batch operations use partial success model with 207 Multi-Status
+- [Phase 18]: Batch routes registered before parameterized routes to avoid path matching conflicts
+- [Phase 18]: Batch endpoints JWT-only (no one-time tokens) since batch is programmatic
 
 ### Pending Todos
 
@@ -118,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T09:09:01.663Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-05-16T12:12:11Z
+Stopped at: Completed 18-01-PLAN.md
 Resume file: None
