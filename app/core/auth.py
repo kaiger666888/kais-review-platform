@@ -1,5 +1,6 @@
-"""JWT authentication and one-time review token management."""
+"""JWT authentication, one-time review tokens, and capability token management."""
 
+import enum
 import secrets
 from datetime import datetime, timezone, timedelta
 
@@ -16,14 +17,30 @@ class AuthenticationError(Exception):
     pass
 
 
+class Role(str, enum.Enum):
+    """Platform roles for role-based access control.
+
+    - ADMIN: Policy management, system configuration
+    - REVIEWER: Desktop/mobile review actions (approve/reject)
+    - AUDITOR: Read-only analytics access (no approve/reject)
+    - AI_SERVICE: Score submission via scoring API endpoints
+    """
+
+    ADMIN = "admin"
+    REVIEWER = "reviewer"
+    AUDITOR = "auditor"
+    AI_SERVICE = "ai_service"
+
+
 # --- JWT Functions ---
 
 
-def create_jwt(client_id: str, jwt_secret: str, expires_minutes: int = 15) -> str:
-    """Create a short-lived JWT token with client claim."""
+def create_jwt(client_id: str, jwt_secret: str, expires_minutes: int = 15, role: str = "reviewer") -> str:
+    """Create a short-lived JWT token with client and role claims."""
     now = datetime.now(timezone.utc)
     payload = {
         "client": client_id,
+        "role": role,
         "exp": now + timedelta(minutes=expires_minutes),
         "iat": now,
     }
@@ -63,6 +80,46 @@ async def require_jwt(
 async def get_current_client(payload: dict = Depends(require_jwt)) -> str:
     """Extract client identity from validated JWT payload."""
     return payload["client"]
+
+
+# --- Role-Based Access Control ---
+
+
+def require_role(*allowed_roles: str):
+    """FastAPI dependency factory: validates JWT and checks role claim.
+
+    Returns a dependency that decodes the JWT, extracts the role claim,
+    and raises 403 if the role is not in the allowed list.
+
+    Usage:
+        @router.get("/admin-only", dependencies=[Depends(require_role(Role.ADMIN))])
+    """
+    async def _check_role(
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        settings: Settings = Depends(get_settings),
+    ) -> dict:
+        try:
+            payload = decode_jwt(credentials.credentials, settings.jwt_secret)
+        except AuthenticationError as e:
+            if "expired" in str(e).lower():
+                raise HTTPException(status_code=401, detail="Token expired")
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user_role = payload.get("role", "reviewer")
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Role '{user_role}' not authorized. Required: {list(allowed_roles)}",
+            )
+        return payload
+    return _check_role
+
+
+# Convenience role dependencies
+require_admin = require_role(Role.ADMIN)
+require_reviewer = require_role(Role.REVIEWER, Role.ADMIN)
+require_auditor = require_role(Role.AUDITOR, Role.ADMIN)
+require_ai_service = require_role(Role.AI_SERVICE)
+require_any_role = require_role(Role.ADMIN, Role.REVIEWER, Role.AUDITOR, Role.AI_SERVICE)
 
 
 # --- One-Time Review Tokens (Redis-backed) ---
