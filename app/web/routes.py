@@ -441,3 +441,110 @@ async def reject_shot_card_htmx(request: Request, shot_card_id: int, reason: str
         "showToast": {"message": "Shot card rejected", "type": "success"},
     })
     return rendered
+
+
+# ---------------------------------------------------------------------------
+# Desktop Workstation — Batch Operations
+# ---------------------------------------------------------------------------
+
+
+@router.post("/partials/shot-cards/batch/approve", response_class=HTMLResponse)
+async def batch_approve_shot_cards_htmx(request: Request):
+    """HTMX endpoint: batch approve shot cards. Accepts JSON body with shot_card_ids."""
+    body = await request.json()
+    shot_card_ids = body.get("shot_card_ids", [])
+    if not shot_card_ids:
+        return HTMLResponse(
+            "<p>No shot cards selected.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "No shot cards selected", "type": "error"}})},
+        )
+
+    approved_count = 0
+    errors = []
+
+    async with async_session_factory() as session:
+        for card_id in shot_card_ids:
+            shot_card = await session.get(ShotCard, card_id)
+            if shot_card is None:
+                errors.append(f"Shot card {card_id} not found")
+                continue
+            if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+                errors.append(f"Shot card {card_id}: status is {shot_card.audit_status}")
+                continue
+            shot_card.audit_status = AuditStatus.APPROVED
+            approved_count += 1
+
+        await session.commit()
+
+    # Re-fetch shot queue
+    shots, has_more, next_cursor, projects = await _fetch_shot_queue()
+
+    rendered = templates.TemplateResponse(request, "partials/_shot_queue_list.html", {
+        "shots": shots,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "projects": projects,
+        "current_project": None,
+        "current_scene": None,
+        "current_risk": None,
+    })
+
+    msg = f"{approved_count} shot card(s) approved"
+    if errors:
+        msg += f" ({len(errors)} skipped)"
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": msg, "type": "success" if approved_count > 0 else "warning"},
+    })
+    return rendered
+
+
+@router.post("/partials/shot-cards/batch/reject", response_class=HTMLResponse)
+async def batch_reject_shot_cards_htmx(request: Request):
+    """HTMX endpoint: batch reject shot cards. Accepts JSON body with shot_card_ids and reason."""
+    body = await request.json()
+    shot_card_ids = body.get("shot_card_ids", [])
+    reason = body.get("reason", "")
+
+    if not shot_card_ids:
+        return HTMLResponse(
+            "<p>No shot cards selected.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "No shot cards selected", "type": "error"}})},
+        )
+
+    rejected_count = 0
+    errors = []
+
+    async with async_session_factory() as session:
+        for card_id in shot_card_ids:
+            shot_card = await session.get(ShotCard, card_id)
+            if shot_card is None:
+                errors.append(f"Shot card {card_id} not found")
+                continue
+            if shot_card.audit_status != AuditStatus.AWAITING_AUDIT:
+                errors.append(f"Shot card {card_id}: status is {shot_card.audit_status}")
+                continue
+            shot_card.audit_status = AuditStatus.REJECTED
+            rejected_count += 1
+
+        await session.commit()
+
+    # Re-fetch shot queue
+    shots, has_more, next_cursor, projects = await _fetch_shot_queue()
+
+    rendered = templates.TemplateResponse(request, "partials/_shot_queue_list.html", {
+        "shots": shots,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+        "projects": projects,
+        "current_project": None,
+        "current_scene": None,
+        "current_risk": None,
+    })
+
+    msg = f"{rejected_count} shot card(s) rejected"
+    if errors:
+        msg += f" ({len(errors)} skipped)"
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": msg, "type": "success" if rejected_count > 0 else "warning"},
+    })
+    return rendered

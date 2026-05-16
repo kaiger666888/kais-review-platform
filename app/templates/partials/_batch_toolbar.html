@@ -1,0 +1,10 @@
+<!-- app/templates/partials/_batch_toolbar.html -->
+<!-- Inline batch toolbar is in workstation.html header; this partial provides
+     batch action confirmation and status display for reuse. -->
+
+<template x-if="batchMode">
+  <div class="px-3 py-2 bg-yellow-900/30 border-b border-yellow-800/50 text-xs text-yellow-300">
+    Batch mode active — Ctrl+click to select individual shots, Shift+click for range.
+    <span x-show="selectedItems.length > 0" x-text="selectedItems.length + ' shot(s) selected'"></span>
+  </div>
+</template>
