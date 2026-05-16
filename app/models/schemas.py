@@ -1,7 +1,24 @@
+import enum
 from datetime import datetime
 from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
+
+
+# --- Legacy Enum (kept for backward compat with app/core/policy.py) ---
+
+
+class Disposition(str, enum.Enum):
+    """Routing disposition for review decisions.
+
+    Mirrors RoutingDecision in shot_card.py. Kept here for backward
+    compatibility with the V1 policy engine (app/core/policy.py).
+    """
+
+    AUTO = "AUTO"
+    HUMAN = "HUMAN"
+    AI_AUDIT = "AI_AUDIT"
+    BLOCK = "BLOCK"
 
 
 # --- Nested Structure Models (JSONB validation) ---
