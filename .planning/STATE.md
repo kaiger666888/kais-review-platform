@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 17-01-PLAN.md
-last_updated: "2026-05-16T11:30:27Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-05-16T11:40:57Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 8
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 31
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
+  percent: 38
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16)
 
 **Core value:** Shot Card-driven pipeline governance -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 17 — gitops-policy-engine
+**Current focus:** Phase 17 — gitops-policy-engine (COMPLETE)
 
 ## Current Position
 
 Phase: 17
-Plan: 01 complete, 02 next
-Status: Plan 17-01 complete
+Plan: 02 complete
+Status: Phase 17 complete
 Last activity: 2026-05-16
 
-Progress: [████░░░░░░] 31%
+Progress: [████░░░░░░] 38%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [████░░░░░░] 31%
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 15 P02 | 2min | 2 tasks | 6 files |
 | Phase 17 P01 | 12min | 2 tasks | 6 files |
+| Phase 17 P02 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Re-added Disposition enum to schemas.py for V1 policy.py backward compatibility
 - [Phase 17]: ShotCardPolicyEngine inherits from V1 PolicyEngine rather than replacing it
 - [Phase 17]: GitPolicyProvider uses MockTree/MockBlob patterns for test isolation from GitPython
+- [Phase 17]: Policies loaded directly into engine._policies dict (bypassing YAML re-parse) since GitPolicyProvider returns pre-parsed dicts
+- [Phase 17]: Policy evaluation uses get_policies() (returns SHA) not get_policies_for_project() (no SHA) for provenance tracking
 
 ### Pending Todos
 
@@ -126,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T11:30:27Z
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-05-16T11:40:57Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
