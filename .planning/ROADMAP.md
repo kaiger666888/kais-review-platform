@@ -44,7 +44,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 - [x] **Phase 15: Foundation** — Shot Card data model, PostgreSQL migration, Docker Compose expansion, config & dependency updates (completed 2026-05-16)
 - [x] **Phase 16: Shot Card Aggregation** — Aggregator, topology collapser, progressive fill engine (completed 2026-05-16)
 - [x] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking (completed 2026-05-16)
-- [ ] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements
+- [x] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements (completed 2026-05-16)
 - [ ] **Phase 19: AI Audit & Capability Tokens** — AI audit Phase 0 stubs, capability token issuance, model registry placeholders
 - [ ] **Phase 20: Desktop Workstation** — 3-column UI, keyboard shortcuts, dual-column comparison, batch operations, candidate array, media preview
 - [ ] **Phase 21: Mobile PWA** — Card flow layout, gesture controls, offline caching, mobile API endpoints
@@ -107,12 +107,12 @@ Plans:
   3. OpenClaw execution state is serialized as a RunState Snapshot in Redis, and after approval a ResumeCommand is produced that a mock execution layer can consume to resume
   4. A Shot Card in human review for 24 hours is automatically rejected; a Shot Card in AI review for 5 minutes is escalated to human review
   5. Event bus emits node_completed, bundle_ready, and shot_card_updated events, and each outlet (desktop/mobile) receives only its targeted events
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 18-01-PLAN.md — Approval router with priority queues, batch approval, AUTO/BLOCK immediate handling (ROUT-01)
 - [x] 18-02-PLAN.md — Checkpoint manager (RunState snapshots, ResumeCommand) + timeout escalation cron (CHKP-01, CHKP-02)
-- [ ] 18-03-PLAN.md — Event bus enhancements with per-outlet filtering and lifecycle events (EVT-01)
+- [x] 18-03-PLAN.md — Event bus enhancements with per-outlet filtering and lifecycle events (EVT-01) -- completed 2026-05-16
 
 ### Phase 19: AI Audit & Capability Tokens
 **Goal**: AI audit interfaces exist as verified stubs returning empty vectors with shadow-mode recording, and capability tokens gate downstream GPU execution after approval
@@ -124,11 +124,11 @@ Plans:
   3. Model registry returns model_unavailable for all queries, and feedback data (human decisions) is written to cold storage for future training
   4. After a Shot Card is approved, a capability token is issued encoding authorized node scope, and a verification endpoint confirms or rejects the token
   5. A/B test interface accepts a batch of Shot Cards and produces paired records (AI score + human decision) in a dedicated data structure, queryable by batch_id
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 19-01: AI audit Phase 0 (scoring bus, shadow mode, model registry, feedback loop, A/B interface)
-- [ ] 19-02: Capability token issuance + verification endpoint
+- [ ] 19-01-PLAN.md -- Scoring bus, model registry, shadow mode, feedback loop, A/B test interface (AI-01, AI-02, AI-03, AI-04, AI-05)
+- [ ] 19-02-PLAN.md -- Capability token issuance + verification endpoint (ROUT-02)
 
 ### Phase 20: Desktop Workstation
 **Goal**: Reviewers use a 3-column desktop workstation to efficiently review Shot Cards with keyboard shortcuts, media playback, comparisons, and batch operations
@@ -141,7 +141,7 @@ Plans:
   4. Multiple Shot Cards can be selected via Ctrl/Shift in the left panel and approved, rejected, or suspended in a single batch action
   5. Video playback streams from a media endpoint with timeline scrubbing; first/last frame thumbnails are auto-generated; candidate thumbnails in a grid allow one-click switching between draw results
 **UI hint**: yes
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
 - [ ] 20-01: 3-column layout + shot queue panel + decision panel
@@ -158,7 +158,7 @@ Plans:
   3. Service Worker caches the 20 most recent Shot Cards and manifest.json enables install-to-homescreen; the app loads cached cards when offline
   4. Mobile API endpoint returns Shot Card bundles (visual + audio + narrative) paginated shot-by-shot with progressive loading (visual first, audio async)
 **UI hint**: yes
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
 - [ ] 21-01: Mobile API endpoints (Shot Card bundles, paginated shot-by-shot)
@@ -175,7 +175,7 @@ Plans:
   4. Users with admin role can manage policies, reviewer role can access desktop/mobile review, auditor role has read-only analytics access, and ai_service role can submit scores -- each role sees only authorized UI and API endpoints
   5. Desktop audit cockpit shows a timeline of review decisions, statistical panels (throughput, rejection reasons, policy hit rates), and policy version diff mode; mobile audit page shows dashboard stats and review history waterfall
 **UI hint**: yes
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
 - [ ] 22-01: Merkle Root anchoring + dual-write audit recorder + tiered storage lifecycle
@@ -192,7 +192,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
 | 16. Shot Card Aggregation | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
-| 18. Routing & Checkpoints | v2.0 | 2/3 | In Progress|  |
+| 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
 | 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
 | 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |
 | 21. Mobile PWA | v2.0 | 0/2 | Not started | - |
