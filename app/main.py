@@ -16,6 +16,7 @@ from app.api.v1.policies import router as policies_router
 from app.api.v1.reviews import router as reviews_router
 from app.api.v1.webhooks import router as webhooks_router
 from app.api.v1.shot_cards import router as shot_cards_router
+from app.api.v1.mobile import router as mobile_router
 from app.api.v1.media import router as media_router
 from app.api.v1.tokens import router as tokens_router
 from app.web.routes import router as web_router
@@ -104,6 +105,7 @@ app.include_router(policies_router)
 app.include_router(events_router)
 app.include_router(webhooks_router)
 app.include_router(shot_cards_router)
+app.include_router(mobile_router)
 app.include_router(media_router)
 app.include_router(tokens_router)
 app.include_router(web_auth_router)
