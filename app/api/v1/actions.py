@@ -3,12 +3,16 @@
 POST /api/v1/reviews/{review_id}/approve -- Approve a review (REV-04)
 POST /api/v1/reviews/{review_id}/reject  -- Reject a review (REV-05)
 POST /api/v1/reviews/{review_id}/token   -- Generate one-time review token (DEBT-01)
+POST /api/v1/reviews/batch/approve       -- Batch approve multiple reviews
+POST /api/v1/reviews/batch/reject        -- Batch reject multiple reviews
 
 Both approve/reject endpoints support JWT auth and one-time review tokens.
+Batch endpoints support JWT auth only (programmatic use).
 """
 
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,11 +28,17 @@ from app.models.schema import Review
 from app.models.schemas import (
     ApiResponse,
     ApproveRequest,
+    BatchApproveRequest,
+    BatchItemResult,
+    BatchRejectRequest,
+    BatchResponse,
     RejectRequest,
     ReviewResponse,
     ReviewState,
     ReviewTokenResponse,
 )
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["actions"])
 
@@ -90,6 +100,220 @@ async def _resolve_actor(
             )
         return "token_holder"
     return f"client:{client}"
+
+
+# ---------------------------------------------------------------------------
+# POST /batch/approve -- Batch approve multiple reviews
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/batch/approve",
+    status_code=status.HTTP_207_MULTI_STATUS,
+    response_model=ApiResponse[BatchResponse],
+)
+async def batch_approve_reviews(
+    request: BatchApproveRequest,
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+):
+    """Batch approve multiple reviews in a single request.
+
+    Processes each review independently. Returns 207 Multi-Status with
+    per-item success/failure results. Partial success is the normal model.
+    Only reviews in APPROVING state can be approved.
+    """
+    items: list[BatchItemResult] = []
+    success_count = 0
+    failure_count = 0
+    actor = f"client:{client}"
+
+    for review_id in request.review_ids:
+        review = await db.get(Review, review_id)
+        if review is None:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id, status="failed", error="Review not found"
+                )
+            )
+            failure_count += 1
+            continue
+
+        if review.state != ReviewState.APPROVING.value:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error=f"Review is not in APPROVING state, current state: {review.state}",
+                )
+            )
+            failure_count += 1
+            continue
+
+        try:
+            await transition_state(
+                db,
+                review.id,
+                ReviewState.APPROVING,
+                ReviewState.COMPLETE,
+                review.version,
+                actor,
+                action="batch_approve",
+                payload={"comment": request.comment, "batch": True},
+            )
+            items.append(
+                BatchItemResult(review_id=review_id, status="success")
+            )
+            success_count += 1
+        except StateConflictError:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error="State conflict: review was modified concurrently",
+                )
+            )
+            failure_count += 1
+        except InvalidTransitionError:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error="Invalid state transition",
+                )
+            )
+            failure_count += 1
+        except Exception as e:
+            logger.error(
+                "batch_approve_item_failed",
+                review_id=review_id,
+                error=str(e),
+            )
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error=str(e),
+                )
+            )
+            failure_count += 1
+
+    return ApiResponse(
+        data=BatchResponse(
+            total=len(request.review_ids),
+            success_count=success_count,
+            failure_count=failure_count,
+            items=items,
+        ).model_dump(),
+        meta={"request_id": _request_id()},
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /batch/reject -- Batch reject multiple reviews
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/batch/reject",
+    status_code=status.HTTP_207_MULTI_STATUS,
+    response_model=ApiResponse[BatchResponse],
+)
+async def batch_reject_reviews(
+    request: BatchRejectRequest,
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+):
+    """Batch reject multiple reviews in a single request.
+
+    Processes each review independently. Returns 207 Multi-Status with
+    per-item success/failure results. Partial success is the normal model.
+    Only reviews in APPROVING state can be rejected.
+    """
+    items: list[BatchItemResult] = []
+    success_count = 0
+    failure_count = 0
+    actor = f"client:{client}"
+
+    for review_id in request.review_ids:
+        review = await db.get(Review, review_id)
+        if review is None:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id, status="failed", error="Review not found"
+                )
+            )
+            failure_count += 1
+            continue
+
+        if review.state != ReviewState.APPROVING.value:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error=f"Review is not in APPROVING state, current state: {review.state}",
+                )
+            )
+            failure_count += 1
+            continue
+
+        try:
+            await transition_state(
+                db,
+                review.id,
+                ReviewState.APPROVING,
+                ReviewState.COMPLETE,
+                review.version,
+                actor,
+                action="batch_reject",
+                payload={"reason": request.reason, "batch": True},
+            )
+            items.append(
+                BatchItemResult(review_id=review_id, status="success")
+            )
+            success_count += 1
+        except StateConflictError:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error="State conflict: review was modified concurrently",
+                )
+            )
+            failure_count += 1
+        except InvalidTransitionError:
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error="Invalid state transition",
+                )
+            )
+            failure_count += 1
+        except Exception as e:
+            logger.error(
+                "batch_reject_item_failed",
+                review_id=review_id,
+                error=str(e),
+            )
+            items.append(
+                BatchItemResult(
+                    review_id=review_id,
+                    status="failed",
+                    error=str(e),
+                )
+            )
+            failure_count += 1
+
+    return ApiResponse(
+        data=BatchResponse(
+            total=len(request.review_ids),
+            success_count=success_count,
+            failure_count=failure_count,
+            items=items,
+        ).model_dump(),
+        meta={"request_id": _request_id()},
+    )
 
 
 # ---------------------------------------------------------------------------
