@@ -11,7 +11,7 @@ from app.core.policy import (
     PolicyValidationError,
     get_policy_engine,
 )
-from app.models.schemas import Disposition
+from app.models.shot_card import RoutingDecision as Disposition
 
 
 # --- Sample YAML policies for testing ---
