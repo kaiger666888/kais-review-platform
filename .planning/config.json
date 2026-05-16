@@ -28,6 +28,7 @@
     "skip_discuss": false,
     "_auto_chain_active": false
   },
+  "milestone": "v2.0",
   "hooks": {
     "context_warnings": true
   },

@@ -1,128 +1,148 @@
-# Requirements: Kai's Review Platform — v1.2 External System Integration
+# Requirements: Kai's Review Platform V2
 
-**Defined:** 2026-05-07
-**Core Value:** Strategy-engine-driven review routing — every AI production task must pass policy evaluation before execution
+**Defined:** 2026-05-16
+**Core Value:** Shot Card 是审核原子 — 将 OpenClaw 节点拓扑折叠为叙事分镜单元，捆绑首帧/尾帧/视频/音频/提示词，实现一体化审核
 
-## v1.2 Requirements
+## v2.0 Requirements
 
-### Database & Config Extension
+### Shot Card Core (SHOT)
 
-- [x] **DB-01**: Review model supports per-review `callback_url` field for external system callbacks
-- [x] **DB-02**: Review model supports per-review `callback_secret` field for HMAC-SHA256 callback signatures
-- [x] **DB-03**: Settings model supports Telegram Bot configuration (token, allowed chat IDs, review timeout)
-- [x] **DB-04**: Database migration script adds new columns to existing Review table without data loss
+- [ ] **SHOT-01**: Shot Card 数据模型定义，包含 shot_id, project_id, narrative_context (scene, shot_number, emotion_curve, continuity_tags), visual_bundle (keyframes, video_clip, prompt, candidates), audio_bundle (bgm_prompt, sfx_prompt, status), audit_state (status, routing_decision, min_audit_set, blocking_reason), provenance (workflow_version, policy_commit_sha, execution_id)
+- [ ] **SHOT-02**: Shot Card 聚合器 — 监听 OpenClaw 事件总线，按 shot_id 渐进式聚合节点输出到对应 Shot Card
+- [ ] **SHOT-03**: 拓扑折叠器 — 将 OpenClaw DAG 节点输出映射到 Shot Card bundles，处理乱序完成（video before image）
+- [ ] **SHOT-04**: 渐进式填充 — visual_bundle 先完成先显示，audio_bundle 完成后自动附加，min_audit_set 就绪后解锁审核按钮
 
-### Callback Delivery
+### Policy & GitOps (POL)
 
-- [x] **CB-01**: New arq task `deliver_review_callback` delivers review result to callback_url when review reaches COMPLETE state
-- [x] **CB-02**: Callback payloads are HMAC-SHA256 signed using per-review callback_secret
-- [x] **CB-03**: Callback delivery retries on failure (3 attempts, exponential backoff: 1s/5s/30s)
-- [x] **CB-04**: Callback URL validated as RFC1918 private address only (SSRF mitigation for LAN deployment)
-- [x] **CB-05**: Telegram admin notification when all callback retry attempts fail
+- [ ] **POL-01**: 策略引擎增强 — 接受 Shot Card 作为输入（非 flat dict），支持策略叠加（全局+项目+临时策略），narrative_context 感知
+- [ ] **POL-02**: GitOps 策略即代码 — 策略文件入 Git repo，PR 审批变更，运行时读取 policy_commit_sha
+- [ ] **POL-03**: Provenance 追踪 — 每个 Shot Card 携带 workflow_version, policy_commit_sha, execution_id，审计记录关联策略版本
 
-### Telegram Bot Core
+### Routing & Tokens (ROUT)
 
-- [x] **TG-01**: Telegram Bot runs in polling mode inside FastAPI process, sharing event loop via python-telegram-bot v22
-- [x] **TG-02**: Bot lifecycle managed in FastAPI lifespan (initialize + start + graceful shutdown)
-- [x] **TG-03**: Bot sends review notification with InlineKeyboard approve/reject buttons when review enters APPROVING state
-- [x] **TG-04**: Bot handles InlineKeyboard callback: approve or reject review via direct `transition_state()` call
-- [x] **TG-05**: Bot edits notification message after approval/rejection to show final status
-- [x] **TG-06**: Bot sends timeout reminder if review remains in APPROVING state beyond configured threshold
-- [x] **TG-07**: Bot displays approval history (previous decisions with timestamps) in review notification
+- [ ] **ROUT-01**: 审批路由器 — 根据策略引擎输出动态分流到三个出口（桌面/移动/AI），优先级队列（高参渲染高优、抽卡预览低优），批量审批
+- [ ] **ROUT-02**: 能力令牌（Capability Token） — 审核通过后发放，OpenClaw 执行层校验令牌后才允许高成本 GPU 任务执行
 
-### kais-gold-team Integration
+### Checkpoint & Events (CHKP)
 
-- [ ] **GT-01**: gold-team control_node submits review to review-platform before dispatching GPU task to worker
-- [x] **GT-02**: Review submission includes task type, GPU resource requirements, and requesting user as metadata
-- [x] **GT-03**: Risk score auto-calculated based on GPU engine type (Blender/FaceFusion = high, TTS/SFX = low)
-- [ ] **GT-04**: gold-team adds callback endpoint `/callback/review_result` on control_node to receive approval/rejection
-- [x] **GT-05**: On approval callback, control_node automatically resumes Guardian scheduling for the approved task
-- [x] **GT-06**: On rejection callback, control_node marks task as failed with rejection reason and notifies user via Telegram
+- [ ] **CHKP-01**: 检查点管理器 — 将 OpenClaw 运行状态序列化为 RunState Snapshot 存入 Redis，审核通过后注入 ResumeCommand 恢复执行
+- [ ] **CHKP-02**: 分级超时策略 — 人工审核默认 24h 超时转拒绝，AI 审核 5min 超时转人工
+- [ ] **EVT-01**: 事件总线增强 — 渐进式填充事件（node_completed, bundle_ready, shot_card_updated），per-outlet 路由
 
-### kais-movie-agent Integration
+### Database & Storage (DB)
 
-- [x] **MA-01**: Node.js HTTP client module (`ReviewPlatformClient`) for calling review-platform REST API (submit, query, auth)
-- [x] **MA-02**: Pipeline review gates replaced: `interactive-review.js` submits to review-platform instead of launching local HTTP server
-- [x] **MA-03**: Pipeline pauses after review submission, waiting for callback approval/rejection
-- [ ] **MA-04**: movie-agent adds callback HTTP endpoint to receive approval/rejection results
-- [ ] **MA-05**: On approval callback, pipeline auto-resumes to next phase
-- [ ] **MA-06**: On rejection callback, pipeline rolls back to previous phase using existing git checkpoint mechanism
-- [x] **MA-07**: Review notification includes material preview images (scene renders, storyboard frames) sent as Telegram photo messages
+- [ ] **DB-01**: PostgreSQL + TimescaleDB 迁移 — 替换 SQLite，hypertable 配置审计数据，asyncpg 驱动
+- [ ] **DB-02**: 分层存储架构 — 热存储 PostgreSQL (30d), 温存储 MinIO JSONL (1yr), 冷存储 WORM (永久)
+- [ ] **DB-03**: 数据生命周期管理 — arq cron 自动归档 worker，可配置保留策略
+- [ ] **DB-04**: Docker Compose 扩展 — PostgreSQL 容器 (~200MB) + MinIO 容器 (~128MB)，总内存 < 1GB
 
-### Dual Bot Coordination & E2E
+### Desktop Workstation (UI-D)
 
-- [x] **E2E-01**: gold-team Bot forwards review-related messages to review-platform Bot (single review notification channel)
-- [ ] **E2E-02**: End-to-end test: gold-team task → review submission → Telegram approval → callback → task execution resumes
-- [ ] **E2E-03**: End-to-end test: movie-agent phase → review submission → Telegram approval → callback → pipeline resumes
-- [ ] **E2E-04**: End-to-end test: review rejection → callback → gold-team marks task failed / movie-agent rolls back
+- [ ] **UI-D-01**: 三栏工作台布局 — 左栏分镜队列（项目/场次/风险筛选）、中栏 Shot Card 预览（视频播放器/帧查看器/候选阵列）、右栏决策面板（叙事上下文/提示词/节点状态/决策按钮）
+- [ ] **UI-D-02**: 键盘快捷键 — Space 播放/暂停, Y/N 通过/拒绝, J/K 切换 Shot, D Diff 对比, B 批量, G Git 策略, L 日志
+- [ ] **UI-D-03**: 双栏对比 — 首帧 vs 尾帧, 当前候选 vs 历史版本, 当前 vs 参考图
+- [ ] **UI-D-04**: 批量操作 — Ctrl/Shift 多选左栏 Shot，一键批量决策（通过/拒绝/挂起）
+- [ ] **UI-D-05**: 候选阵列 — 同一 Shot 多抽卡结果缩略图阵列，点击无缝切换
 
-## Future Requirements
+### Mobile PWA (UI-M)
 
-### Deferred to v1.3+
+- [ ] **UI-M-01**: 卡片流布局 — 纵向滑动切换分镜（叙事连续性），横向滑动切换候选，首帧/尾帧始终可见
+- [ ] **UI-M-02**: 手势操作 — 左滑通过、右滑拒绝、上滑详情、双指放大
+- [ ] **UI-M-03**: 上下文条 — 卡片顶部显示场次、镜头编号、情绪曲线
+- [ ] **UI-M-04**: PWA 离线缓存 — Service Worker 缓存最近 20 条 Shot Card, manifest.json
+- [ ] **UI-M-05**: 移动端 API — Shot Card bundles 接口，分镜逐条分页，渐进加载
 
-- **TG-AI-01**: Bot supports conversational approval (ask reviewer follow-up questions before deciding)
-- **GT-BATCH-01**: Batch review submission for multiple GPU tasks
-- **MA-MULTI-01**: Parallel review gates (submit multiple phases for review simultaneously)
-- **DASH-01**: Review analytics dashboard (approval rates, response times, per-system breakdown)
+### AI Audit (AI)
+
+- [ ] **AI-01**: AI 审计 Phase 0 — 评分插件总线返回空向量（美学/一致性/合规/技术质量/音频匹配度），路由 fallback 到人工
+- [ ] **AI-02**: 影子模式 — AI 评分持续运行但不影响决策，记录结果用于训练
+- [ ] **AI-03**: 模型注册中心（占位） — 空注册表，标记 model_unavailable
+- [ ] **AI-04**: 反馈闭环（占位） — 人工审核结果入冷存储，作为未来训练信号
+- [ ] **AI-05**: A/B 测试接口（占位） — 预留数据格式，同一批 Shot Card 并行送 AI 和人工
+
+### Audit & Compliance (AUDIT)
+
+- [ ] **AUDIT-01**: Merkle Root 锚定 — 每日审计日志 Merkle Root 写入 Git，防篡改校验
+- [ ] **AUDIT-02**: 双写审计记录器 — 实时写入 PostgreSQL + 异步归档到 MinIO
+- [ ] **AUDIT-03**: 桌面审计驾驶舱 — 时间轴视图、统计面板（吞吐量/拒绝原因/策略命中）、策略版本 Diff 模式
+- [ ] **AUDIT-04**: 移动端审计页 — Dashboard 统计、瀑布流审核历史、详情页
+
+### Media Preview (MEDIA)
+
+- [ ] **MEDIA-01**: 视频播放基础设施 — 视频流端点、帧提取、时间轴控制
+- [ ] **MEDIA-02**: 缩略图生成 — 首帧/尾帧/候选缩略图自动生成
+- [ ] **MEDIA-03**: 候选对比视图 — 多抽卡候选并排/叠加对比
+
+### Authentication & Config (AUTH)
+
+- [ ] **AUTH-01**: 多角色认证 — admin (策略管理), reviewer (桌面/移动), auditor (只读分析), ai_service (评分)
+- [ ] **AUTH-02**: 配置扩展 — git_repo_url, postgres_url, minio_endpoint, openclaw_event_url, capability_token_secret, 保留策略设置
+- [ ] **AUTH-03**: 依赖更新 — 添加 asyncpg, gitpython, minio; 移除 aiosqlite
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Webhook mode for Telegram Bot | LAN deployment has no public IP; polling mode is the only viable option |
-| OAuth/SSO for external systems | API key + JWT sufficient for LAN deployment |
-| Real-time WebSocket bidirectional communication | SSE + callback HTTP sufficient; WebSocket adds complexity without benefit |
-| Cross-system file transfer via review-platform | Artifacts stay in their respective systems; review-platform only handles metadata and decisions |
-| Mobile native app | Mobile web + Telegram Bot cover all review scenarios |
-| AI-powered auto-approval | v1.2 focuses on human-in-the-loop; AI audit plugin deferred to future milestone |
+| AI Phase 1-4 自动化 | V2 仅 Phase 0（全人工 + 预留窗口），AI 评分能力未就绪 |
+| OpenClaw 深度集成 | 依赖外部 OpenClaw API 可用性，V2 仅定义接口和 mock |
+| 移动原生 App | PWA 优先，原生 App 成本过高 |
+| OAuth/第三方登录 | JWT 足够 |
+| 多租户 | 单团队场景 |
+| Prometheus/Grafana | V2 审计驾驶舱覆盖监控需求 |
+| CDN/公网部署 | 局域网 only |
+| 视频流式审核（逐帧标注） | V2 仅支持视频播放和关键帧查看 |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DB-01 | Phase 08 | Complete |
-| DB-02 | Phase 08 | Complete |
-| DB-03 | Phase 08 | Complete |
-| DB-04 | Phase 08 | Complete |
-| CB-01 | Phase 08 | Complete |
-| CB-02 | Phase 08 | Complete |
-| CB-03 | Phase 08 | Complete |
-| CB-04 | Phase 08 | Complete |
-| CB-05 | Phase 08 | Complete |
-| TG-01 | Phase 09 | Complete |
-| TG-02 | Phase 09 | Complete |
-| TG-03 | Phase 09 | Complete |
-| TG-04 | Phase 09 | Complete |
-| TG-05 | Phase 09 | Complete |
-| TG-06 | Phase 09 | Complete |
-| TG-07 | Phase 09 | Complete |
-| GT-01 | Phase 10, Phase 13 | Complete → Gap (auth token) |
-| GT-02 | Phase 10 | Complete |
-| GT-03 | Phase 10 | Complete |
-| GT-04 | Phase 10, Phase 13 | Complete → Gap (HMAC header) |
-| GT-05 | Phase 10 | Complete |
-| GT-06 | Phase 10 | Complete |
-| MA-01 | Phase 11 | Complete |
-| MA-02 | Phase 11 | Complete |
-| MA-03 | Phase 11 | Complete |
-| MA-04 | Phase 11, Phase 13 | Complete → Gap (payload contract) |
-| MA-05 | Phase 11, Phase 13 | Complete → Gap (payload + CLI) |
-| MA-06 | Phase 11, Phase 13 | Complete → Gap (payload contract) |
-| MA-07 | Phase 11 | Complete |
-| E2E-01 | Phase 12 | Complete |
-| E2E-02 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
-| E2E-03 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
-| E2E-04 | Phase 12, Phase 14 | Complete → Gap (E2E masked) |
+| SHOT-01 | Phase 1 | Pending |
+| DB-01 | Phase 1 | Pending |
+| DB-04 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| SHOT-02 | Phase 2 | Pending |
+| SHOT-03 | Phase 2 | Pending |
+| SHOT-04 | Phase 2 | Pending |
+| POL-01 | Phase 3 | Pending |
+| POL-02 | Phase 3 | Pending |
+| POL-03 | Phase 3 | Pending |
+| ROUT-01 | Phase 4 | Pending |
+| CHKP-01 | Phase 4 | Pending |
+| CHKP-02 | Phase 4 | Pending |
+| EVT-01 | Phase 4 | Pending |
+| ROUT-02 | Phase 5 | Pending |
+| AI-01 | Phase 5 | Pending |
+| AI-02 | Phase 5 | Pending |
+| AI-03 | Phase 5 | Pending |
+| AI-04 | Phase 5 | Pending |
+| AI-05 | Phase 5 | Pending |
+| UI-D-01 | Phase 6 | Pending |
+| UI-D-02 | Phase 6 | Pending |
+| UI-D-03 | Phase 6 | Pending |
+| UI-D-04 | Phase 6 | Pending |
+| UI-D-05 | Phase 6 | Pending |
+| MEDIA-01 | Phase 6 | Pending |
+| MEDIA-02 | Phase 6 | Pending |
+| MEDIA-03 | Phase 6 | Pending |
+| UI-M-01 | Phase 7 | Pending |
+| UI-M-02 | Phase 7 | Pending |
+| UI-M-03 | Phase 7 | Pending |
+| UI-M-04 | Phase 7 | Pending |
+| UI-M-05 | Phase 7 | Pending |
+| AUDIT-01 | Phase 8 | Pending |
+| AUDIT-02 | Phase 8 | Pending |
+| AUDIT-03 | Phase 8 | Pending |
+| AUDIT-04 | Phase 8 | Pending |
+| AUTH-01 | Phase 8 | Pending |
+| DB-02 | Phase 8 | Pending |
+| DB-03 | Phase 8 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 33 total
-- Mapped to phases: 33
-- Satisfied: 25
-- Gap closure pending: 8 (GT-01, GT-04, MA-04, MA-05, MA-06, E2E-02, E2E-03, E2E-04)
-- Unmapped: 0
+- v2.0 requirements: 42 total
+- Mapped to phases: 42
+- Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-05-07*
-*Last updated: 2026-05-08 after v1.2 audit gap closure planning*
+*Requirements defined: 2026-05-16*
+*Last updated: 2026-05-16 after V2 project initialization*
