@@ -76,11 +76,11 @@ Plans:
   1. An OpenClaw node completion event (mock) triggers aggregation into the correct Shot Card by shot_id, even when nodes complete out of order (video before image)
   2. Visual bundle fields appear on the Shot Card as soon as their source nodes complete; audio bundle fields append independently without blocking visual review
   3. The min_audit_set logic unlocks a Shot Card for review only when all required bundles are populated, and the unlock state is queryable via API
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 16-01: Shot Card aggregator + topology collapser
-- [ ] 16-02: Progressive fill engine + min_audit_set unlock logic
+- [ ] 16-01-PLAN.md — Event types, topology collapser, progressive fill engine, aggregator orchestrator (SHOT-03, SHOT-04)
+- [ ] 16-02-PLAN.md — Shot Card API endpoints, arq task registration, aggregation pipeline tests (SHOT-02, SHOT-03, SHOT-04)
 
 ### Phase 17: GitOps Policy Engine
 **Goal**: Policy decisions are driven by Git-versioned rule files, with every Shot Card carrying the exact policy commit SHA that evaluated it
