@@ -16,6 +16,7 @@ from arq import Retry, cron
 from sqlalchemy import select
 
 from app.workers.ai_audit_tasks import record_shadow_score, write_feedback
+from app.workers.lifecycle import archive_hot_to_warm, compute_merkle_root_cron
 
 # Timeout thresholds per route type (seconds)
 TIMEOUT_THRESHOLDS: dict[str, int] = {
@@ -408,10 +409,12 @@ async def deliver_review_callback(
 class WorkerSettings:
     """arq worker configuration."""
 
-    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders, process_node_completion, record_shadow_score, write_feedback]
+    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders, process_node_completion, record_shadow_score, write_feedback, archive_hot_to_warm, compute_merkle_root_cron]
     cron_jobs = [
         cron(check_timeouts, minute={0}),  # Run every hour at minute 0
         cron(check_timeout_reminders, minute={0, 30}),  # Run every 30 minutes
+        cron(compute_merkle_root_cron, minute=30, hour=0),  # Daily at 00:30 UTC
+        cron(archive_hot_to_warm, minute=0, hour=2),  # Daily at 02:00 UTC
     ]
 
     async def on_startup(ctx):
