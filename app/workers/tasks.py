@@ -270,6 +270,44 @@ async def check_timeout_reminders(ctx: dict) -> list[int]:
     return reminded
 
 
+async def process_node_completion(ctx: dict, event_data: dict) -> dict:
+    """Process a node completion event through the Shot Card aggregation pipeline.
+
+    Delegates to ShotCardAggregator for topology collapse, progressive fill,
+    and event emission. Retries up to 3 times on transient failures.
+
+    Args:
+        ctx: arq context dict.
+        event_data: Node completion event dict with execution_id, shot_id,
+            project_id, node_type, node_output, etc.
+
+    Returns:
+        Aggregation result dict from ShotCardAggregator.handle_node_completion().
+    """
+    logger = structlog.get_logger()
+
+    from app.services.aggregator import ShotCardAggregator
+
+    aggregator = ShotCardAggregator()
+    try:
+        result = await aggregator.handle_node_completion(event_data)
+        logger.info(
+            "node_completion_processed",
+            shot_id=event_data.get("shot_id"),
+            node_type=event_data.get("node_type"),
+            status=result.get("status"),
+        )
+        return result
+    except Exception as e:
+        logger.error(
+            "node_completion_failed",
+            shot_id=event_data.get("shot_id"),
+            node_type=event_data.get("node_type"),
+            error=str(e),
+        )
+        raise
+
+
 async def deliver_review_callback(
     ctx: dict, review_id: int, event_data: dict
 ) -> dict:
@@ -368,7 +406,7 @@ async def deliver_review_callback(
 class WorkerSettings:
     """arq worker configuration."""
 
-    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders]
+    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders, process_node_completion]
     cron_jobs = [
         cron(check_timeouts, minute={0}),  # Run every hour at minute 0
         cron(check_timeout_reminders, minute={0, 30}),  # Run every 30 minutes
