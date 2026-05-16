@@ -6,12 +6,12 @@ Exports the three core service classes for convenient import:
 - ShotCardAggregator: Orchestrates the full aggregation pipeline
 """
 
+from app.services.aggregator import ShotCardAggregator
 from app.services.progressive_fill import ProgressiveFillEngine
 from app.services.topology_collapser import TopologyCollapser
 
 __all__ = [
+    "ShotCardAggregator",
     "ProgressiveFillEngine",
     "TopologyCollapser",
 ]
-
-# ShotCardAggregator added in Task 2 (aggregator.py creation)
