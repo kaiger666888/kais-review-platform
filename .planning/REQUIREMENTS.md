@@ -21,13 +21,13 @@
 ### Routing & Tokens (ROUT)
 
 - [ ] **ROUT-01**: 审批路由器 — 根据策略引擎输出动态分流到三个出口（桌面/移动/AI），优先级队列（高参渲染高优、抽卡预览低优），批量审批
-- [ ] **ROUT-02**: 能力令牌（Capability Token） — 审核通过后发放，OpenClaw 执行层校验令牌后才允许高成本 GPU 任务执行
+- [x] **ROUT-02**: 能力令牌（Capability Token） — 审核通过后发放，OpenClaw 执行层校验令牌后才允许高成本 GPU 任务执行
 
 ### Checkpoint & Events (CHKP)
 
 - [x] **CHKP-01**: 检查点管理器 — 将 OpenClaw 运行状态序列化为 RunState Snapshot 存入 Redis，审核通过后注入 ResumeCommand 恢复执行
 - [x] **CHKP-02**: 分级超时策略 — 人工审核默认 24h 超时转拒绝，AI 审核 5min 超时转人工
-- [ ] **EVT-01**: 事件总线增强 — 渐进式填充事件（node_completed, bundle_ready, shot_card_updated），per-outlet 路由
+- [x] **EVT-01**: 事件总线增强 — 渐进式填充事件（node_completed, bundle_ready, shot_card_updated），per-outlet 路由
 
 ### Database & Storage (DB)
 
@@ -110,8 +110,8 @@
 | ROUT-01 | Phase 18 | Pending |
 | CHKP-01 | Phase 18 | Complete |
 | CHKP-02 | Phase 18 | Complete |
-| EVT-01 | Phase 18 | Pending |
-| ROUT-02 | Phase 19 | Pending |
+| EVT-01 | Phase 18 | Complete |
+| ROUT-02 | Phase 19 | Complete |
 | AI-01 | Phase 19 | Pending |
 | AI-02 | Phase 19 | Pending |
 | AI-03 | Phase 19 | Pending |

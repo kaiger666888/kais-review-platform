@@ -124,11 +124,11 @@ Plans:
   3. Model registry returns model_unavailable for all queries, and feedback data (human decisions) is written to cold storage for future training
   4. After a Shot Card is approved, a capability token is issued encoding authorized node scope, and a verification endpoint confirms or rejects the token
   5. A/B test interface accepts a batch of Shot Cards and produces paired records (AI score + human decision) in a dedicated data structure, queryable by batch_id
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 19-01-PLAN.md -- Scoring bus, model registry, shadow mode, feedback loop, A/B test interface (AI-01, AI-02, AI-03, AI-04, AI-05)
-- [ ] 19-02-PLAN.md -- Capability token issuance + verification endpoint (ROUT-02)
+- [x] 19-02-PLAN.md -- Capability token issuance + verification endpoint (ROUT-02)
 
 ### Phase 20: Desktop Workstation
 **Goal**: Reviewers use a 3-column desktop workstation to efficiently review Shot Cards with keyboard shortcuts, media playback, comparisons, and batch operations
@@ -193,7 +193,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 16. Shot Card Aggregation | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
 | 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
-| 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
+| 19. AI Audit & Capability Tokens | v2.0 | 1/2 | In Progress|  |
 | 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |
 | 21. Mobile PWA | v2.0 | 0/2 | Not started | - |
 | 22. Audit & Compliance | v2.0 | 0/3 | Not started | - |

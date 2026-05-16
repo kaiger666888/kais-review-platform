@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: routing-checkpoints
+milestone: v1.0
+milestone_name: milestone
 status: executing
-stopped_at: Completed 18-02-PLAN.md
-last_updated: "2026-05-16T12:28:53Z"
+stopped_at: Completed 19-02-PLAN.md
+last_updated: "2026-05-16T15:21:15.728Z"
 last_activity: 2026-05-16
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 3
-  completed_plans: 2
-  percent: 67
+  total_phases: 8
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-08)
 
 **Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 18 — routing-checkpoints
+**Current focus:** Phase 19 — ai-audit-capability-tokens
 
 ## Current Position
 
-Phase: 18
-Plan: 02 complete
-Status: Plan complete — 18-02-PLAN.md executed
+Phase: 19 (ai-audit-capability-tokens) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-05-16
 
-Progress: [#######...] 67%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -69,6 +69,8 @@ Progress: [#######...] 67%
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 18 P01 | 13min | 5 tasks | 8 files |
 | Phase 18 P02 | 13min | 2 tasks | 8 files |
+| Phase 18 P03 | 7min | 2 tasks | 4 files |
+| Phase 19 P02 | 7min | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -115,6 +117,8 @@ Recent decisions affecting current work:
 - [Phase 18]: TTL per route type: 24h (HUMAN), 5min (AI_AUDIT), 0 (AUTO/BLOCK immediate cleanup)
 - [Phase 18]: Timeout cron uses direct DB updates on ShotCard instead of ApprovalRouter (router lacks reject/enqueue class methods)
 - [Phase 18]: Timeout audit entries use simplified hash chain (prev_hash='timeout')
+- [Phase 19]: Capability token single-use: Redis GET+DELETE instead of Lua script (race window acceptable for GPU gating)
+- [Phase 19]: Integration tests use standalone FastAPI app to avoid pre-existing broken import in actions.py
 
 ### Pending Todos
 
@@ -128,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T12:28:53Z
-Stopped at: Completed 18-02-PLAN.md
+Last session: 2026-05-16T15:21:15.726Z
+Stopped at: Completed 19-02-PLAN.md
 Resume file: None
