@@ -43,7 +43,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 
 - [x] **Phase 15: Foundation** — Shot Card data model, PostgreSQL migration, Docker Compose expansion, config & dependency updates (completed 2026-05-16)
 - [x] **Phase 16: Shot Card Aggregation** — Aggregator, topology collapser, progressive fill engine (completed 2026-05-16)
-- [ ] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking
+- [x] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking (completed 2026-05-16)
 - [ ] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements
 - [ ] **Phase 19: AI Audit & Capability Tokens** — AI audit Phase 0 stubs, capability token issuance, model registry placeholders
 - [ ] **Phase 20: Desktop Workstation** — 3-column UI, keyboard shortcuts, dual-column comparison, batch operations, candidate array, media preview
@@ -91,7 +91,7 @@ Plans:
   2. Multiple policies (global + project + temporary) are evaluated in stacked order with deterministic precedence, and the effective policy is logged
   3. Every Shot Card stores policy_commit_sha, workflow_version, and execution_id in its provenance field, and these are queryable in audit records
   4. Policy YAML files are read from a Git repo at a specific commit SHA, and changes to policy files in the repo are reflected on next evaluation without application restart
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 17-01-PLAN.md — ShotCardPolicyEngine with Shot Card evaluation, policy stacking, narrative context awareness + GitPolicyProvider with SHA-based caching (POL-01, POL-02) -- completed 2026-05-16
@@ -191,7 +191,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 |-------|-----------|----------------|--------|-----------|
 | 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
 | 16. Shot Card Aggregation | v2.0 | 2/2 | Complete    | 2026-05-16 |
-| 17. GitOps Policy Engine | v2.0 | 1/2 | In progress | - |
+| 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
 | 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
 | 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
 | 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |
