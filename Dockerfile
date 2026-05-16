@@ -13,12 +13,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Copy startup script
-COPY scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+# Copy Alembic migration files
+COPY alembic.ini alembic/ ./
 
-# Create data directory for SQLite bind mount target
-RUN mkdir -p /app/data && chown appuser:appuser /app/data
+# Copy scripts
+COPY scripts/ ./scripts/
+
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 USER appuser
 
