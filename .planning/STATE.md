@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-05-08T09:14:26.981Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-05-16T07:35:26.053Z"
 last_activity: 2026-05-08
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 5
   total_plans: 10
   completed_plans: 10
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 11 P01 | 7min | 2 tasks | 3 files |
 | Phase 12 P01 | 4min | 2 tasks | 3 files |
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
+| Phase 15 P02 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 12]: No forwarding bridge needed -- review-platform Bot is single notification channel for all source systems (documented in gold-team client)
 - [Phase 12]: aiohttp chosen for mock callback server (native server mode with AppRunner/TCPSite)
 - [Phase 12]: Audit trail verification (action field) is authoritative for approve/reject decisions, not disposition field which stores routing decision (HUMAN/AUTO/BLOCK)
+- [Phase 15]: PostgreSQL default URL uses Docker service name 'postgres' not localhost
+- [Phase 15]: MinIO exposes API (9000) and Console (9001) internally only
+- [Phase 15]: init-db.sql mounted via docker-entrypoint-initdb.d, not copied into API image
 
 ### Pending Todos
 
@@ -118,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T09:09:01.663Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-05-16T07:35:26.050Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
