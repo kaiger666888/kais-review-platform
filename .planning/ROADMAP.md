@@ -161,8 +161,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 21-01: Mobile API endpoints (Shot Card bundles, paginated shot-by-shot)
-- [ ] 21-02: PWA card flow (layout, gestures, context bar, offline cache, manifest)
+- [ ] 21-01-PLAN.md — Mobile API endpoints: flat Shot Card bundles with cursor pagination, async audio loading, swipe-decision endpoint (UI-M-05)
+- [ ] 21-02-PLAN.md — PWA card flow: gesture controls via Alpine.js touch events, context bar, Service Worker offline cache, manifest.json, standalone dark-themed page (UI-M-01, UI-M-02, UI-M-03, UI-M-04)
 
 ### Phase 22: Audit & Compliance
 **Goal**: Every decision is tamper-evident via Merkle Root anchoring, tiered storage manages data lifecycle automatically, and multi-role auth controls access across the platform
