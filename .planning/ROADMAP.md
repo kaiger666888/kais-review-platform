@@ -107,12 +107,12 @@ Plans:
   3. OpenClaw execution state is serialized as a RunState Snapshot in Redis, and after approval a ResumeCommand is produced that a mock execution layer can consume to resume
   4. A Shot Card in human review for 24 hours is automatically rejected; a Shot Card in AI review for 5 minutes is escalated to human review
   5. Event bus emits node_completed, bundle_ready, and shot_card_updated events, and each outlet (desktop/mobile) receives only its targeted events
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 18-01: Approval router with priority queues + batch approval
-- [ ] 18-02: Checkpoint manager (RunState snapshots, ResumeCommand, timeout escalation)
-- [ ] 18-03: Event bus enhancements (progressive fill events, per-outlet routing)
+- [ ] 18-01-PLAN.md — Approval router with priority queues, batch approval, AUTO/BLOCK immediate handling (ROUT-01)
+- [ ] 18-02-PLAN.md — Checkpoint manager (RunState snapshots, ResumeCommand) + timeout escalation cron (CHKP-01, CHKP-02)
+- [ ] 18-03-PLAN.md — Event bus enhancements with per-outlet filtering and lifecycle events (EVT-01)
 
 ### Phase 19: AI Audit & Capability Tokens
 **Goal**: AI audit interfaces exist as verified stubs returning empty vectors with shadow-mode recording, and capability tokens gate downstream GPU execution after approval
