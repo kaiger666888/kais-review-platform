@@ -1,21 +1,22 @@
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
-**Kai's Review Platform**
+**Kai's Review Platform V2**
 
-AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI 系统提供策略驱动的审核 API 服务。实现自动路由（AUTO/HUMAN/AI_AUDIT/BLOCK）、移动端人工审核网关、AI 审计接口预留和不可变审计日志链。
+AI 短剧管线治理平台（OpenClaw 治理层），为 kais-movie-agent、kais-gold-team 等 AI 系统提供 Shot Card 驱动的审核治理。通过 GitOps 版本控制、策略引擎路由、桌面三栏工作台 + 移动 PWA 卡片流双端审核、AI 审计预留窗口，为短剧管线提供可审计、可回溯、可渐进自动化的质量闸门。
 
-**Core Value:** 策略引擎驱动的审核路由 — 每个 AI 生产任务执行前必须通过策略评估，决定自动放行或进入人工审核，确保 AI 输出质量可控。
+**Core Value:** Shot Card 是审核原子 — 将 OpenClaw 节点拓扑折叠为叙事分镜单元，捆绑首帧/尾帧/视频/音频/提示词，实现"时空-视听"一体化审核，确保每个分镜在进入高成本下游执行前通过质量闸门。
 
 ### Constraints
 
-- **资源限制**: 目标机器 8-16GB RAM，Docker 容器总内存 < 400MB
-- **技术栈**: FastAPI (Python 3.12+) + SQLite (WAL) + Redis 7 + HTMX + Alpine.js + Tailwind CSS
+- **资源限制**: 目标机器 8-16GB RAM，Docker 容器总内存 < 1GB
+- **技术栈**: FastAPI (Python 3.12+) + PostgreSQL (TimescaleDB) + Redis 7 + HTMX/Alpine.js/Tailwind CSS + MinIO
 - **网络**: 局域网部署，无公网，API 地址 http://192.168.71.140:8090
-- **数据库**: SQLite 单进程写入，WAL 模式，bind mount 持久化
-- **任务队列**: arq（纯 async，Redis-based，不使用 Celery）
-- **前端**: 零构建步骤，服务端渲染（HTMX），总 bundle < 50KB
+- **数据库**: PostgreSQL + TimescaleDB，热温冷分层存储
+- **任务队列**: arq（纯 async，Redis-based）
+- **前端**: 桌面三栏工作台（HTMX SSR），移动 PWA（卡片流），零构建步骤
 - **安全**: Docker read_only + cap_drop ALL + non-root 用户
+- **GitOps**: 所有决策逻辑入 Git，运行时读取 commit SHA
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->
@@ -67,6 +68,10 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 | structlog | 24.5.0 | Structured logging | JSON logs for Docker ingestion, context binding (request_id, review_id), better than stdlib logging for audit trail | HIGH |
 | Dozzle | latest | Container log viewer | Read-only Docker log web UI, < 10MB RAM, development/debugging only | HIGH |
 | Docker Compose | v2 | Container orchestration | 4-container deployment (API + Nginx + Redis + Dozzle), resource limits, health checks, restart policies | HIGH |
+### NEW: Telegram Bot (v1.2)
+| Technology | Version | Purpose | Why | Confidence |
+|------------|---------|---------|-----|------------|
+| python-telegram-bot | 22.x | Telegram Bot API client | Fully async (v22), polling mode for LAN deployment (no public IP), InlineKeyboard for approve/reject, shares FastAPI event loop | HIGH |
 ## Alternatives Considered
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
@@ -88,6 +93,10 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 | Policy engine | YAML (custom) | Cedar (AWS) | AWS-specific, not self-contained enough for embedded policy in Docker < 400MB |
 | Redis client | redis-py 7.x | aioredis | aioredis deprecated since redis-py 4.2.0, merged into `redis.asyncio` module |
 | Logging | structlog | loguru | structlog better for structured JSON output in Docker, loguru more suited to CLI/debugging |
+| Telegram bot | python-telegram-bot | aiogram | aiogram is popular but python-telegram-bot is the reference implementation, better docs, larger community |
+| Telegram bot | python-telegram-bot | telethon | Telethon is MTProto client (userbot), not Bot API. Wrong abstraction for bot use case |
+| Bot deployment | Same process | Separate container | Separate container adds 150MB+ RAM, exceeds 400MB Docker budget, requires IPC |
+| Bot mode | Polling | Webhook | Webhook requires public HTTPS URL, not available on LAN (192.168.71.140) |
 ## Key Architecture Decisions Embedded in Stack
 ### 1. Why async everywhere (FastAPI + arq + aiosqlite + redis.asyncio)
 - SSE connections holding open for mobile reviewers (many idle connections)
@@ -101,6 +110,14 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 - WAL mode enables concurrent reads while writing, which is the actual contention pattern (reviewers reading status while new submissions write)
 ### 3. Why HTMX + Jinja Fragments over SPA
 ### 4. Why Tailwind v4 CDN over build pipeline
+### 5. Why python-telegram-bot in same process (v1.2)
+- The review platform runs on 192.168.71.140 with no public internet access
+- Telegram webhook mode requires a publicly accessible HTTPS URL -- not available
+- Polling mode works via outbound connections only, compatible with LAN deployment
+- python-telegram-bot v22 is fully async, shares FastAPI's event loop natively
+- Same-process deployment avoids IPC overhead, keeps memory under 400MB total
+- Direct function calls to state machine (no HTTP-to-localhost overhead)
+- Bot lifecycle managed via FastAPI lifespan context manager
 ## Critical Version Constraints
 | Constraint | Details |
 |------------|---------|
@@ -109,6 +126,7 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 | SQLAlchemy >= 2.0.0 | 1.4.x async API was transitional. 2.0 is the stable async API |
 | FastAPI >= 0.100.0 | Pydantic v2 support requires FastAPI >= 0.100 |
 | Python >= 3.12 | Required for performance characteristics and exception group support |
+| python-telegram-bot >= 22.0 | v22 is the fully-async rewrite. Do NOT use v20 or earlier (different async model) |
 ## Installation
 # Core application
 # Database
@@ -117,6 +135,7 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 # Real-time
 # Templates & Frontend
 # Observability
+# NEW: Telegram Bot (v1.2)
 # Development
 # Frontend (no npm -- CDN loaded in HTML)
 # HTMX 2.0.9: <script src="https://unpkg.com/htmx.org@2.0.9"></script>
@@ -139,8 +158,9 @@ AI 生产管线审核治理平台，为 kais-movie-agent、kais-gold-team 等 AI
 | jinja2-fragments documentation | GitHub README | MEDIUM |
 | Docker Hub image sizes | Docker Hub | HIGH |
 | PROJECT.md constraints (authoritative) | Project definition | HIGH |
-| RESEARCH-REPORT.md competitor analysis | Existing research | MEDIUM |
-| DEPLOYMENT-FEASIBILITY.md deployment specs | Existing research (note: contains Node.js references that conflict with PROJECT.md -- PROJECT.md is authoritative) | MEDIUM |
+| python-telegram-bot v22 PyPI | PyPI direct | HIGH |
+| python-telegram-bot v22 official docs | Official documentation | HIGH |
+| PTB GitHub issues #3687, #4107 (event loop integration) | GitHub issues | HIGH |
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
