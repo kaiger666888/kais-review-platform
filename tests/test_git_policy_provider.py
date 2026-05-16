@@ -155,9 +155,14 @@ class TestGetPolicies:
     @pytest.mark.asyncio
     async def test_returns_policies_and_sha(self):
         """get_policies returns (policies_by_layer, head_sha)."""
-        tree = _make_mock_tree({
-            "global": {"routing.yaml": GLOBAL_ROUTING_YAML},
-            "projects": {"strict.yaml": PROJECT_STRICT_YAML},
+        # projects/ layer expects subdirectories per project:
+        #   policies/projects/{project_id}/strict.yaml
+        proj_tree = MockTree({"strict.yaml": MockBlob(PROJECT_STRICT_YAML)})
+        tree = MockTree({
+            "policies": MockTree({
+                "global": MockTree({"routing.yaml": MockBlob(GLOBAL_ROUTING_YAML)}),
+                "projects": MockTree({"proj-001": proj_tree}),
+            }),
         })
         mock_repo = _make_mock_repo("abc123", tree)
 
@@ -172,6 +177,7 @@ class TestGetPolicies:
         assert sha == "abc123"
         assert "global" in policies
         assert "projects" in policies
+        assert "proj-001" in policies["projects"]
         # Verify global policy has correct structure
         assert policies["global"]["routing.yaml"]["name"] == "global_routing"
 
@@ -245,9 +251,13 @@ class TestGetPoliciesForProject:
     @pytest.mark.asyncio
     async def test_returns_global_and_project_policies(self):
         """Returns combined global + project policies."""
-        tree = _make_mock_tree({
-            "global": {"routing.yaml": GLOBAL_ROUTING_YAML},
-            "projects": {"proj-001": {"strict.yaml": PROJECT_STRICT_YAML}},
+        # Build 3-level tree: policies/projects/{project_id}/file.yaml
+        proj_dir = MockTree({"strict.yaml": MockBlob(PROJECT_STRICT_YAML)})
+        tree = MockTree({
+            "policies": MockTree({
+                "global": MockTree({"routing.yaml": MockBlob(GLOBAL_ROUTING_YAML)}),
+                "projects": MockTree({"proj-001": proj_dir}),
+            }),
         })
         mock_repo = _make_mock_repo("abc123", tree)
 
