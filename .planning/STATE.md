@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 22-01-PLAN.md
-last_updated: "2026-05-16T17:41:56.441Z"
+stopped_at: Completed 22-03-PLAN.md
+last_updated: "2026-05-16T17:51:43.340Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
   percent: 100
 ---
 
@@ -77,6 +77,7 @@ Progress: [##########] 100%
 | Phase 21 P02 | 4min | 2 tasks | 7 files |
 | Phase 22 P02 | 3min | 2 tasks | 4 files |
 | Phase 22 P01 | 5min | 2 tasks | 5 files |
+| Phase 22 P03 | 8min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,7 @@ Recent decisions affecting current work:
 - [Phase 22]: MerkleTree uses simple binary tree with last-leaf duplication for odd counts
 - [Phase 22]: MinIO import deferred to function-level to avoid ImportError when package absent
 - [Phase 22]: archive_hot_to_warm batches in 500-entry chunks to avoid memory spikes
+- [Phase 22]: Policy diff reads YAML from policies/ dir in Git tree (matches GitPolicyProvider convention)
 
 ### Pending Todos
 
@@ -153,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T17:41:56.439Z
-Stopped at: Completed 22-01-PLAN.md
+Last session: 2026-05-16T17:51:43.337Z
+Stopped at: Completed 22-03-PLAN.md
 Resume file: None

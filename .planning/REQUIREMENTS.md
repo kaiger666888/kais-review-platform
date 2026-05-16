@@ -64,8 +64,8 @@
 
 - [x] **AUDIT-01**: Merkle Root 锚定 — 每日审计日志 Merkle Root 写入 Git，防篡改校验
 - [x] **AUDIT-02**: 双写审计记录器 — 实时写入 PostgreSQL + 异步归档到 MinIO
-- [ ] **AUDIT-03**: 桌面审计驾驶舱 — 时间轴视图、统计面板（吞吐量/拒绝原因/策略命中）、策略版本 Diff 模式
-- [ ] **AUDIT-04**: 移动端审计页 — Dashboard 统计、瀑布流审核历史、详情页
+- [x] **AUDIT-03**: 桌面审计驾驶舱 — 时间轴视图、统计面板（吞吐量/拒绝原因/策略命中）、策略版本 Diff 模式
+- [x] **AUDIT-04**: 移动端审计页 — Dashboard 统计、瀑布流审核历史、详情页
 
 ### Media Preview (MEDIA)
 
@@ -132,8 +132,8 @@
 | UI-M-05 | Phase 21 | Complete |
 | AUDIT-01 | Phase 22 | Complete |
 | AUDIT-02 | Phase 22 | Complete |
-| AUDIT-03 | Phase 22 | Pending |
-| AUDIT-04 | Phase 22 | Pending |
+| AUDIT-03 | Phase 22 | Complete |
+| AUDIT-04 | Phase 22 | Complete |
 | AUTH-01 | Phase 22 | Complete |
 | DB-02 | Phase 22 | Complete |
 | DB-03 | Phase 22 | Complete |
