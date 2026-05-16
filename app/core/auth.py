@@ -116,3 +116,88 @@ async def consume_review_token(
     consume = redis.register_script(LUA_CONSUME_TOKEN)
     result = await consume(keys=[f"review_token:{token}"])
     return result
+
+
+# --- Capability Tokens (Phase 19 - AI Audit Gate) ---
+
+
+async def issue_capability_token(
+    redis: aioredis.Redis,
+    shot_id: str,
+    node_scope: list[str],
+    secret: str,
+    ttl: int = 3600,
+) -> str:
+    """Issue a single-use capability token as JWT for downstream GPU execution gating.
+
+    After a ShotCard is approved, this token is issued to authorize high-cost
+    GPU tasks. The token is consumed on first verification to prevent replay.
+
+    Args:
+        redis: Async Redis connection.
+        shot_id: The ShotCard natural key this token authorizes.
+        node_scope: List of OpenClaw node names this token grants access to.
+        secret: Capability token secret (separate from jwt_secret).
+        ttl: Time-to-live in seconds (default 1 hour).
+
+    Returns:
+        JWT string encoding shot_id, node_scope, iat, exp.
+    """
+    now = datetime.now(timezone.utc)
+    payload = {
+        "shot_id": shot_id,
+        "node_scope": node_scope,
+        "iat": now,
+        "exp": now + timedelta(seconds=ttl),
+    }
+    token = jwt.encode(payload, secret, algorithm="HS256")
+    key = f"cap_token:{token}"
+    await redis.set(key, shot_id, ex=ttl)
+    return token
+
+
+async def verify_capability_token(
+    redis: aioredis.Redis,
+    token: str,
+    secret: str,
+) -> dict:
+    """Verify a capability token and consume it (single-use).
+
+    Decodes the JWT, checks Redis for revocation/consumption, then
+    deletes the Redis key to enforce single-use semantics.
+
+    Args:
+        redis: Async Redis connection.
+        token: JWT string to verify.
+        secret: Capability token secret (separate from jwt_secret).
+
+    Returns:
+        Dict with 'valid' bool. If valid: includes shot_id, node_scope, expires_at.
+        If invalid: includes 'reason' string (token_expired, invalid_token,
+        token_revoked_or_consumed).
+    """
+    # Step 1: Decode JWT
+    try:
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return {"valid": False, "reason": "token_expired"}
+    except jwt.InvalidTokenError:
+        return {"valid": False, "reason": "invalid_token"}
+
+    # Step 2: Check Redis for revocation/consumption
+    key = f"cap_token:{token}"
+    stored = await redis.get(key)
+    if stored is None:
+        return {"valid": False, "reason": "token_revoked_or_consumed"}
+
+    # Step 3: Consume (single-use) -- delete the key
+    await redis.delete(key)
+
+    return {
+        "valid": True,
+        "shot_id": payload["shot_id"],
+        "node_scope": payload["node_scope"],
+        "expires_at": datetime.fromtimestamp(
+            payload["exp"], tz=timezone.utc
+        ).isoformat(),
+    }

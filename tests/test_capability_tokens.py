@@ -18,6 +18,7 @@ os.environ.setdefault("API_KEY", "test-api-key")
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-for-testing-min-32-chars-long")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("CAPABILITY_TOKEN_SECRET", "test-capability-secret-min-32-chars-long!!")
 
 from app.core.auth import issue_capability_token, verify_capability_token
 
@@ -215,23 +216,35 @@ class TestVerifyCapabilityToken:
 
 
 class TestTokenVerifyEndpoint:
-    """Tests for the POST /api/v1/tokens/verify endpoint."""
+    """Tests for the POST /api/v1/tokens/verify endpoint.
+
+    Uses a standalone FastAPI app with just the tokens router to avoid
+    importing app.main which has a pre-existing broken import chain
+    in actions.py (unrelated to capability tokens).
+    """
 
     @pytest_asyncio.fixture
     async def client(self, mock_redis):
-        """Create test client with mock Redis injected."""
-        from app.main import app
+        """Create test client with mock Redis injected on a standalone app."""
+        from fastapi import FastAPI
+        from app.api.v1.tokens import router as tokens_router
+        from app.core.config import Settings, get_settings
 
-        # Override redis on app.state
-        original_redis = getattr(app.state, "redis", None)
+        test_settings = Settings(
+            api_key="test-api-key",
+            jwt_secret="test-jwt-secret-for-testing-min-32-chars-long",
+            capability_token_secret=CAPABILITY_SECRET,
+        )
+
+        app = FastAPI()
+        app.include_router(tokens_router)
         app.state.redis = mock_redis
+        app.dependency_overrides[get_settings] = lambda: test_settings
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as c:
             yield c
-
-        # Restore
-        app.state.redis = original_redis
+        app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_verify_valid_token(self, client, mock_redis):
