@@ -1,11 +1,12 @@
 """Shot Card Aggregator -- orchestrates the aggregation pipeline.
 
 Top-level service that coordinates topology collapsing, progressive fill,
-and event emission for node completion events. Single entry point for all
-OpenClaw node completion processing.
+policy evaluation, and event emission for node completion events. Single
+entry point for all OpenClaw node completion processing.
 
 Pipeline: node_completed event -> topology collapse -> ensure Shot Card
-          -> progressive fill -> check readiness -> emit events
+          -> progressive fill -> check readiness -> policy evaluation
+          -> provenance writeback -> emit events
 """
 
 import structlog
@@ -14,7 +15,10 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.database import async_session_factory
 from app.core.events import event_manager
+from app.core.policy_v2 import ShotCardPolicyEngine
+from app.models.audit_entry import AuditEntry
 from app.models.shot_card import ShotCard
+from app.services.git_policy_provider import GitPolicyProvider, get_git_policy_provider
 from app.services.progressive_fill import ProgressiveFillEngine
 from app.services.topology_collapser import TopologyCollapser
 
@@ -25,12 +29,15 @@ class ShotCardAggregator:
     """Orchestrates the aggregation pipeline for node completion events.
 
     Pipeline: node_completed event -> topology collapse -> progressive fill
-              -> min_audit_set check -> event emission
+              -> min_audit_set check -> policy evaluation -> provenance
+              writeback -> event emission
     """
 
     def __init__(self) -> None:
         self.collapser = TopologyCollapser()
         self.filler = ProgressiveFillEngine()
+        self.policy_engine = ShotCardPolicyEngine()
+        self.git_provider: GitPolicyProvider | None = None
 
     async def handle_node_completion(self, event: dict) -> dict:
         """Process a node completion event through the full pipeline.
@@ -73,6 +80,13 @@ class ShotCardAggregator:
         min_audit_satisfied = self.filler.check_min_audit_set(shot_card)
         bundle_complete = self.filler.check_bundle_complete(shot_card, target_column)
 
+        # Step 4.5: Policy evaluation when ready and not yet evaluated
+        policy_result_dict = None
+        if min_audit_satisfied and shot_card.routing_decision is None:
+            policy_result_dict = await self._evaluate_policy(shot_card)
+            shot_card = await self._write_provenance(shot_card, policy_result_dict)
+            await self._create_audit_entry(shot_card, policy_result_dict)
+
         # Step 5: Emit events
         await self._emit_events(
             shot_card=shot_card,
@@ -88,6 +102,7 @@ class ShotCardAggregator:
             "updated_column": target_column,
             "bundle_complete": bundle_complete,
             "min_audit_satisfied": min_audit_satisfied,
+            "policy_result": policy_result_dict,
         }
 
     async def _ensure_shot_card(self, event: dict) -> ShotCard | None:
@@ -199,3 +214,127 @@ class ShotCardAggregator:
                 shot_card_id=shot_card.id,
                 bundles_complete=target_column,
             )
+
+    # -- Git Provider -------------------------------------------------------
+
+    def _get_git_provider(self) -> GitPolicyProvider:
+        """Lazy-initialize and return the GitPolicyProvider singleton."""
+        if self.git_provider is None:
+            self.git_provider = get_git_policy_provider()
+        return self.git_provider
+
+    # -- Policy Evaluation ---------------------------------------------------
+
+    async def _evaluate_policy(self, shot_card: ShotCard) -> dict:
+        """Evaluate policy for a ShotCard using Git-backed policies.
+
+        Fetches policies from the Git provider, loads them into the engine,
+        and evaluates the ShotCard against the stacked layers.
+
+        Args:
+            shot_card: The ShotCard to evaluate.
+
+        Returns:
+            Dict with "result" (PolicyResult) and "commit_sha" (str).
+        """
+        git_provider = self._get_git_provider()
+        all_policies, commit_sha = await git_provider.get_policies()
+
+        # Load policies into engine by layer
+        policies_by_layer: dict[str, list[str]] = {}
+
+        # Global layer
+        if "global" in all_policies:
+            for filename, policy_dict in all_policies["global"].items():
+                name = policy_dict.get("name", filename)
+                self.policy_engine._policies[name] = policy_dict
+                policies_by_layer.setdefault("global", []).append(name)
+
+        # Project-specific layer
+        if "projects" in all_policies and shot_card.project_id in all_policies["projects"]:
+            project_layer = all_policies["projects"][shot_card.project_id]
+            for filename, policy_dict in project_layer.items():
+                name = policy_dict.get("name", filename)
+                self.policy_engine._policies[name] = policy_dict
+                policies_by_layer.setdefault("project", []).append(name)
+
+        # Temporary layer
+        if "temporary" in all_policies:
+            for filename, policy_dict in all_policies["temporary"].items():
+                name = policy_dict.get("name", filename)
+                self.policy_engine._policies[name] = policy_dict
+                policies_by_layer.setdefault("temporary", []).append(name)
+
+        # Local fallback
+        if "local" in all_policies:
+            for i, policy_dict in enumerate(all_policies["local"]):
+                name = policy_dict.get("name", f"local_{i}")
+                self.policy_engine._policies[name] = policy_dict
+                policies_by_layer.setdefault("global", []).append(name)
+
+        # Evaluate with stack
+        result = self.policy_engine.evaluate_with_stack(
+            shot_card, policies_by_layer, policy_commit_sha=commit_sha
+        )
+
+        return {"result": result, "commit_sha": commit_sha}
+
+    # -- Provenance Writeback ------------------------------------------------
+
+    async def _write_provenance(self, shot_card: ShotCard, policy_result_dict: dict) -> ShotCard:
+        """Write routing_decision and policy_commit_sha back to the ShotCard.
+
+        Args:
+            shot_card: The ShotCard to update.
+            policy_result_dict: Dict with "result" (PolicyResult) and "commit_sha".
+
+        Returns:
+            Updated ShotCard instance.
+        """
+        from sqlalchemy.orm.attributes import flag_modified
+
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(ShotCard).where(ShotCard.shot_id == shot_card.shot_id)
+            )
+            db_card = result.scalar_one_or_none()
+
+            if db_card is not None:
+                db_card.routing_decision = policy_result_dict["result"].disposition.value
+                db_card.policy_commit_sha = policy_result_dict["commit_sha"]
+                flag_modified(db_card, "routing_decision")
+                await session.commit()
+                await session.refresh(db_card)
+                return db_card
+
+            # Fallback: return original if not found in DB
+            return shot_card
+
+    # -- Audit Entry ---------------------------------------------------------
+
+    async def _create_audit_entry(self, shot_card: ShotCard, policy_result_dict: dict) -> None:
+        """Create an AuditEntry recording the policy evaluation.
+
+        Args:
+            shot_card: The ShotCard that was evaluated.
+            policy_result_dict: Dict with "result" (PolicyResult) and "commit_sha".
+        """
+        policy_result = policy_result_dict["result"]
+        entry = AuditEntry(
+            shot_card_id=shot_card.id,
+            action="policy_evaluated",
+            actor="system:policy_engine",
+            from_state="awaiting_audit",
+            to_state=policy_result.disposition.value,
+            payload={
+                "matched_rule": policy_result.matched_rule,
+                "policy_commit_sha": policy_result_dict["commit_sha"],
+                "stack_layers": policy_result.stack_layers_evaluated,
+            },
+            prev_hash="0" * 64,
+            own_hash="pending",
+        )
+
+        async with async_session_factory() as session:
+            session.add(entry)
+            await session.commit()
