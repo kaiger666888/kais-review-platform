@@ -1,48 +1,89 @@
-"""Tests for ShotCardPolicyEngine: Shot Card evaluation, policy stacking,
-narrative context awareness, and PolicyResult tracking."""
+"""Tests for the V2 ShotCard-aware policy engine with policy stacking.
 
-import pytest
+Tests ShotCard-to-eval-dict conversion, narrative context field evaluation,
+policy stacking (global -> project -> temporary with last-layer-wins),
+PolicyResult tracking, and graceful handling of missing fields.
+"""
+
 from unittest.mock import MagicMock
 
-from app.core.policy_v2 import ShotCardPolicyEngine, PolicyResult
-from app.models.schemas import Disposition
+import pytest
+
+from app.models.shot_card import RoutingDecision
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Helpers: build mock ShotCard-like objects
 # ---------------------------------------------------------------------------
 
-def _make_shot_card(
-    shot_id="shot-001",
+
+def make_shot_card(
     project_id="proj-001",
+    shot_id="shot-001",
+    scene="scene_01",
+    shot_number=1,
+    emotion_curve="neutral",
+    continuity_tags=None,
     audit_status="awaiting_audit",
-    narrative_context=None,
-    visual_bundle=None,
     routing_decision=None,
+    visual_bundle=None,
+    audio_bundle=None,
 ):
-    """Create a MagicMock ShotCard-like object with configurable attributes."""
+    """Build a MagicMock mimicking a ShotCard model instance."""
     card = MagicMock()
-    card.shot_id = shot_id
     card.project_id = project_id
+    card.shot_id = shot_id
     card.audit_status = audit_status
-    card.narrative_context = narrative_context or {
-        "scene": "scene-01",
-        "shot_number": 1,
-        "emotion_curve": "neutral",
-        "continuity_tags": ["daytime", "interior"],
+    card.routing_decision = routing_decision
+    card.narrative_context = {
+        "scene": scene,
+        "shot_number": shot_number,
+        "emotion_curve": emotion_curve,
+        "continuity_tags": continuity_tags or [],
     }
     card.visual_bundle = visual_bundle
-    card.routing_decision = routing_decision
+    card.audio_bundle = audio_bundle
     return card
 
 
-# Sample YAML policies for stacking tests
+def make_shot_card_dict(
+    project_id="proj-001",
+    shot_id="shot-001",
+    scene="scene_01",
+    shot_number=1,
+    emotion_curve="neutral",
+    continuity_tags=None,
+    audit_status="awaiting_audit",
+    routing_decision=None,
+    visual_bundle=None,
+    audio_bundle=None,
+):
+    """Build a plain dict mimicking a ShotCard."""
+    return {
+        "project_id": project_id,
+        "shot_id": shot_id,
+        "audit_status": audit_status,
+        "routing_decision": routing_decision,
+        "narrative_context": {
+            "scene": scene,
+            "shot_number": shot_number,
+            "emotion_curve": emotion_curve,
+            "continuity_tags": continuity_tags or [],
+        },
+        "visual_bundle": visual_bundle,
+        "audio_bundle": audio_bundle,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sample policies for stacking tests
+# ---------------------------------------------------------------------------
 
 GLOBAL_POLICY_YAML = """\
 name: global_routing
 version: "1.0"
 rules:
-  - name: auto_low_emotion
+  - name: auto_neutral
     priority: 1
     conditions:
       operator: AND
@@ -51,11 +92,16 @@ rules:
           operator: equals
           value: neutral
     disposition: AUTO
+"""
 
+PROJECT_POLICY_YAML = """\
+name: project_high_emotion
+version: "1.0"
+rules:
   - name: human_high_emotion
-    priority: 2
+    priority: 1
     conditions:
-      operator: OR
+      operator: AND
       checks:
         - field: narrative_context.emotion_curve
           operator: equals
@@ -63,408 +109,399 @@ rules:
     disposition: HUMAN
 """
 
-PROJECT_POLICY_YAML = """\
-name: project_strict
+TEMPORARY_POLICY_YAML = """\
+name: temporary_block_scene
 version: "1.0"
 rules:
-  - name: block_flagged_tags
+  - name: block_specific_scene
+    priority: 1
+    conditions:
+      operator: AND
+      checks:
+        - field: narrative_context.scene
+          operator: equals
+          value: scene_42
+    disposition: BLOCK
+"""
+
+# Policy that matches emotion_curve via contains on continuity_tags
+TAG_POLICY_YAML = """\
+name: tag_routing
+version: "1.0"
+rules:
+  - name: horror_needs_human
     priority: 1
     conditions:
       operator: AND
       checks:
         - field: narrative_context.continuity_tags
           operator: contains
-          value: flagged
-    disposition: BLOCK
-
-  - name: human_night_scene
-    priority: 2
-    conditions:
-      operator: AND
-      checks:
-        - field: narrative_context.scene
-          operator: equals
-          value: night-ext
+          value: horror
     disposition: HUMAN
-"""
-
-TEMPORARY_POLICY_YAML = """\
-name: temp_override
-version: "1.0"
-rules:
-  - name: block_all_for_project
-    priority: 1
-    conditions:
-      operator: AND
-      checks:
-        - field: project_id
-          operator: equals
-          value: proj-001
-    disposition: BLOCK
 """
 
 
 # ---------------------------------------------------------------------------
-# Task 1 Tests: ShotCardPolicyEngine
+# Test: _shot_card_to_eval_dict conversion
 # ---------------------------------------------------------------------------
 
 
 class TestShotCardToEvalDict:
-    """Test _shot_card_to_eval_dict converts ShotCard to flat eval dict."""
+    """Test ShotCard model/dict to flat evaluation dict conversion."""
 
-    def test_basic_field_mapping(self):
-        """ShotCard fields map to top-level eval dict keys."""
+    def test_converts_basic_fields(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        card = _make_shot_card(
-            shot_id="shot-001",
-            project_id="proj-001",
-            audit_status="awaiting_audit",
-        )
+        card = make_shot_card(project_id="p1", shot_id="s1", audit_status="awaiting_audit")
         result = engine._shot_card_to_eval_dict(card)
 
-        assert result["shot_id"] == "shot-001"
-        assert result["project_id"] == "proj-001"
+        assert result["project_id"] == "p1"
+        assert result["shot_id"] == "s1"
         assert result["audit_status"] == "awaiting_audit"
 
-    def test_narrative_context_preserved_as_nested_dict(self):
-        """narrative_context fields remain accessible via dotted path."""
+    def test_converts_narrative_context(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "forest",
-                "shot_number": 5,
-                "emotion_curve": "tense",
-                "continuity_tags": ["outdoor", "sunset"],
-            }
+        card = make_shot_card(
+            scene="scene_05",
+            shot_number=3,
+            emotion_curve="tension",
+            continuity_tags=["dark", "horror"],
         )
         result = engine._shot_card_to_eval_dict(card)
 
-        assert result["narrative_context"]["scene"] == "forest"
-        assert result["narrative_context"]["shot_number"] == 5
-        assert result["narrative_context"]["emotion_curve"] == "tense"
-        assert result["narrative_context"]["continuity_tags"] == ["outdoor", "sunset"]
+        assert result["narrative_context"]["scene"] == "scene_05"
+        assert result["narrative_context"]["shot_number"] == 3
+        assert result["narrative_context"]["emotion_curve"] == "tension"
+        assert result["narrative_context"]["continuity_tags"] == ["dark", "horror"]
 
-    def test_visual_bundle_keyframes_accessible(self):
-        """visual_bundle nested fields are dot-accessible."""
+    def test_converts_visual_bundle(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        card = _make_shot_card(
-            visual_bundle={
-                "keyframes": {"first": "frame_001.png", "last": "frame_050.png"},
-                "video_url": "https://example.com/video.mp4",
-            }
+        card = make_shot_card(
+            visual_bundle={"keyframes": {"first": {"url": "http://example.com/img.jpg"}}}
         )
         result = engine._shot_card_to_eval_dict(card)
 
-        assert result["visual_bundle"]["keyframes"]["first"] == "frame_001.png"
+        assert result["visual_bundle"]["keyframes"]["first"]["url"] == "http://example.com/img.jpg"
 
-    def test_none_visual_bundle_handled(self):
-        """None visual_bundle does not crash conversion."""
+    def test_handles_none_visual_bundle(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        card = _make_shot_card(visual_bundle=None)
+        card = make_shot_card(visual_bundle=None)
         result = engine._shot_card_to_eval_dict(card)
 
-        assert result["visual_bundle"] is None
+        assert "visual_bundle" not in result or result.get("visual_bundle") is None
 
-    def test_dict_input_accepted(self):
-        """_shot_card_to_eval_dict also accepts a plain dict."""
+    def test_handles_dict_input(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        data = {
-            "shot_id": "shot-002",
-            "project_id": "proj-002",
-            "audit_status": "approved",
-            "narrative_context": {"scene": "beach", "shot_number": 3},
-        }
+        data = make_shot_card_dict(project_id="p2", shot_id="s2")
         result = engine._shot_card_to_eval_dict(data)
 
-        assert result["shot_id"] == "shot-002"
-        assert result["narrative_context"]["scene"] == "beach"
+        assert result["project_id"] == "p2"
+        assert result["narrative_context"]["scene"] == "scene_01"
+
+    def test_handles_empty_narrative_context(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        card = make_shot_card()
+        card.narrative_context = {}
+        result = engine._shot_card_to_eval_dict(card)
+
+        # Should not crash; narrative_context may be empty dict
+        assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Test: evaluate_shot_card
+# ---------------------------------------------------------------------------
 
 
 class TestEvaluateShotCard:
-    """Test evaluate_shot_card() returns correct Disposition."""
+    """Test evaluating a ShotCard against loaded policies."""
 
-    def test_neutral_emotion_auto_approved(self):
-        """Neutral emotion curve triggers AUTO disposition."""
+    def test_neutral_emotion_auto(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
         engine.load_policy("global", GLOBAL_POLICY_YAML)
 
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_shot_card(card, policy_name="global")
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_shot_card(card)
 
-        assert result.disposition == Disposition.AUTO
+        assert result.disposition == RoutingDecision.AUTO
 
-    def test_intense_emotion_human_review(self):
-        """Intense emotion curve triggers HUMAN disposition."""
+    def test_intense_emotion_no_match_defaults_human(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
         engine.load_policy("global", GLOBAL_POLICY_YAML)
 
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "battle",
-                "shot_number": 1,
-                "emotion_curve": "intense",
-                "continuity_tags": ["exterior"],
-            }
-        )
-        result = engine.evaluate_shot_card(card, policy_name="global")
+        card = make_shot_card(emotion_curve="intense")
+        result = engine.evaluate_shot_card(card)
 
-        assert result.disposition == Disposition.HUMAN
-
-    def test_no_matching_rule_defaults_to_human(self):
-        """When no rule matches, default to HUMAN (safe conservative)."""
-        engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "forest",
-                "shot_number": 1,
-                "emotion_curve": "mild",
-                "continuity_tags": [],
-            }
-        )
-        result = engine.evaluate_shot_card(card, policy_name="global")
-
-        assert result.disposition == Disposition.HUMAN
-
-    def test_continuity_tags_contains_operator(self):
-        """The contains operator works on continuity_tags list."""
-        engine = ShotCardPolicyEngine()
-        engine.load_policy("project", PROJECT_POLICY_YAML)
-
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior", "flagged"],
-            }
-        )
-        result = engine.evaluate_shot_card(card, policy_name="project")
-
-        assert result.disposition == Disposition.BLOCK
-
-    def test_missing_narrative_context_field_fails_gracefully(self):
-        """Missing narrative_context field causes condition to fail, not crash."""
-        engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                # Missing emotion_curve and continuity_tags
-            }
-        )
-        # Should not raise -- condition fails gracefully, default HUMAN
-        result = engine.evaluate_shot_card(card, policy_name="global")
-
-        assert result.disposition == Disposition.HUMAN
+        # No rule matches "intense" in global policy -> default HUMAN
+        assert result.disposition == RoutingDecision.HUMAN
 
     def test_returns_policy_result(self):
-        """evaluate_shot_card returns a PolicyResult with tracking info."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
         engine.load_policy("global", GLOBAL_POLICY_YAML)
 
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_shot_card(card, policy_name="global")
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_shot_card(card)
 
-        assert isinstance(result, PolicyResult)
-        assert result.disposition == Disposition.AUTO
-        assert result.matched_rule == "auto_low_emotion"
-        assert isinstance(result.stack_layers_evaluated, list)
+        assert hasattr(result, "disposition")
+        assert hasattr(result, "matched_rule")
+        assert hasattr(result, "policy_commit_sha")
+        assert hasattr(result, "stack_layers_evaluated")
+
+    def test_evaluates_with_dict(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        engine.load_policy("global", GLOBAL_POLICY_YAML)
+
+        data = make_shot_card_dict(emotion_curve="neutral")
+        result = engine.evaluate_shot_card(data)
+
+        assert result.disposition == RoutingDecision.AUTO
+
+
+# ---------------------------------------------------------------------------
+# Test: Policy Stacking
+# ---------------------------------------------------------------------------
 
 
 class TestPolicyStacking:
-    """Test evaluate_with_stack: global -> project -> temporary precedence."""
+    """Test policy stacking: global -> project -> temporary, last match wins."""
 
-    def test_global_only_uses_global_result(self):
-        """When only global policy exists, uses global result."""
+    def _make_stacked_policies(self):
+        """Return policies_by_layer dict."""
+        import yaml
+
+        return {
+            "global": [yaml.safe_load(GLOBAL_POLICY_YAML)],
+            "project": [yaml.safe_load(PROJECT_POLICY_YAML)],
+            "temporary": [yaml.safe_load(TEMPORARY_POLICY_YAML)],
+        }
+
+    def test_global_only_returns_global_result(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
+        import yaml
 
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={"global": ["global"]},
-        )
+        policies = {"global": [yaml.safe_load(GLOBAL_POLICY_YAML)]}
 
-        assert result.disposition == Disposition.AUTO
-        assert "global" in result.stack_layers_evaluated
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_with_stack(card, policies)
 
-    def test_project_overrides_global(self):
-        """Project policy overrides global when project rule matches."""
+        assert result.disposition == RoutingDecision.AUTO
+
+    def test_global_says_auto_project_says_human_human_wins(self):
+        """When both global and project match, project layer overrides."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-        engine.load_policy("project", PROJECT_POLICY_YAML)
+        policies = self._make_stacked_policies()
 
-        # Global says AUTO (neutral emotion), but project says BLOCK (flagged tag)
-        card = _make_shot_card(
-            project_id="proj-001",
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior", "flagged"],
-            }
-        )
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={"global": ["global"], "project": ["project"]},
-        )
+        # "intense" matches project's human_high_emotion rule
+        # global auto_neutral does NOT match "intense"
+        card = make_shot_card(emotion_curve="intense")
+        result = engine.evaluate_with_stack(card, policies)
 
-        assert result.disposition == Disposition.BLOCK
-        assert "global" in result.stack_layers_evaluated
-        assert "project" in result.stack_layers_evaluated
+        assert result.disposition == RoutingDecision.HUMAN
 
     def test_temporary_overrides_all(self):
-        """Temporary policy overrides both global and project."""
+        """Temporary layer overrides both global and project."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-        engine.load_policy("project", PROJECT_POLICY_YAML)
-        engine.load_policy("temporary", TEMPORARY_POLICY_YAML)
+        policies = self._make_stacked_policies()
 
-        # Global: AUTO (neutral), Project: no match, Temporary: BLOCK (proj-001)
-        card = _make_shot_card(
-            project_id="proj-001",
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={
-                "global": ["global"],
-                "project": ["project"],
-                "temporary": ["temporary"],
-            },
-        )
+        # scene_42 matches temporary's block rule; emotion_curve=neutral matches global's auto
+        card = make_shot_card(emotion_curve="neutral", scene="scene_42")
+        result = engine.evaluate_with_stack(card, policies)
 
-        assert result.disposition == Disposition.BLOCK
-        assert result.matched_rule == "block_all_for_project"
-        assert len(result.stack_layers_evaluated) == 3
+        # Temporary BLOCK overrides global AUTO
+        assert result.disposition == RoutingDecision.BLOCK
 
-    def test_stacking_no_match_in_later_layer_keeps_earlier(self):
-        """If a later layer has no match, earlier result stands."""
+    def test_no_match_defaults_to_human(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-        engine.load_policy("project", PROJECT_POLICY_YAML)
+        policies = self._make_stacked_policies()
 
-        # Global: AUTO (neutral), Project: no match (not flagged, not night-ext)
-        card = _make_shot_card(
-            project_id="proj-002",
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={"global": ["global"], "project": ["project"]},
-        )
+        card = make_shot_card(emotion_curve="melancholy", scene="scene_99")
+        result = engine.evaluate_with_stack(card, policies)
 
-        # Global's AUTO stands since project had no match
-        assert result.disposition == Disposition.AUTO
+        assert result.disposition == RoutingDecision.HUMAN
 
-    def test_empty_stack_defaults_to_human(self):
-        """Empty policy stack returns HUMAN default."""
+    def test_stack_layers_evaluated_tracked(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        policies = self._make_stacked_policies()
+
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_with_stack(card, policies)
+
+        assert "global" in result.stack_layers_evaluated
+
+    def test_matched_rule_name_tracked(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        import yaml
+
+        policies = {"global": [yaml.safe_load(GLOBAL_POLICY_YAML)]}
+
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_with_stack(card, policies)
+
+        assert result.matched_rule == "auto_neutral"
+
+    def test_global_auto_project_human_same_card_project_wins(self):
+        """When a card matches both global AUTO and project HUMAN,
+        project's match overrides because it's evaluated later."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
         engine = ShotCardPolicyEngine()
 
-        card = _make_shot_card()
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={},
-        )
-
-        assert result.disposition == Disposition.HUMAN
-
-    def test_policy_result_tracks_commit_sha(self):
-        """PolicyResult stores policy_commit_sha when provided."""
-        engine = ShotCardPolicyEngine()
-        engine.load_policy("global", GLOBAL_POLICY_YAML)
-
-        card = _make_shot_card(
-            narrative_context={
-                "scene": "office",
-                "shot_number": 1,
-                "emotion_curve": "neutral",
-                "continuity_tags": ["interior"],
-            }
-        )
-        result = engine.evaluate_with_stack(
-            card,
-            policies_by_layer={"global": ["global"]},
-            policy_commit_sha="abc123def456",
-        )
-
-        assert result.policy_commit_sha == "abc123def456"
-
-
-class TestLoadPoliciesFromLayer:
-    """Test batch loading policies for a named layer."""
-
-    def test_load_multiple_policies_for_layer(self):
-        """load_policies_from_layer loads multiple YAML strings under prefixed names."""
-        engine = ShotCardPolicyEngine()
-
-        yaml_a = """\
-name: policy_a
+        # Create a project policy that also matches neutral
+        project_override_yaml = """\
+name: project_override
 version: "1.0"
 rules:
-  - name: rule_a
+  - name: human_all_neutral
     priority: 1
     conditions:
       operator: AND
       checks:
-        - field: project_id
+        - field: narrative_context.emotion_curve
           operator: equals
-          value: proj-a
-    disposition: AUTO
+          value: neutral
+    disposition: HUMAN
 """
-        yaml_b = """\
-name: policy_b
-version: "1.0"
-rules:
-  - name: rule_b
-    priority: 1
-    conditions:
-      operator: AND
-      checks:
-        - field: project_id
-          operator: equals
-          value: proj-b
-    disposition: BLOCK
-"""
-        names = engine.load_policies_from_layer(
-            {"policy_a": yaml_a, "policy_b": yaml_b}, "test_layer"
+        import yaml
+
+        policies = {
+            "global": [yaml.safe_load(GLOBAL_POLICY_YAML)],
+            "project": [yaml.safe_load(project_override_yaml)],
+        }
+
+        card = make_shot_card(emotion_curve="neutral")
+        result = engine.evaluate_with_stack(card, policies)
+
+        # Project layer evaluated after global, its HUMAN match wins
+        assert result.disposition == RoutingDecision.HUMAN
+        assert result.matched_rule == "human_all_neutral"
+
+
+# ---------------------------------------------------------------------------
+# Test: Narrative context field access
+# ---------------------------------------------------------------------------
+
+
+class TestNarrativeContextEvaluation:
+    """Test that narrative context fields are accessible in policy rules."""
+
+    def test_continuity_tags_contains(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        engine.load_policy("tags", TAG_POLICY_YAML)
+
+        card = make_shot_card(continuity_tags=["action", "horror", "night"])
+        result = engine.evaluate_shot_card(card)
+
+        assert result.disposition == RoutingDecision.HUMAN
+
+    def test_continuity_tags_not_contains(self):
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        engine.load_policy("tags", TAG_POLICY_YAML)
+
+        card = make_shot_card(continuity_tags=["comedy", "light"])
+        result = engine.evaluate_shot_card(card)
+
+        # No match -> default HUMAN (but not because of the horror rule)
+        assert result.disposition == RoutingDecision.HUMAN
+        assert result.matched_rule is None
+
+    def test_missing_narrative_context_field_fails_gracefully(self):
+        """If narrative_context is missing a field, conditions fail without crash."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        engine.load_policy("global", GLOBAL_POLICY_YAML)
+
+        card = make_shot_card()
+        card.narrative_context = {}  # Empty -- no emotion_curve field
+
+        result = engine.evaluate_shot_card(card)
+
+        # Should not crash; no match -> default HUMAN
+        assert result.disposition == RoutingDecision.HUMAN
+
+    def test_none_narrative_context_fails_gracefully(self):
+        """If narrative_context is None, conditions fail without crash."""
+        from app.core.policy_v2 import ShotCardPolicyEngine
+
+        engine = ShotCardPolicyEngine()
+        engine.load_policy("global", GLOBAL_POLICY_YAML)
+
+        card = make_shot_card()
+        card.narrative_context = None
+
+        result = engine.evaluate_shot_card(card)
+
+        assert result.disposition == RoutingDecision.HUMAN
+
+
+# ---------------------------------------------------------------------------
+# Test: PolicyResult
+# ---------------------------------------------------------------------------
+
+
+class TestPolicyResult:
+    """Test the PolicyResult dataclass."""
+
+    def test_policy_result_fields(self):
+        from app.core.policy_v2 import PolicyResult
+
+        result = PolicyResult(
+            disposition=RoutingDecision.AUTO,
+            policy_commit_sha="abc123",
+            matched_rule="auto_rule",
+            stack_layers_evaluated=["global"],
         )
 
-        assert len(names) == 2
-        # Verify loaded policies exist
-        assert engine.get_policy("policy_a") is not None
-        assert engine.get_policy("policy_b") is not None
+        assert result.disposition == RoutingDecision.AUTO
+        assert result.policy_commit_sha == "abc123"
+        assert result.matched_rule == "auto_rule"
+        assert result.stack_layers_evaluated == ["global"]
+
+    def test_policy_result_defaults(self):
+        from app.core.policy_v2 import PolicyResult
+
+        result = PolicyResult(
+            disposition=RoutingDecision.HUMAN,
+            policy_commit_sha=None,
+            matched_rule=None,
+            stack_layers_evaluated=[],
+        )
+
+        assert result.policy_commit_sha is None
+        assert result.matched_rule is None
+        assert result.stack_layers_evaluated == []

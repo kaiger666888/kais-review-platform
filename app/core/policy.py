@@ -11,7 +11,7 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-from app.models.schemas import Disposition
+from app.models.shot_card import RoutingDecision as Disposition
 
 # ---------------------------------------------------------------------------
 # JSON Schema for policy YAML validation

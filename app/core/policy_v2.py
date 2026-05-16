@@ -1,11 +1,10 @@
-"""Enhanced policy engine for Shot Card evaluation with policy stacking.
+"""V2 ShotCard-aware policy engine with policy stacking.
 
-Extends the V1 PolicyEngine to accept ShotCard model objects, evaluate
-them against layered policies (global, project, temporary), and return
-rich PolicyResult objects with provenance tracking.
-
-V1 PolicyEngine (app/core/policy.py) is kept completely untouched.
-ShotCardPolicyEngine inherits from it and adds Shot Card-specific methods.
+Extends V1 PolicyEngine to accept Shot Card objects as input, converting them
+to flat evaluation dicts that leverage the existing dotted-field resolver.
+Adds policy stacking (global -> project -> temporary, last-layer match wins)
+and returns a PolicyResult tracking disposition, matched rule, commit SHA,
+and layers evaluated.
 """
 
 from __future__ import annotations
@@ -13,19 +12,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.core.policy import PolicyEngine
-from app.models.schemas import Disposition
+from app.models.shot_card import RoutingDecision
 
 
 # ---------------------------------------------------------------------------
-# PolicyResult — rich evaluation result with provenance
+# PolicyResult
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class PolicyResult:
-    """Result of a policy evaluation with full tracking information."""
+    """Outcome of a policy evaluation with full tracking metadata."""
 
-    disposition: Disposition
+    disposition: RoutingDecision
     policy_commit_sha: str | None = None
     matched_rule: str | None = None
     stack_layers_evaluated: list[str] = field(default_factory=list)
@@ -37,83 +36,186 @@ class PolicyResult:
 
 
 class ShotCardPolicyEngine(PolicyEngine):
-    """Enhanced policy engine that accepts ShotCard objects.
+    """Policy engine that understands Shot Card structure.
 
     Extends V1 PolicyEngine with:
-    - _shot_card_to_eval_dict() — converts ShotCard to flat evaluation dict
-    - evaluate_shot_card() — evaluates a ShotCard against loaded policies
-    - evaluate_with_stack() — evaluates with layered policy stacking
-    - load_policies_from_layer() — batch loads policies for a named layer
+    - _shot_card_to_eval_dict() to convert ShotCard models/dicts to flat eval dicts
+    - evaluate_shot_card() for single-policy evaluation
+    - evaluate_with_stack() for multi-layer policy stacking
     """
 
     # -- Conversion ----------------------------------------------------------
 
     @staticmethod
     def _shot_card_to_eval_dict(shot_card) -> dict:
-        """Convert a ShotCard model (or dict) to a flat evaluation dict.
+        """Convert a ShotCard model instance or dict to a flat evaluation dict.
 
-        The result preserves nested structure so that dotted-path access
-        (e.g. narrative_context.scene) works via the inherited
-        _evaluate_check() method.
-
-        Args:
-            shot_card: A ShotCard SQLAlchemy model, MagicMock, or plain dict.
-
-        Returns:
-            Flat dict suitable for PolicyEngine.evaluate().
+        The resulting dict uses dotted keys that the V1 _evaluate_check()
+        dotted-path resolver can traverse, e.g. ``narrative_context.scene``
+        resolves to ``result["narrative_context"]["scene"]``.
         """
+        # Accept both MagicMock/dict/SQLAlchemy model via attribute access
         if isinstance(shot_card, dict):
-            data = shot_card
+            project_id = shot_card.get("project_id", "")
+            shot_id = shot_card.get("shot_id", "")
+            audit_status = shot_card.get("audit_status", "")
+            routing_decision = shot_card.get("routing_decision")
+            narrative_context = shot_card.get("narrative_context") or {}
+            visual_bundle = shot_card.get("visual_bundle")
+            audio_bundle = shot_card.get("audio_bundle")
         else:
-            # Build from attribute access (works with models and MagicMocks)
-            data = {
-                "shot_id": getattr(shot_card, "shot_id", None),
-                "project_id": getattr(shot_card, "project_id", None),
-                "audit_status": getattr(shot_card, "audit_status", None),
-                "narrative_context": getattr(shot_card, "narrative_context", None),
-                "visual_bundle": getattr(shot_card, "visual_bundle", None),
-                "audio_bundle": getattr(shot_card, "audio_bundle", None),
-                "routing_decision": getattr(shot_card, "routing_decision", None),
-            }
+            project_id = getattr(shot_card, "project_id", "")
+            shot_id = getattr(shot_card, "shot_id", "")
+            audit_status = getattr(shot_card, "audit_status", "")
+            routing_decision = getattr(shot_card, "routing_decision", None)
+            narrative_context = getattr(shot_card, "narrative_context", None) or {}
+            visual_bundle = getattr(shot_card, "visual_bundle", None)
+            audio_bundle = getattr(shot_card, "audio_bundle", None)
 
-        return data
+        result: dict = {
+            "project_id": project_id,
+            "shot_id": shot_id,
+            "audit_status": audit_status,
+        }
 
-    # -- Shot Card Evaluation ------------------------------------------------
+        if routing_decision is not None:
+            result["routing_decision"] = routing_decision
 
-    def evaluate_shot_card(
-        self, shot_card, policy_name: str | None = None
-    ) -> PolicyResult:
+        if isinstance(narrative_context, dict):
+            result["narrative_context"] = narrative_context
+
+        if visual_bundle is not None:
+            result["visual_bundle"] = visual_bundle
+
+        if audio_bundle is not None:
+            result["audio_bundle"] = audio_bundle
+
+        return result
+
+    # -- Single-policy evaluation -------------------------------------------
+
+    def evaluate_shot_card(self, shot_card, policy_name: str | None = None) -> PolicyResult:
         """Evaluate a ShotCard against loaded policies.
 
-        Converts the ShotCard to an eval dict, delegates to parent
-        evaluate(), and returns a PolicyResult with tracking info.
-
-        Args:
-            shot_card: ShotCard model, MagicMock, or dict.
-            policy_name: Optional specific policy to evaluate.
-
-        Returns:
-            PolicyResult with disposition, matched rule, and layer info.
+        Converts the ShotCard to a flat eval dict and delegates to the
+        V1 ``evaluate()`` method.
         """
         eval_dict = self._shot_card_to_eval_dict(shot_card)
         disposition = self.evaluate(eval_dict, policy_name=policy_name)
 
-        # Find which rule matched by re-evaluating with tracking
+        # Try to determine which rule matched (best-effort)
         matched_rule = self._find_matched_rule(eval_dict, policy_name)
 
         return PolicyResult(
-            disposition=disposition,
+            disposition=RoutingDecision(disposition.value)
+            if not isinstance(disposition, RoutingDecision)
+            else disposition,
             matched_rule=matched_rule,
-            stack_layers_evaluated=["direct"],
+            stack_layers_evaluated=["loaded"],
         )
+
+    # -- Policy stacking evaluation -----------------------------------------
+
+    def evaluate_with_stack(
+        self,
+        shot_card_or_dict,
+        policies_by_layer: dict[str, list[dict]],
+        project_id: str | None = None,
+    ) -> PolicyResult:
+        """Evaluate a ShotCard against stacked policy layers.
+
+        Layer order: global -> project -> temporary.
+        Within each layer, rules are sorted by priority (ascending), first match wins.
+        Last layer's match wins overall (later layer overrides earlier layers).
+
+        Args:
+            shot_card_or_dict: A ShotCard model, MagicMock, or dict.
+            policies_by_layer: ``{"global": [policy_dict, ...], "project": [...], "temporary": [...]}``
+            project_id: Optional project ID for context (not used for filtering here).
+
+        Returns:
+            PolicyResult with full tracking metadata.
+        """
+        eval_dict = self._shot_card_to_eval_dict(shot_card_or_dict)
+
+        layer_order = ["global", "project", "temporary"]
+        final_disposition: RoutingDecision | None = None
+        final_matched_rule: str | None = None
+        layers_evaluated: list[str] = []
+
+        for layer_name in layer_order:
+            policies = policies_by_layer.get(layer_name, [])
+            if not policies:
+                continue
+
+            layers_evaluated.append(layer_name)
+
+            for policy in policies:
+                rules = sorted(
+                    policy.get("rules", []),
+                    key=lambda r: r.get("priority", 999),
+                )
+                for rule in rules:
+                    if self._evaluate_conditions(rule["conditions"], eval_dict):
+                        final_disposition = RoutingDecision(rule["disposition"])
+                        final_matched_rule = rule["name"]
+                        break  # first match in this policy
+                # Continue checking other policies in same layer
+                # (they may have higher-priority rules)
+                # Actually, we should check all policies in the layer and
+                # use the one with the highest priority (lowest number) that matches.
+                # Let me restructure: collect all matching rules in this layer.
+
+            # Re-evaluate: collect all matches from all policies in this layer,
+            # then pick the one with the lowest priority number.
+            layer_match = self._find_layer_match(policies, eval_dict)
+            if layer_match is not None:
+                final_disposition = layer_match[0]
+                final_matched_rule = layer_match[1]
+
+        if final_disposition is None:
+            final_disposition = RoutingDecision.HUMAN
+
+        return PolicyResult(
+            disposition=final_disposition,
+            matched_rule=final_matched_rule,
+            stack_layers_evaluated=layers_evaluated,
+        )
+
+    # -- Internal helpers ----------------------------------------------------
+
+    def _find_layer_match(
+        self, policies: list[dict], eval_dict: dict
+    ) -> tuple[RoutingDecision, str] | None:
+        """Find the best matching rule across all policies in a layer.
+
+        Returns (disposition, rule_name) for the lowest-priority match, or None.
+        """
+        best_match: tuple[int, RoutingDecision, str] | None = None
+
+        for policy in policies:
+            rules = sorted(
+                policy.get("rules", []),
+                key=lambda r: r.get("priority", 999),
+            )
+            for rule in rules:
+                if self._evaluate_conditions(rule["conditions"], eval_dict):
+                    priority = rule.get("priority", 999)
+                    if best_match is None or priority < best_match[0]:
+                        best_match = (
+                            priority,
+                            RoutingDecision(rule["disposition"]),
+                            rule["name"],
+                        )
+
+        if best_match is not None:
+            return (best_match[1], best_match[2])
+        return None
 
     def _find_matched_rule(
         self, eval_dict: dict, policy_name: str | None = None
     ) -> str | None:
-        """Find which rule matched the evaluation data.
-
-        Re-runs evaluation logic to identify the specific rule name.
-        """
+        """Best-effort find which rule matched in loaded V1 policies."""
         if policy_name and policy_name in self._policies:
             policies_to_check = {policy_name: self._policies[policy_name]}
         else:
@@ -127,89 +229,4 @@ class ShotCardPolicyEngine(PolicyEngine):
             for rule in rules:
                 if self._evaluate_conditions(rule["conditions"], eval_dict):
                     return rule["name"]
-
         return None
-
-    # -- Policy Stacking -----------------------------------------------------
-
-    def evaluate_with_stack(
-        self,
-        shot_card,
-        policies_by_layer: dict[str, list[str]],
-        policy_commit_sha: str | None = None,
-    ) -> PolicyResult:
-        """Evaluate a ShotCard against stacked policy layers.
-
-        Layers are evaluated in order: global -> project -> temporary.
-        Within each layer, rules are sorted by priority (ascending) and
-        the first matching rule wins for that layer. The last layer's
-        match wins overall (later layer overrides earlier).
-
-        Args:
-            shot_card: ShotCard model, MagicMock, or dict.
-            policies_by_layer: Mapping of layer name to list of policy names
-                in that layer. E.g. {"global": ["global_routing"],
-                "project": ["project_strict"]}.
-            policy_commit_sha: Optional Git commit SHA for provenance.
-
-        Returns:
-            PolicyResult with full tracking information.
-        """
-        eval_dict = self._shot_card_to_eval_dict(shot_card)
-
-        # Layer order determines precedence (later overrides earlier)
-        layer_order = ["global", "project", "temporary"]
-        final_disposition = Disposition.HUMAN  # Safe default
-        final_matched_rule: str | None = None
-        layers_evaluated: list[str] = []
-
-        for layer_name in layer_order:
-            policy_names = policies_by_layer.get(layer_name, [])
-            if not policy_names:
-                continue
-
-            layers_evaluated.append(layer_name)
-
-            # Evaluate all policies in this layer
-            for pname in policy_names:
-                if pname not in self._policies:
-                    continue
-
-                policy = self._policies[pname]
-                rules = sorted(
-                    policy.get("rules", []),
-                    key=lambda r: r.get("priority", 999),
-                )
-
-                for rule in rules:
-                    if self._evaluate_conditions(rule["conditions"], eval_dict):
-                        final_disposition = Disposition(rule["disposition"])
-                        final_matched_rule = rule["name"]
-                        break  # First match wins within a policy
-
-        return PolicyResult(
-            disposition=final_disposition,
-            policy_commit_sha=policy_commit_sha,
-            matched_rule=final_matched_rule,
-            stack_layers_evaluated=layers_evaluated,
-        )
-
-    # -- Batch Loading -------------------------------------------------------
-
-    def load_policies_from_layer(
-        self, yaml_contents: dict[str, str], layer_name: str
-    ) -> list[str]:
-        """Batch-load multiple YAML policies for a named layer.
-
-        Args:
-            yaml_contents: Mapping of policy name to YAML content string.
-            layer_name: Layer name (for logging purposes).
-
-        Returns:
-            List of successfully loaded policy names.
-        """
-        loaded: list[str] = []
-        for name, content in yaml_contents.items():
-            self.load_policy(name, content)
-            loaded.append(name)
-        return loaded
