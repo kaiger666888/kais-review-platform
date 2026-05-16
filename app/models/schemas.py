@@ -323,6 +323,52 @@ class BatchResponse(BaseModel):
     items: list[BatchItemResult]
 
 
+# --- Mobile Bundle Models ---
+
+
+class MobileShotCardBundle(BaseModel):
+    """Mobile-optimized Shot Card bundle with flat fields extracted from nested JSONB.
+
+    Denormalizes narrative_context, visual_bundle, and audio_bundle into
+    flat fields for easy consumption by mobile clients (no nested traversal).
+    """
+
+    id: int
+    shot_id: str
+    project_id: str
+    scene: str
+    shot_number: int
+    emotion_curve: str
+    continuity_tags: list[str]
+    first_frame_url: str | None = None
+    last_frame_url: str | None = None
+    video_url: str | None = None
+    visual_prompt: str | None = None
+    candidates: list[dict] | None = None
+    audio_status: str = "pending"
+    bgm_prompt: str | None = None
+    sfx_prompt: str | None = None
+    audit_status: str
+    routing_decision: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MobileAudioBundle(BaseModel):
+    """Audio bundle data for async progressive loading on mobile.
+
+    Mobile clients load visual content first, then fetch audio data
+    via a separate endpoint to reduce initial payload size.
+    """
+
+    shot_card_id: int
+    audio_status: str
+    bgm_prompt: str | None = None
+    sfx_prompt: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 # --- Generic Envelope Models ---
 
 
