@@ -75,7 +75,7 @@
 
 ### Authentication & Config (AUTH)
 
-- [ ] **AUTH-01**: 多角色认证 — admin (策略管理), reviewer (桌面/移动), auditor (只读分析), ai_service (评分)
+- [x] **AUTH-01**: 多角色认证 — admin (策略管理), reviewer (桌面/移动), auditor (只读分析), ai_service (评分)
 - [ ] **AUTH-02**: 配置扩展 — git_repo_url, postgres_url, minio_endpoint, openclaw_event_url, capability_token_secret, 保留策略设置
 - [ ] **AUTH-03**: 依赖更新 — 添加 asyncpg, gitpython, minio; 移除 aiosqlite
 
@@ -134,7 +134,7 @@
 | AUDIT-02 | Phase 22 | Pending |
 | AUDIT-03 | Phase 22 | Pending |
 | AUDIT-04 | Phase 22 | Pending |
-| AUTH-01 | Phase 22 | Pending |
+| AUTH-01 | Phase 22 | Complete |
 | DB-02 | Phase 22 | Pending |
 | DB-03 | Phase 22 | Pending |
 
