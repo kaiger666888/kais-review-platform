@@ -109,12 +109,9 @@ class TestWriteFeedback:
         mock_session.get = AsyncMock(return_value=mock_shot_card)
 
         with patch("app.workers.ai_audit_tasks.async_session_factory") as mock_factory, \
-             patch("app.workers.ai_audit_tasks.structlog.get_logger") as mock_get_logger:
+             patch("app.workers.ai_audit_tasks.logger") as mock_logger:
             mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
             mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
-            mock_logger = AsyncMock()
-            mock_get_logger.return_value = mock_logger
 
             await write_feedback(
                 ctx={},

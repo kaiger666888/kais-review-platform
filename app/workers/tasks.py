@@ -15,6 +15,8 @@ import structlog
 from arq import Retry, cron
 from sqlalchemy import select
 
+from app.workers.ai_audit_tasks import record_shadow_score, write_feedback
+
 # Timeout thresholds per route type (seconds)
 TIMEOUT_THRESHOLDS: dict[str, int] = {
     "AI_AUDIT": 300,    # 5 minutes for AI review
@@ -406,7 +408,7 @@ async def deliver_review_callback(
 class WorkerSettings:
     """arq worker configuration."""
 
-    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders, process_node_completion]
+    functions = [check_timeouts, deliver_webhook, deliver_review_callback, check_timeout_reminders, process_node_completion, record_shadow_score, write_feedback]
     cron_jobs = [
         cron(check_timeouts, minute={0}),  # Run every hour at minute 0
         cron(check_timeout_reminders, minute={0, 30}),  # Run every 30 minutes
