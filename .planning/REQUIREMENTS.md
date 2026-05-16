@@ -25,8 +25,8 @@
 
 ### Checkpoint & Events (CHKP)
 
-- [ ] **CHKP-01**: 检查点管理器 — 将 OpenClaw 运行状态序列化为 RunState Snapshot 存入 Redis，审核通过后注入 ResumeCommand 恢复执行
-- [ ] **CHKP-02**: 分级超时策略 — 人工审核默认 24h 超时转拒绝，AI 审核 5min 超时转人工
+- [x] **CHKP-01**: 检查点管理器 — 将 OpenClaw 运行状态序列化为 RunState Snapshot 存入 Redis，审核通过后注入 ResumeCommand 恢复执行
+- [x] **CHKP-02**: 分级超时策略 — 人工审核默认 24h 超时转拒绝，AI 审核 5min 超时转人工
 - [ ] **EVT-01**: 事件总线增强 — 渐进式填充事件（node_completed, bundle_ready, shot_card_updated），per-outlet 路由
 
 ### Database & Storage (DB)
@@ -108,8 +108,8 @@
 | POL-02 | Phase 17 | Pending |
 | POL-03 | Phase 17 | Pending |
 | ROUT-01 | Phase 18 | Pending |
-| CHKP-01 | Phase 18 | Pending |
-| CHKP-02 | Phase 18 | Pending |
+| CHKP-01 | Phase 18 | Complete |
+| CHKP-02 | Phase 18 | Complete |
 | EVT-01 | Phase 18 | Pending |
 | ROUT-02 | Phase 19 | Pending |
 | AI-01 | Phase 19 | Pending |

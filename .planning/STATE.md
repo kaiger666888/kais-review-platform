@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: routing-checkpoints
 status: executing
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-05-16T12:12:11Z"
+stopped_at: Completed 18-02-PLAN.md
+last_updated: "2026-05-16T12:28:53Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 1
-  completed_plans: 1
-  percent: 100
+  total_plans: 3
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 ## Current Position
 
 Phase: 18
-Plan: 01 complete
-Status: Plan complete — 18-01-PLAN.md executed
+Plan: 02 complete
+Status: Plan complete — 18-02-PLAN.md executed
 Last activity: 2026-05-16
 
-Progress: [##########] 100%
+Progress: [#######...] 67%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [##########] 100%
 | Phase 12 P01 | 4min | 2 tasks | 3 files |
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 18 P01 | 13min | 5 tasks | 8 files |
+| Phase 18 P02 | 13min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,10 @@ Recent decisions affecting current work:
 - [Phase 18]: Batch operations use partial success model with 207 Multi-Status
 - [Phase 18]: Batch routes registered before parameterized routes to avoid path matching conflicts
 - [Phase 18]: Batch endpoints JWT-only (no one-time tokens) since batch is programmatic
+- [Phase 18]: Checkpoint stored as Redis hash at checkpoint:{shot_id}, ResumeCommand at resume:{execution_id} with 1h TTL
+- [Phase 18]: TTL per route type: 24h (HUMAN), 5min (AI_AUDIT), 0 (AUTO/BLOCK immediate cleanup)
+- [Phase 18]: Timeout cron uses direct DB updates on ShotCard instead of ApprovalRouter (router lacks reject/enqueue class methods)
+- [Phase 18]: Timeout audit entries use simplified hash chain (prev_hash='timeout')
 
 ### Pending Todos
 
@@ -123,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T12:12:11Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-05-16T12:28:53Z
+Stopped at: Completed 18-02-PLAN.md
 Resume file: None

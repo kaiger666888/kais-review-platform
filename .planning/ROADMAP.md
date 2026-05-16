@@ -107,11 +107,11 @@ Plans:
   3. OpenClaw execution state is serialized as a RunState Snapshot in Redis, and after approval a ResumeCommand is produced that a mock execution layer can consume to resume
   4. A Shot Card in human review for 24 hours is automatically rejected; a Shot Card in AI review for 5 minutes is escalated to human review
   5. Event bus emits node_completed, bundle_ready, and shot_card_updated events, and each outlet (desktop/mobile) receives only its targeted events
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 18-01-PLAN.md — Approval router with priority queues, batch approval, AUTO/BLOCK immediate handling (ROUT-01)
-- [ ] 18-02-PLAN.md — Checkpoint manager (RunState snapshots, ResumeCommand) + timeout escalation cron (CHKP-01, CHKP-02)
+- [x] 18-01-PLAN.md — Approval router with priority queues, batch approval, AUTO/BLOCK immediate handling (ROUT-01)
+- [x] 18-02-PLAN.md — Checkpoint manager (RunState snapshots, ResumeCommand) + timeout escalation cron (CHKP-01, CHKP-02)
 - [ ] 18-03-PLAN.md — Event bus enhancements with per-outlet filtering and lifecycle events (EVT-01)
 
 ### Phase 19: AI Audit & Capability Tokens
@@ -192,7 +192,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 15. Foundation | v2.0 | 0/2 | Complete    | 2026-05-16 |
 | 16. Shot Card Aggregation | v2.0 | 2/2 | Complete    | 2026-05-16 |
 | 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
-| 18. Routing & Checkpoints | v2.0 | 0/3 | Not started | - |
+| 18. Routing & Checkpoints | v2.0 | 2/3 | In Progress|  |
 | 19. AI Audit & Capability Tokens | v2.0 | 0/2 | Not started | - |
 | 20. Desktop Workstation | v2.0 | 0/3 | Not started | - |
 | 21. Mobile PWA | v2.0 | 0/2 | Not started | - |
