@@ -2,43 +2,43 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-05-16T07:36:56Z"
-last_activity: 2026-05-16 -- Phase 15 Plan 01 completed
+status: verifying
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-05-16T07:35:26.053Z"
+last_activity: 2026-05-08
 progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 1
-  percent: 50
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 10
+  completed_plans: 10
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-16)
+See: .planning/PROJECT.md (updated 2026-05-07)
 
-**Core value:** Shot Card 是审核原子 -- 将 OpenClaw 节点拓扑折叠为叙事分镜单元，实现时空-视听一体化审核
-**Current focus:** Phase 15 — Foundation
+**Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
+**Current focus:** Phase 12 — dual-bot-coordination-e2e
 
 ## Current Position
 
-Phase: 15 (Foundation) — EXECUTING
-Plan: 2 of 2
-Status: Plan 01 complete, ready for Plan 02
-Last activity: 2026-05-16 -- Phase 15 Plan 01 completed
+Phase: 12
+Plan: Not started
+Status: Phase complete — ready for verification
+Last activity: 2026-05-08
 
-Progress: [█████░░░░░] 50%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 28 (v1.0: 12, v1.1: 6, v1.2: 10)
+- Total plans completed: 18 (v1.0 + v1.1)
 - Average duration: ~5min
-- Total execution time: ~2.3 hours
+- Total execution time: ~1.5 hours
 
 **By Phase:**
 
@@ -51,16 +51,23 @@ Progress: [█████░░░░░] 50%
 | 05 (v1.1) | 2 | 13min | 6.5min |
 | 06 (v1.1) | 3 | 38min | 12.7min |
 | 07 (v1.1) | 1 | 4min | 4.0min |
-| 08 (v1.2) | 2 | 9min | 4.5min |
-| 09 (v1.2) | 2 | 18min | 9.0min |
-| 10 (v1.2) | 2 | 8min | 4.0min |
-| 11 (v1.2) | 2 | 10min | 5.0min |
-| 12 (v1.2) | 2 | 11min | 5.5min |
 
 **Recent Trend:**
 
-- Last 5 plans: 4min, 4min, 3min, 7min, 7min
+- Last 5 plans: 10min, 10min, 18min, 4min, 4min
 - Trend: Stable
+
+| Phase 08 P01 | 3min | 2 tasks | 7 files |
+| Phase 08 P02 | 6min | 2 tasks | 3 files |
+| Phase 09 P01 | 7min | 2 tasks | 7 files |
+| Phase 09 P02 | 11min | 2 tasks | 5 files |
+| Phase 10 P01 | 4min | 2 tasks | 5 files |
+| Phase 10 P02 | 4min | 2 tasks | 4 files |
+| Phase 11 P02 | 3min | 1 tasks | 2 files |
+| Phase 11 P01 | 7min | 2 tasks | 3 files |
+| Phase 12 P01 | 4min | 2 tasks | 3 files |
+| Phase 12 P02 | 7min | 2 tasks | 1 files |
+| Phase 15 P02 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -69,15 +76,39 @@ Progress: [█████░░░░░] 50%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [V2 roadmap]: Full rewrite (not incremental migration) -- Shot Card model fundamentally different from Review
-- [V2 roadmap]: 8 phases at coarse granularity -- foundation, aggregation, gitops, routing, AI+tokens, desktop, mobile, audit
-- [V2 roadmap]: Memory budget relaxed from 400MB to 1GB (PostgreSQL ~200MB + MinIO ~128MB)
-- [V2 roadmap]: OpenClaw integration is mock-only (interfaces + stubs, no external dependency)
-- [V2 roadmap]: AI audit Phase 0 only (empty vectors, shadow mode, all human)
-- [15-01]: JSONB columns for nested Shot Card bundles -- data always read/written as unit
-- [15-01]: PostgreSQL ENUM types for stable status fields (audit_status, routing_decision)
-- [15-01]: Composite PK (created_at, id) on audit_entries for TimescaleDB hypertable partitioning
-- [15-01]: Audit immutability via PostgreSQL trigger, not SQLite authorizer
+- [v1.2 roadmap]: 5 phases (coarse granularity) — Schema+Callback, Telegram Bot, gold-team, movie-agent, E2E
+- [v1.2 roadmap]: Phase 08 combines DB schema + callback delivery (DB-01..04 + CB-01..05) since callback is tightly coupled to schema
+- [v1.2 roadmap]: Telegram Bot core + handlers in single Phase 09 (TG-01..07) since handlers are inseparable from bot lifecycle
+- [v1.2 roadmap]: Phases 10 and 11 are independent (gold-team Python, movie-agent Node.js) but both depend on Phase 08 callback infrastructure
+- [v1.2 roadmap]: Phase 12 (E2E) depends on everything — tests cross system boundaries
+- [Phase 08]: RFC1918 + loopback + link-local for callback URL SSRF validation
+- [Phase 08]: callback_secret excluded from API responses, stored only in DB
+- [Phase 08]: Telegram settings default to empty/disabled (no .env changes needed)
+- [Phase 08]: Callback block in emit_state_change is self-contained with own arq_pool import to avoid NameError if webhook block fails
+- [Phase 08]: Telegram notification is log-only stub; actual Bot delivery deferred to Phase 09
+- [Phase 08]: CALLBACK_BACKOFF separate from WEBHOOK_BACKOFF for independent tuning
+- [Phase 09]: Bot module decoupled from FastAPI lifecycle, wired in Plan 02 — Enables independent testing and graceful degradation when token not configured
+- [Phase 09]: callback_data format: action:review_id:version for optimistic locking — Integrates with transition_state expected_version parameter for concurrent modification safety
+- [Phase 09]: Bot startup failure logged but does not crash FastAPI (graceful degradation)
+- [Phase 09]: Timeout reminders at 80% threshold via check_timeout_reminders cron every 30min
+- [Phase 10]: Client code lives in review-platform at app/integrations/gold_team/client.py -- gold-team imports it as a dependency
+- [Phase 10]: Risk score auto-calculated from task_type via frozenset (HIGH=0.8, LOW=0.2, unknown=0.5)
+- [Phase 10]: JWT cached with 60s safety margin before expiry to avoid edge-case auth failures
+- [Phase 10]: Review interception uses direct httpx REST calls instead of importing ReviewPlatformClient to avoid cross-repo runtime dependency
+- [Phase 10]: Fail-open on review submission failure: if review platform unreachable, task proceeds without review (logged warning)
+- [Phase 10]: Polling 30s interval / 24h max, JWT auto-refresh on 401 during long poll
+- [Phase 11]: Photo sending only for kais-movie-agent source system (gold-team reviews have no images)
+- [Phase 11]: Max 3 preview images per review notification before InlineKeyboard
+- [Phase 11]: Pipeline resume spawns as detached child process via execFile with unref() (process isolation)
+- [Phase 11]: Callback server retries review_id lookup 3 times with 1s/3s delays (race condition mitigation)
+- [Phase 11]: All 6 review gates use moderate risk score 0.5 (tunable per phase later)
+- [Phase 11]: Callback handler uses workdir from review metadata to locate correct pipeline state file
+- [Phase 12]: No forwarding bridge needed -- review-platform Bot is single notification channel for all source systems (documented in gold-team client)
+- [Phase 12]: aiohttp chosen for mock callback server (native server mode with AppRunner/TCPSite)
+- [Phase 12]: Audit trail verification (action field) is authoritative for approve/reject decisions, not disposition field which stores routing decision (HUMAN/AUTO/BLOCK)
+- [Phase 15]: PostgreSQL default URL uses Docker service name 'postgres' not localhost
+- [Phase 15]: MinIO exposes API (9000) and Console (9001) internally only
+- [Phase 15]: init-db.sql mounted via docker-entrypoint-initdb.d, not copied into API image
 
 ### Pending Todos
 
@@ -85,10 +116,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- V1 phases 13-14 (gap closure) are still pending -- decide whether to complete before starting V2 or defer
+- [Phase 10]: Gold-team callback endpoint shape needs coordination with gold-team codebase
+- [Phase 11]: Movie-agent Node.js HTTP client library choice depends on movie-agent's existing dependency tree
+- [Phase 09]: Telegram InlineKeyboard callback_data has 64-byte limit — verified low risk (approve:9999:5 = 14 bytes)
 
 ## Session Continuity
 
-Last session: 2026-05-16
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-05-16T07:35:26.050Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
