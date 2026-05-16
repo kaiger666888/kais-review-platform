@@ -27,6 +27,7 @@ def _make_shot_card(
 ):
     """Create a mock ShotCard ORM object for testing."""
     card = MagicMock()
+    card.id = hash(shot_id) % 10000  # Numeric ID for audit entries
     card.shot_id = shot_id
     card.project_id = project_id
     card.execution_id = execution_id
@@ -38,6 +39,14 @@ def _make_shot_card(
     card.updated_at = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
     card.created_at = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
     return card
+
+
+def _patch_session_factory(mock_session):
+    """Helper to patch async_session_factory as context manager."""
+    mock_factory = MagicMock()
+    mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+    return mock_factory
 
 
 class TestHumanAutoReject:
@@ -58,28 +67,21 @@ class TestHumanAutoReject:
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [card]
         mock_session.execute = AsyncMock(return_value=mock_result)
-
-        mock_router = AsyncMock()
-        mock_router.reject_single = AsyncMock(return_value=True)
+        mock_session.commit = AsyncMock()
 
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
         ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             result = await check_shot_card_timeouts({})
 
             assert "shot-old" in result
-            mock_router.reject_single.assert_called_once_with(
-                "shot-old", "timeout", reason="Exceeded 24h human review timeout"
-            )
+            # Verify audit status was changed to rejected
+            assert card.audit_status == AuditStatus.REJECTED
+            mock_session.commit.assert_called()
 
     @pytest.mark.asyncio
     async def test_creates_audit_entry_on_reject(self):
@@ -96,30 +98,22 @@ class TestHumanAutoReject:
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [card]
         mock_session.execute = AsyncMock(return_value=mock_result)
-
-        mock_router = AsyncMock()
-        mock_router.reject_single = AsyncMock(return_value=True)
+        mock_session.commit = AsyncMock()
 
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
         ) as mock_audit:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             await check_shot_card_timeouts({})
 
-            mock_audit.assert_called()
-            # Verify the call was for auto-reject
-            call_kwargs = mock_audit.call_args
-            assert call_kwargs[1].get("actor") == "timeout" or (
-                len(call_kwargs[0]) > 1 and call_kwargs[0][1] == "timeout"
-            )
+            mock_audit.assert_called_once()
+            # Verify the call was for auto-reject with actor=timeout
+            call_kwargs = mock_audit.call_args[1]
+            assert call_kwargs.get("actor") == "timeout"
+            assert call_kwargs.get("action") == "timeout_rejected"
 
 
 class TestAiAuditEscalate:
@@ -142,21 +136,13 @@ class TestAiAuditEscalate:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        mock_router = AsyncMock()
-        mock_router.enqueue = AsyncMock()
-
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
         ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             result = await check_shot_card_timeouts({})
 
             assert "shot-ai" in result
@@ -181,30 +167,20 @@ class TestAiAuditEscalate:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        mock_router = AsyncMock()
-        mock_router.enqueue = AsyncMock()
-
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
         ) as mock_audit:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             await check_shot_card_timeouts({})
 
-            mock_audit.assert_called()
+            mock_audit.assert_called_once()
             # Verify action is timeout_escalated
-            call_kwargs = mock_audit.call_args
-            args = call_kwargs[0] if call_kwargs[0] else []
-            kwargs = call_kwargs[1] if call_kwargs[1] else {}
-            # Check that action field indicates escalation
-            assert "timeout_escalated" in str(args) or "timeout_escalated" in str(kwargs)
+            call_kwargs = mock_audit.call_args[1]
+            assert call_kwargs.get("action") == "timeout_escalated"
+            assert call_kwargs.get("actor") == "timeout"
 
 
 class TestWithinThreshold:
@@ -226,25 +202,19 @@ class TestWithinThreshold:
         mock_result.scalars.return_value.all.return_value = [card]
         mock_session.execute = AsyncMock(return_value=mock_result)
 
-        mock_router = AsyncMock()
-
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
-        ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
+        ) as mock_audit:
             result = await check_shot_card_timeouts({})
 
             assert result == []
-            mock_router.reject_single.assert_not_called()
-            mock_router.enqueue.assert_not_called()
+            mock_audit.assert_not_called()
+            # Status should remain unchanged
+            assert card.audit_status == "awaiting_audit"
 
     @pytest.mark.asyncio
     async def test_ai_audit_card_within_threshold_not_affected(self):
@@ -262,24 +232,19 @@ class TestWithinThreshold:
         mock_result.scalars.return_value.all.return_value = [card]
         mock_session.execute = AsyncMock(return_value=mock_result)
 
-        mock_router = AsyncMock()
-
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
-        ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
+        ) as mock_audit:
             result = await check_shot_card_timeouts({})
 
             assert result == []
-            mock_router.reject_single.assert_not_called()
+            mock_audit.assert_not_called()
+            # routing_decision should remain AI_AUDIT
+            assert card.routing_decision == "AI_AUDIT"
 
 
 class TestCronReturn:
@@ -303,22 +268,13 @@ class TestCronReturn:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        mock_router = AsyncMock()
-        mock_router.reject_single = AsyncMock(return_value=True)
-        mock_router.enqueue = AsyncMock()
-
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
-            return_value=mock_router,
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ), patch(
             "app.workers.shot_card_timeouts.create_audit_entry",
             new_callable=AsyncMock,
         ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             result = await check_shot_card_timeouts({})
 
             assert len(result) == 2
@@ -336,13 +292,9 @@ class TestCronReturn:
         mock_session.execute = AsyncMock(return_value=mock_result)
 
         with patch(
-            "app.workers.shot_card_timeouts.async_session_factory"
-        ) as mock_factory, patch(
-            "app.workers.shot_card_timeouts.ApprovalRouter",
+            "app.workers.shot_card_timeouts.async_session_factory",
+            _patch_session_factory(mock_session),
         ):
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
-
             result = await check_shot_card_timeouts({})
 
             assert result == []

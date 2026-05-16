@@ -21,6 +21,22 @@ class Disposition(str, enum.Enum):
     BLOCK = "BLOCK"
 
 
+# --- Review State Machine Enum (V1 compatibility) ---
+
+
+class ReviewState(str, enum.Enum):
+    """Review lifecycle states for the V1 state machine.
+
+    Used by state_machine.py, approval_router.py, and API endpoints
+    that still operate on the Review model.
+    """
+
+    PENDING = "PENDING"
+    POLICY_EVAL = "POLICY_EVAL"
+    APPROVING = "APPROVING"
+    COMPLETE = "COMPLETE"
+
+
 # --- Nested Structure Models (JSONB validation) ---
 
 
