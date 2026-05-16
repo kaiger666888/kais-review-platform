@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-05-16T07:50:29.142Z"
-last_activity: 2026-05-16
+status: executing
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-05-16T08:23:35.958Z"
+last_activity: 2026-05-16 -- Phase 16 Plan 01 completed
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 0
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-05-07)
 
-**Core value:** Strategy-engine-driven review routing -- every AI production task must pass policy evaluation before execution
-**Current focus:** Phase 12 — dual-bot-coordination-e2e
+**Core value:** Shot Card is the audit atom -- OpenClaw DAG node topology collapses into narrative shot units for review
+**Current focus:** Phase 16 -- shot-card-aggregation
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-16
+Phase: 16 (shot-card-aggregation) -- EXECUTING
+Plan: 1 of 2 (completed)
+Status: Executing Phase 16 -- Plan 01 done, Plan 02 next
+Last activity: 2026-05-16 -- Phase 16 Plan 01 completed
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 12 P01 | 4min | 2 tasks | 3 files |
 | Phase 12 P02 | 7min | 2 tasks | 1 files |
 | Phase 15 P02 | 2min | 2 tasks | 6 files |
+| Phase 16 P01 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,10 @@ Recent decisions affecting current work:
 - [Phase 15]: PostgreSQL default URL uses Docker service name 'postgres' not localhost
 - [Phase 15]: MinIO exposes API (9000) and Console (9001) internally only
 - [Phase 15]: init-db.sql mounted via docker-entrypoint-initdb.d, not copied into API image
+- [Phase 16]: AudioGen node override: merge_data={'status': 'ready'} regardless of node_output
+- [Phase 16]: visual_bundle check_bundle_complete requires keyframes.first AND prompt (not just keyframes)
+- [Phase 16]: Default min_audit_set is ['visual_bundle'] on new Shot Cards
+- [Phase 16]: _ensure_shot_card uses IntegrityError catch + re-query for concurrent creation safety
 
 ### Pending Todos
 
@@ -122,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T07:35:26.050Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-05-16T08:23:35.956Z
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None

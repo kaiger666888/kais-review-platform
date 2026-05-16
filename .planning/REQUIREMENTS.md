@@ -9,8 +9,8 @@
 
 - [ ] **SHOT-01**: Shot Card 数据模型定义，包含 shot_id, project_id, narrative_context (scene, shot_number, emotion_curve, continuity_tags), visual_bundle (keyframes, video_clip, prompt, candidates), audio_bundle (bgm_prompt, sfx_prompt, status), audit_state (status, routing_decision, min_audit_set, blocking_reason), provenance (workflow_version, policy_commit_sha, execution_id)
 - [ ] **SHOT-02**: Shot Card 聚合器 — 监听 OpenClaw 事件总线，按 shot_id 渐进式聚合节点输出到对应 Shot Card
-- [ ] **SHOT-03**: 拓扑折叠器 — 将 OpenClaw DAG 节点输出映射到 Shot Card bundles，处理乱序完成（video before image）
-- [ ] **SHOT-04**: 渐进式填充 — visual_bundle 先完成先显示，audio_bundle 完成后自动附加，min_audit_set 就绪后解锁审核按钮
+- [x] **SHOT-03**: 拓扑折叠器 — 将 OpenClaw DAG 节点输出映射到 Shot Card bundles，处理乱序完成（video before image）
+- [x] **SHOT-04**: 渐进式填充 — visual_bundle 先完成先显示，audio_bundle 完成后自动附加，min_audit_set 就绪后解锁审核按钮
 
 ### Policy & GitOps (POL)
 
@@ -102,8 +102,8 @@
 | AUTH-02 | Phase 15 | Pending |
 | AUTH-03 | Phase 15 | Pending |
 | SHOT-02 | Phase 16 | Pending |
-| SHOT-03 | Phase 16 | Pending |
-| SHOT-04 | Phase 16 | Pending |
+| SHOT-03 | Phase 16 | Complete |
+| SHOT-04 | Phase 16 | Complete |
 | POL-01 | Phase 17 | Pending |
 | POL-02 | Phase 17 | Pending |
 | POL-03 | Phase 17 | Pending |
