@@ -6,6 +6,7 @@ import os
 os.environ["API_KEY"] = "test-api-key"
 os.environ["JWT_SECRET"] = "test-jwt-secret-for-testing-min-32-chars-long"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["POSTGRES_URL"] = "postgresql+asyncpg://test:test@localhost:5432/testdb"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 
 import pytest

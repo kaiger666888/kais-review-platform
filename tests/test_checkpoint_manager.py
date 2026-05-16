@@ -69,7 +69,8 @@ class TestSaveSnapshot:
         assert call_args[0][0] == "checkpoint:shot-001"
 
         # Verify the mapping contains all required fields
-        mapping = call_args[0][1] if len(call_args[0]) > 1 else call_args[1].get("mapping", call_args[0][1])
+        # hset is called with (key, mapping=...) keyword arg
+        mapping = call_args[1].get("mapping", call_args[0][1] if len(call_args[0]) > 1 else {})
         assert b"execution_id" in mapping or "execution_id" in mapping
         assert b"shot_id" in mapping or "shot_id" in mapping
         assert b"project_id" in mapping or "project_id" in mapping
@@ -356,6 +357,13 @@ class TestOnRejection:
         redis = MagicMock()
         redis.hgetall = AsyncMock(return_value={
             b"execution_id": b"exec-001",
+            b"shot_id": b"shot-001",
+            b"project_id": b"proj-001",
+            b"routing_decision": b"HUMAN",
+            b"narrative_context": json.dumps({}).encode(),
+            b"visual_bundle": json.dumps({}).encode(),
+            b"audio_bundle": json.dumps({}).encode(),
+            b"created_at": b"2026-01-01T12:00:00+00:00",
         })
         redis.delete = AsyncMock()
 
