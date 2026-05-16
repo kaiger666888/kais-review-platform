@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, case, literal_column
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import require_jwt, require_auditor
+from app.core.auth import require_jwt, require_auditor, get_current_client
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.merkle import commit_merkle_root_to_git, compute_daily_merkle_root
