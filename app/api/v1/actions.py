@@ -375,6 +375,11 @@ async def approve_review(
             detail="Invalid state transition",
         )
 
+    if request.result:
+        metadata = review.metadata_json or {}
+        metadata["review_result"] = request.result.model_dump()
+        review.metadata_json = metadata
+
     await db.refresh(review)
     return ApiResponse(
         data=_review_response(review).model_dump(),

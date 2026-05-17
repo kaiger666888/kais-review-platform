@@ -345,11 +345,16 @@ async def deliver_review_callback(
         return {"status": "skipped", "reason": "no_callback_url"}
 
     # Build enriched callback payload
+    result = None
+    if review.metadata_json and "review_result" in review.metadata_json:
+        result = review.metadata_json["review_result"]
+
     callback_payload = {
         **event_data,
         "disposition": review.disposition,
         "review_id": review.id,
         "source_system": review.source_system,
+        "result": result,
     }
 
     # Compute HMAC-SHA256 signature using review's callback_secret

@@ -280,9 +280,17 @@ class ABTestPairResponse(BaseModel):
 # --- Shot Card Action Models ---
 
 
+class ReviewResult(BaseModel):
+    """Multi-candidate review result."""
+    selected: list[int] | None = None
+    scores: list[dict] | None = None
+    feedback: str | None = None
+
+
 class ApproveRequest(BaseModel):
-    """V1 legacy approve request — kept for backward compat with actions.py."""
+    """V1 legacy approve request — extended with multi-candidate result support."""
     comment: str | None = None
+    result: ReviewResult | None = None
 
 
 class RejectRequest(BaseModel):
