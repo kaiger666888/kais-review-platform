@@ -7,7 +7,8 @@ GET  /api/v1/reviews       -- List reviews with filters and cursor pagination (R
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import structlog
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,7 @@ from app.models.schemas import (
 from app.services.approval_router import PRIORITY_WEIGHT
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["reviews"])
+logger = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -77,6 +79,7 @@ async def submit_review(
     request: ReviewCreateRequest,
     db: AsyncSession = Depends(get_db),
     client: str = Depends(get_current_client),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
 ):
     """Submit a review item for policy evaluation and routing.
 
@@ -109,6 +112,16 @@ async def submit_review(
         callback_secret=request.callback_secret,
     )
     db.add(review)
+
+    # Store trace_id in metadata for cross-system log correlation
+    trace_id = x_trace_id
+    if trace_id and review.metadata_json:
+        review.metadata_json["trace_id"] = trace_id
+    elif trace_id:
+        review.metadata_json = {"trace_id": trace_id}
+
+    logger.info("review_submitted", review_id=review.id, source_system=request.source_system,
+                content_ref=request.content_ref, trace_id=trace_id)
     await db.commit()
     await db.refresh(review)
 
