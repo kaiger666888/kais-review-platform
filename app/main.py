@@ -121,7 +121,7 @@ app.include_router(web_router)
 @app.get("/health")
 @app.get("/api/v1/health")
 async def health():
-    checks = {"status": "ok"}
+    checks = {"status": "ok", "version": "2.0.0"}
 
     # Check Redis connectivity
     try:

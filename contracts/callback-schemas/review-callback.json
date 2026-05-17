@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReviewCallbackPayload",
+  "description": "Callback payload sent to source systems after review decision",
+  "type": "object",
+  "properties": {
+    "event": {
+      "type": "string",
+      "enum": ["review.approved", "review.rejected"]
+    },
+    "review_id": {
+      "type": "integer"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "disposition": {
+      "type": "string",
+      "enum": ["AUTO", "HUMAN", "AI_AUDIT", "BLOCK"]
+    },
+    "result": {
+      "type": "object",
+      "nullable": true,
+      "properties": {
+        "selected": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Indices of selected candidates"
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "description": "Per-candidate scores"
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Free-text feedback"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["event", "review_id", "source_system", "disposition"]
+}

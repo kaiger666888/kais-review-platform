@@ -167,10 +167,26 @@ async def review_detail_partial(request: Request, review_id: int):
 @router.post("/reviews/{review_id}/approve", response_class=HTMLResponse)
 async def approve_review_htmx(request: Request, review_id: int):
     """HTMX form handler: approve review, return updated list with toast trigger."""
+    form = await request.form()
+    comment = form.get("comment")
+    selected_raw = form.get("result[selected]")
+
     async with async_session_factory() as session:
         review = await session.get(Review, review_id)
         if review is None:
             return HTMLResponse("<p>Review not found.</p>", status_code=404)
+
+        # Store candidate selection in metadata if present
+        payload_data = {"comment": comment if isinstance(comment, str) else None}
+        if selected_raw and str(selected_raw).strip():
+            import json as _json
+            try:
+                selected = _json.loads(str(selected_raw))
+                metadata = review.metadata_json or {}
+                metadata["review_result"] = {"selected": selected}
+                review.metadata_json = metadata
+            except (ValueError, TypeError):
+                pass
 
         try:
             await transition_state(
@@ -181,7 +197,7 @@ async def approve_review_htmx(request: Request, review_id: int):
                 expected_version=review.version,
                 actor="reviewer",
                 action="approve",
-                payload={"comment": None},
+                payload=payload_data,
             )
         except (StateConflictError, InvalidTransitionError) as e:
             return HTMLResponse(

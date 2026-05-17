@@ -1,5 +1,5 @@
 <!-- Full-screen detail overlay -->
-<div x-data="{ showReject: false, reason: '' }" class="fixed inset-0 z-30">
+<div x-data="{ showReject: false, reason: '', selectedCandidates: [] }" class="fixed inset-0 z-30">
   <!-- Backdrop -->
   <div class="fixed inset-0 bg-black/50" @click="document.getElementById('detail-overlay').innerHTML = ''"></div>
 
@@ -57,6 +57,55 @@
       </div>
       {% endif %}
 
+      {% if review.metadata_json and review.metadata_json.get('candidates') %}
+      <!-- Multi-candidate selection UI -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <p class="text-xs text-gray-500 mb-3">Candidates <span class="text-gray-400">(click to select)</span></p>
+        <div class="grid grid-cols-2 gap-3">
+          {% for candidate in review.metadata_json.get('candidates', []) %}
+          <div class="relative cursor-pointer rounded-lg border-2 overflow-hidden transition-colors"
+               :class="selectedCandidates.includes({{ loop.index0 }}) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'"
+               @click="
+                 const idx = {{ loop.index0 }};
+                 if (selectedCandidates.includes(idx)) {
+                   selectedCandidates = selectedCandidates.filter(i => i !== idx);
+                 } else {
+                   selectedCandidates = [...selectedCandidates, idx];
+                 }
+               ">
+            {% if candidate.get('image_url') or candidate.get('url') %}
+            <img src="{{ candidate.get('image_url') or candidate.get('url') }}"
+                 alt="Candidate {{ loop.index }}"
+                 class="w-full h-32 object-cover"
+                 loading="lazy">
+            {% else %}
+            <div class="w-full h-32 bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+              Candidate {{ loop.index }}
+            </div>
+            {% endif %}
+            {% if candidate.get('score') is not none %}
+            <div class="absolute top-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+              {{ candidate.get('score', '') }}
+            </div>
+            {% endif %}
+            <div class="p-2">
+              <p class="text-xs text-gray-700 font-medium">Candidate {{ loop.index }}</p>
+              {% if candidate.get('label') %}
+              <p class="text-xs text-gray-500">{{ candidate.get('label') }}</p>
+              {% endif %}
+            </div>
+            <div x-show="selectedCandidates.includes({{ loop.index0 }})"
+                 class="absolute top-1 left-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              ✓
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="selected_candidates"
+               :value="JSON.stringify(selectedCandidates)">
+      </div>
+      {% endif %}
+
       <!-- Audit history placeholder -->
       <div class="bg-gray-50 rounded-lg p-4">
         <p class="text-xs text-gray-500 mb-1">Audit History</p>
@@ -66,13 +115,26 @@
 
     <!-- Action footer -->
     <div class="border-t border-gray-200 p-4 flex gap-3 bg-white">
-      <button class="h-12 flex-1 bg-green-600 text-white font-semibold rounded-lg min-h-[44px] focus-visible:ring-2 focus-visible:ring-green-600"
-              hx-post="/reviews/{{ review.id }}/approve"
-              hx-target="#review-list"
-              hx-swap="innerHTML"
-              hx-on::after-request="document.getElementById('detail-overlay').innerHTML = ''">
-        Approve
-      </button>
+      <form class="flex-1" hx-post="/reviews/{{ review.id }}/approve"
+            hx-target="#review-list"
+            hx-swap="innerHTML"
+            hx-on::after-request="document.getElementById('detail-overlay').innerHTML = ''">
+        {% if review.metadata_json and review.metadata_json.get('candidates') %}
+        <input type="hidden" name="result[selected]"
+               :value="selectedCandidates.length > 0 ? JSON.stringify(selectedCandidates) : ''">
+        {% endif %}
+        <button type="submit"
+                class="w-full h-12 bg-green-600 text-white font-semibold rounded-lg min-h-[44px] focus-visible:ring-2 focus-visible:ring-green-600">
+          Approve{% if review.metadata_json and review.metadata_json.get('candidates') %} (with selection){% endif %}
+        </button>
+      </form>
+      <div class="flex-1">
+        <button class="w-full h-12 bg-red-600 text-white font-semibold rounded-lg min-h-[44px] focus-visible:ring-2 focus-visible:ring-red-600"
+                @click="showReject = true">
+          Reject
+        </button>
+      </div>
+    </div>
       <button class="h-12 flex-1 bg-red-600 text-white font-semibold rounded-lg min-h-[44px] focus-visible:ring-2 focus-visible:ring-red-600"
               @click="showReject = true">
         Reject
