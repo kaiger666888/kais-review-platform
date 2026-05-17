@@ -1,0 +1,87 @@
+name: movie_agent_phases
+version: "1.0"
+description: "审核路由策略 for kais-movie-agent 各管线阶段"
+rules:
+  # 美术方向 — 人工审核（3选1 多候选）
+  - name: art_direction_human
+    priority: 1
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: art-direction
+    disposition: HUMAN
+
+  # 角色设计 — 人工审核（多选）
+  - name: character_human
+    priority: 2
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: character
+    disposition: HUMAN
+
+  # 配音 — 人工审核（音色确认）
+  - name: voice_human
+    priority: 3
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: voice
+    disposition: HUMAN
+
+  # 场景 — 人工审核
+  - name: scene_human
+    priority: 4
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: scene
+    disposition: HUMAN
+
+  # 分镜 — 人工审核
+  - name: storyboard_human
+    priority: 5
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: storyboard
+    disposition: HUMAN
+
+  # quality-gate — 自动通过
+  - name: quality_gate_auto
+    priority: 10
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: quality-gate
+    disposition: AUTO

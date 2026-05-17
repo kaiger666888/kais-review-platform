@@ -26,6 +26,7 @@ from app.web.sse import router as sse_router
 from app.core.dependencies import get_arq_pool, get_redis
 from app.core.config import get_settings
 from app.core.database import engine
+from app.core.events import event_manager
 from app.core.policy import get_policy_engine
 from app.models.schema import create_tables
 from app.bot import create_bot_application
@@ -118,6 +119,7 @@ app.include_router(web_router)
 
 
 @app.get("/health")
+@app.get("/api/v1/health")
 async def health():
     checks = {"status": "ok"}
 
@@ -126,22 +128,25 @@ async def health():
         redis = getattr(app.state, "redis", None)
         if redis:
             await redis.ping()
-            checks["redis"] = "ok"
+            checks["redis"] = True
         else:
-            checks["redis"] = "unavailable"
+            checks["redis"] = False
             checks["status"] = "degraded"
     except Exception:
-        checks["redis"] = "error"
+        checks["redis"] = False
         checks["status"] = "degraded"
 
-    # Check SQLite connectivity
+    # Check DB connectivity
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        checks["database"] = "ok"
+        checks["db"] = True
     except Exception:
-        checks["database"] = "error"
+        checks["db"] = False
         checks["status"] = "degraded"
+
+    # Active SSE connections
+    checks["active_sse"] = event_manager.connection_count
 
     status_code = 200 if checks["status"] == "ok" else 503
     from fastapi.responses import JSONResponse
