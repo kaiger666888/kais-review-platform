@@ -8,6 +8,7 @@ from arq.connections import RedisSettings
 from fastapi import Depends, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
+from app.api.v1.analytics import router as analytics_router
 from app.api.v1.ab_tests import router as ab_tests_router
 from app.api.v1.actions import router as actions_router
 from app.api.v1.audit_api import router as audit_router
@@ -110,6 +111,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Register API routers
+app.include_router(analytics_router)
 app.include_router(ab_tests_router)
 app.include_router(auth_router)
 app.include_router(reviews_router)

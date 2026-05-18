@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2_fragments.fastapi import Jinja2Blocks
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func, distinct, case, cast, Integer
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory, get_db
@@ -731,8 +731,39 @@ async def audit_stats_partial(
             for row in daily_result.all()
         ]
 
-        # Avg decision time (simplified)
-        avg_time = 0.0
+        # Avg decision time: earliest_subq + decision_subq pattern from audit_api.py
+        earliest_subq = (
+            select(
+                AuditEntry.review_id,
+                func.min(AuditEntry.created_at).label("first_entry"),
+            )
+            .group_by(AuditEntry.review_id)
+            .subquery()
+        )
+        decision_subq = (
+            select(
+                AuditEntry.review_id,
+                func.min(AuditEntry.created_at).label("first_decision"),
+            )
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by(AuditEntry.review_id)
+            .subquery()
+        )
+        avg_time_stmt = select(
+            func.avg(
+                func.extract("epoch", decision_subq.c.first_decision - earliest_subq.c.first_entry)
+                / 60.0
+            ).label("avg_minutes")
+        ).join(
+            earliest_subq,
+            earliest_subq.c.review_id == decision_subq.c.review_id,
+        )
+        avg_time_result = await session.execute(avg_time_stmt)
+        avg_time = round(avg_time_result.scalar() or 0, 1)
 
     stats = {
         "total_decisions": total_decisions,
@@ -936,5 +967,327 @@ async def mobile_audit(request: Request):
         return RedirectResponse(url="/login", status_code=303)
 
     return templates.TemplateResponse(request, "pages/mobile_audit.html", {
+        "user": user,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Analytics Dashboard Routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/analytics", response_class=HTMLResponse)
+async def analytics_dashboard(request: Request):
+    """Analytics dashboard: approval rates, routing ratio, AI scores."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    if _reject_ai_service(user):
+        return RedirectResponse(url="/login", status_code=303)
+
+    today = datetime.now(timezone.utc).date()
+    week_ago = today - timedelta(days=7)
+
+    return templates.TemplateResponse(request, "pages/analytics.html", {
+        "user": user,
+        "active_tab": "analytics",
+        "default_start_date": week_ago.isoformat(),
+        "default_end_date": today.isoformat(),
+    })
+
+
+@router.get("/partials/analytics-metrics", response_class=HTMLResponse)
+async def analytics_metrics_partial(
+    request: Request,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """HTMX partial: summary metric cards + by-source/phase tables."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    today = datetime.now(timezone.utc).date()
+    start = date.fromisoformat(start_date) if start_date else today - timedelta(days=7)
+    end = date.fromisoformat(end_date) if end_date else today
+
+    start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc)
+
+    async with async_session_factory() as session:
+        # By source_system
+        source_stmt = (
+            select(
+                Review.source_system,
+                func.count().label("total"),
+                func.sum(case((AuditEntry.action == "approve", 1), else_=0)).label("approved"),
+                func.sum(case((AuditEntry.action == "reject", 1), else_=0)).label("rejected"),
+            )
+            .join(AuditEntry, AuditEntry.review_id == Review.id)
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by(Review.source_system)
+            .order_by(func.count().desc())
+        )
+        source_result = await session.execute(source_stmt)
+        by_source = []
+        for row in source_result.all():
+            total = row.total or 0
+            approved = row.approved or 0
+            rejected = row.rejected or 0
+            by_source.append({
+                "source_system": row.source_system,
+                "total": total,
+                "approved": approved,
+                "rejected": rejected,
+                "approval_rate": round(approved / total, 4) if total > 0 else 0.0,
+            })
+
+        # By phase
+        phase_stmt = (
+            select(
+                func.json_extract_path_text(Review.metadata_json, "phase").label("phase"),
+                func.count().label("total"),
+                func.sum(case((AuditEntry.action == "approve", 1), else_=0)).label("approved"),
+                func.sum(case((AuditEntry.action == "reject", 1), else_=0)).label("rejected"),
+            )
+            .join(AuditEntry, AuditEntry.review_id == Review.id)
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by("phase")
+            .order_by(func.count().desc())
+        )
+        phase_result = await session.execute(phase_stmt)
+        by_phase = []
+        for row in phase_result.all():
+            total = row.total or 0
+            approved = row.approved or 0
+            rejected = row.rejected or 0
+            by_phase.append({
+                "phase": row.phase or "unknown",
+                "total": total,
+                "approved": approved,
+                "rejected": rejected,
+                "approval_rate": round(approved / total, 4) if total > 0 else 0.0,
+            })
+
+        total_decisions = sum(s["total"] for s in by_source)
+        total_approved = sum(s["approved"] for s in by_source)
+        total_rejected = sum(s["rejected"] for s in by_source)
+        approval_rate = round(total_approved / total_decisions, 4) if total_decisions > 0 else 0.0
+
+        # Avg wait time (real calculation, not hardcoded)
+        earliest_subq = (
+            select(
+                AuditEntry.review_id,
+                func.min(AuditEntry.created_at).label("first_entry"),
+            )
+            .group_by(AuditEntry.review_id)
+            .subquery()
+        )
+        decision_subq = (
+            select(
+                AuditEntry.review_id,
+                func.min(AuditEntry.created_at).label("first_decision"),
+            )
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by(AuditEntry.review_id)
+            .subquery()
+        )
+        avg_time_stmt = select(
+            func.avg(
+                func.extract("epoch", decision_subq.c.first_decision - earliest_subq.c.first_entry)
+                / 60.0
+            ).label("avg_minutes")
+        ).join(
+            earliest_subq,
+            earliest_subq.c.review_id == decision_subq.c.review_id,
+        )
+        avg_time_result = await session.execute(avg_time_stmt)
+        avg_wait_minutes = round(avg_time_result.scalar() or 0, 1)
+
+        # Daily throughput
+        daily_result = await session.execute(
+            select(func.date(AuditEntry.created_at).label("day"), func.count().label("cnt"))
+            .where(
+                AuditEntry.action.in_(["approve", "reject"]),
+                AuditEntry.created_at >= start_dt,
+                AuditEntry.created_at <= end_dt,
+            )
+            .group_by(func.date(AuditEntry.created_at))
+            .order_by(func.date(AuditEntry.created_at))
+        )
+        daily_throughput = [
+            {"date": str(row[0]) if row[0] else "", "count": row[1]}
+            for row in daily_result.all()
+        ]
+
+    stats = {
+        "total_decisions": total_decisions,
+        "approved": total_approved,
+        "rejected": total_rejected,
+        "approval_rate": approval_rate,
+        "avg_wait_minutes": avg_wait_minutes,
+        "daily_throughput": daily_throughput,
+    }
+
+    return templates.TemplateResponse(request, "partials/_analytics_metrics.html", {
+        "stats": stats,
+        "by_source": by_source,
+        "by_phase": by_phase,
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "user": user,
+    })
+
+
+@router.get("/partials/analytics-routing", response_class=HTMLResponse)
+async def analytics_routing_partial(
+    request: Request,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """HTMX partial: AUTO/HUMAN routing ratio bar."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    today = datetime.now(timezone.utc).date()
+    start = date.fromisoformat(start_date) if start_date else today - timedelta(days=7)
+    end = date.fromisoformat(end_date) if end_date else today
+
+    start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc)
+
+    async with async_session_factory() as session:
+        stmt = (
+            select(
+                ShotCard.routing_decision,
+                func.count().label("cnt"),
+            )
+            .where(
+                ShotCard.routing_decision.isnot(None),
+                ShotCard.created_at >= start_dt,
+                ShotCard.created_at <= end_dt,
+            )
+            .group_by(ShotCard.routing_decision)
+        )
+        result = await session.execute(stmt)
+        rows = result.all()
+
+    total = sum(row.cnt for row in rows)
+    counts = {}
+    ratios = {}
+    for row in rows:
+        key = row.routing_decision
+        counts[key] = row.cnt
+        ratios[key] = round(row.cnt / total, 4) if total > 0 else 0.0
+
+    return templates.TemplateResponse(request, "partials/_analytics_routing.html", {
+        "total": total,
+        "counts": counts,
+        "ratios": ratios,
+        "user": user,
+    })
+
+
+@router.get("/partials/analytics-scores", response_class=HTMLResponse)
+async def analytics_scores_partial(
+    request: Request,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """HTMX partial: AI score distribution histogram."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    if _reject_ai_service(user):
+        return HTMLResponse("<p>Access denied.</p>", status_code=403)
+
+    today = datetime.now(timezone.utc).date()
+    start = date.fromisoformat(start_date) if start_date else today - timedelta(days=7)
+    end = date.fromisoformat(end_date) if end_date else today
+
+    start_dt = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+    end_dt = datetime(end.year, end.month, end.day, 23, 59, 59, tzinfo=timezone.utc)
+
+    async with async_session_factory() as session:
+        score_col = ShotCard.narrative_context["ai_score"].astext
+        score_int = cast(score_col, Integer)
+
+        bucket_expr = case(
+            (score_int >= 90, "90-100"),
+            (score_int >= 70, "70-89"),
+            (score_int >= 50, "50-69"),
+            (score_int >= 30, "30-49"),
+            else_="0-29",
+        )
+
+        stmt = (
+            select(
+                bucket_expr.label("bucket"),
+                func.count().label("cnt"),
+                func.avg(score_int).label("avg_score"),
+            )
+            .where(
+                score_col.isnot(None),
+                ShotCard.created_at >= start_dt,
+                ShotCard.created_at <= end_dt,
+            )
+            .group_by("bucket")
+        )
+        result = await session.execute(stmt)
+        rows = result.all()
+
+    bucket_order = ["90-100", "70-89", "50-69", "30-49", "0-29"]
+    distribution = {b: {"bucket": b, "count": 0, "avg_score": None} for b in bucket_order}
+
+    total_scored = 0
+    weighted_sum = 0
+    for row in rows:
+        bucket = row.bucket
+        if bucket in distribution:
+            distribution[bucket]["count"] = row.cnt
+            distribution[bucket]["avg_score"] = round(row.avg_score, 1) if row.avg_score else None
+            total_scored += row.cnt
+            if row.avg_score:
+                weighted_sum += row.avg_score * row.cnt
+
+    overall_avg = round(weighted_sum / total_scored, 1) if total_scored > 0 else None
+
+    return templates.TemplateResponse(request, "partials/_analytics_scores.html", {
+        "distribution": [distribution[b] for b in bucket_order],
+        "overall_avg": overall_avg,
+        "total_scored": total_scored,
         "user": user,
     })
