@@ -359,6 +359,7 @@ class MobileShotCardBundle(BaseModel):
     sfx_prompt: str | None = None
     audit_status: str
     routing_decision: str | None = None
+    template_config: dict | None = None
 
     model_config = {"from_attributes": True}
 

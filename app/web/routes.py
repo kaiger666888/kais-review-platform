@@ -333,17 +333,28 @@ async def shot_queue_partial(
 async def shot_card_detail_partial(request: Request, shot_card_id: int):
     """HTMX partial: Shot card detail for center and right panels.
 
-    Returns the decision panel content as the primary response,
-    plus an OOB swap element for #media-preview to update the center panel.
+    Returns template-aware decision panel content based on source_system + phase.
+    Uses TemplateRegistry to resolve the correct partial, wrapped by
+    _template_wrapper.html for dynamic Jinja2 include selection.
+    Falls back to default decision panel for unknown source_system/phase.
     """
+    from app.core.template_registry import derive_source_system, get_template_registry
+
     async with async_session_factory() as session:
         shot_card = await session.get(ShotCard, shot_card_id)
 
     if shot_card is None:
         return HTMLResponse("<p>Shot card not found.</p>", status_code=404)
 
-    return templates.TemplateResponse(request, "partials/_decision_panel.html", {
+    # Resolve template based on source_system + phase
+    source_system = derive_source_system(shot_card)
+    nc = shot_card.narrative_context or {}
+    phase = nc.get("phase") or nc.get("pipeline_phase")
+    template_config = get_template_registry().resolve(source_system, phase)
+
+    return templates.TemplateResponse(request, "partials/_template_wrapper.html", {
         "shot": shot_card,
+        "template": template_config,
     })
 
 

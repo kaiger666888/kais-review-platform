@@ -28,6 +28,7 @@ from app.core.config import get_settings
 from app.core.database import engine
 from app.core.events import event_manager
 from app.core.policy import get_policy_engine
+from app.core.template_registry import get_template_registry
 from app.models.schema import create_tables
 from app.bot import create_bot_application
 from app.bot.lifecycle import bot_start, bot_stop
@@ -50,6 +51,14 @@ async def lifespan(app: FastAPI):
         logger.info("Loaded %d default policies: %s", len(loaded), loaded)
     except Exception as exc:
         logger.warning("Failed to load default policies: %s", exc)
+
+    # Startup: load template configs from YAML files
+    template_registry = get_template_registry()
+    try:
+        loaded_templates = template_registry.load_from_directory("app/templates/config")
+        logger.info("Loaded %d template configs: %s", len(loaded_templates), loaded_templates)
+    except Exception as exc:
+        logger.warning("Failed to load template configs: %s", exc)
 
     # Startup: initialize Redis connection
     try:

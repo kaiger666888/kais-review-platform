@@ -38,6 +38,34 @@
           <span class="text-white text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded ml-1"
                 x-text="(candidateIndex + 1) + '/' + cards[currentIndex].candidates.length">
           </span>
+          <!-- Score display when template_config.show_scores is true (candidate-swipe variant) -->
+          <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.show_scores && cards[currentIndex].candidates[candidateIndex]">
+            <span class="text-white text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded"
+                  x-text="cards[currentIndex].candidates[candidateIndex].score ? Math.round(cards[currentIndex].candidates[candidateIndex].score * 100) + '%' : ''">
+            </span>
+          </template>
+        </div>
+      </template>
+
+      <!-- Risk assessment badge (risk-assessment variant) -->
+      <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.card_variant === 'risk-assessment'">
+        <div class="absolute top-2 left-2 bg-black/60 rounded px-2 py-1">
+          <div class="text-xs text-gray-400">Risk</div>
+          <div class="flex items-center gap-1">
+            <div class="w-16 bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <div class="h-1.5 rounded-full"
+                   :class="{
+                     'bg-red-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                     'bg-yellow-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                     'bg-green-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                   }"
+                   :style="'width: ' + ((cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) : 0) + '%'">
+              </div>
+            </div>
+            <span class="text-white text-xs font-mono"
+                  x-text="(cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) + '%' : 'N/A'">
+            </span>
+          </div>
         </div>
       </template>
 
@@ -91,6 +119,33 @@
       <!-- Detail panel (shown on swipe-up) -->
       <template x-if="showDetail">
         <div class="space-y-3 pt-2 border-t border-gray-700" x-transition>
+          <!-- Risk assessment section (risk-assessment variant) -->
+          <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.card_variant === 'risk-assessment'">
+            <div>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 mb-1">Risk Assessment</h4>
+              <div class="flex items-center gap-2 mb-2">
+                <div class="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
+                  <div class="h-2 rounded-full"
+                       :class="{
+                         'bg-red-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                         'bg-yellow-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                         'bg-green-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                       }"
+                       :style="'width: ' + ((cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) : 0) + '%'">
+                  </div>
+                </div>
+                <span class="text-xs font-mono"
+                      :class="{
+                        'text-red-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                        'text-yellow-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                        'text-green-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                      }"
+                      x-text="(cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) + '%' : 'N/A'">
+                </span>
+              </div>
+            </div>
+          </template>
+
           <!-- Visual prompt -->
           <template x-if="cards[currentIndex].visual_prompt">
             <div>

@@ -44,7 +44,11 @@ def _shot_card_to_bundle(shot_card: ShotCard) -> MobileShotCardBundle:
     Extracts fields from nested JSONB columns (narrative_context,
     visual_bundle, audio_bundle) into flat fields for mobile consumption.
     Uses safe chained .get() calls to handle missing or partial data.
+    Also resolves template_config from TemplateRegistry for client-side
+    conditional rendering.
     """
+    from app.core.template_registry import derive_source_system, get_template_registry
+
     # Narrative context -- always present (NOT NULL in DB)
     nc = shot_card.narrative_context or {}
     scene = nc.get("scene", "")
@@ -71,6 +75,16 @@ def _shot_card_to_bundle(shot_card: ShotCard) -> MobileShotCardBundle:
     bgm_prompt = ab.get("bgm_prompt")
     sfx_prompt = ab.get("sfx_prompt")
 
+    # Template resolution for mobile card variant
+    source_system = derive_source_system(shot_card)
+    phase = nc.get("phase") or nc.get("pipeline_phase")
+    tc = get_template_registry().resolve(source_system, phase)
+    template_config = {
+        "card_variant": tc.mobile_card_variant,
+        "show_scores": tc.show_scores,
+        "show_candidates": tc.show_candidates,
+    }
+
     return MobileShotCardBundle(
         id=shot_card.id,
         shot_id=shot_card.shot_id,
@@ -89,6 +103,7 @@ def _shot_card_to_bundle(shot_card: ShotCard) -> MobileShotCardBundle:
         sfx_prompt=sfx_prompt,
         audit_status=shot_card.audit_status,
         routing_decision=shot_card.routing_decision,
+        template_config=template_config,
     )
 
 

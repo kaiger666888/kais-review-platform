@@ -1,0 +1,16 @@
+<!-- Template-aware wrapper: dynamically includes template-selected partials -->
+<!-- Context: shot (ShotCard), template (TemplateConfig) -->
+{% if shot %}
+<div data-template="{{ template.desktop_decision_panel | default('partials/_decision_panel.html') }}">
+  {% include template.desktop_decision_panel ignore missing with context %}
+</div>
+
+<!-- Media Preview OOB swap — includes the template-selected media player partial -->
+<div id="media-preview" hx-swap-oob="true">
+  {% include template.desktop_media_player ignore missing with context %}
+</div>
+{% else %}
+<div class="space-y-4">
+  <span class="text-gray-500 text-sm">No shot selected</span>
+</div>
+{% endif %}
