@@ -207,7 +207,10 @@ Plans:
   1. Review submission API accepts metadata.ai_score, ai_score_dimensions, and ai_score_source fields from movie-agent
   2. External scores are stored in the review/shot_card record and returned in API responses
   3. Desktop and mobile review UIs display AI score dimensions (visual_quality, audio_quality, consistency) as read-only badges/panels
-**Plans:** 0/0 plans
+**Plans:** 1 plan
+
+Plans:
+- [ ] 24-01-PLAN.md — Extend schemas + mobile bundle for AI scores, render score panels in desktop and mobile UI
 
 ### Phase 25: Analytics Dashboard
 **Goal**: Review data analytics dashboard showing throughput, approval rates, score distributions, and batch review enhancements
@@ -237,5 +240,5 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 ->
 | 21. Mobile PWA | v2.0 | 2/2 | Complete   | 2026-05-16 |
 | 22. Audit & Compliance | v2.0 | 3/3 | Complete   | 2026-05-16 |
 | 23. Review Template System | v2.0 | 2/2 | Complete   | 2026-05-18 |
-| 24. External Scoring Integration | v2.0 | 0/0 | Pending    |  |
+| 24. External Scoring Integration | v2.0 | 0/1 | Pending    |  |
 | 25. Analytics Dashboard | v2.0 | 0/0 | Pending    |  |
