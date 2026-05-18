@@ -81,6 +81,9 @@ class NarrativeContext(BaseModel):
     shot_number: int
     emotion_curve: str
     continuity_tags: list[str] = Field(default_factory=list)
+    ai_score: int | None = None
+    ai_score_dimensions: dict | None = None
+    ai_score_source: str | None = None
 
 
 class AuditStatePydantic(BaseModel):
@@ -360,6 +363,9 @@ class MobileShotCardBundle(BaseModel):
     audit_status: str
     routing_decision: str | None = None
     template_config: dict | None = None
+    ai_score: int | None = None
+    ai_score_dimensions: dict | None = None
+    ai_score_source: str | None = None
 
     model_config = {"from_attributes": True}
 

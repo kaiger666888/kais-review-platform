@@ -75,6 +75,11 @@ def _shot_card_to_bundle(shot_card: ShotCard) -> MobileShotCardBundle:
     bgm_prompt = ab.get("bgm_prompt")
     sfx_prompt = ab.get("sfx_prompt")
 
+    # External AI scores (from movie-agent quality-gate phase)
+    ai_score = nc.get("ai_score")
+    ai_score_dimensions = nc.get("ai_score_dimensions")
+    ai_score_source = nc.get("ai_score_source")
+
     # Template resolution for mobile card variant
     source_system = derive_source_system(shot_card)
     phase = nc.get("phase") or nc.get("pipeline_phase")
@@ -104,6 +109,9 @@ def _shot_card_to_bundle(shot_card: ShotCard) -> MobileShotCardBundle:
         audit_status=shot_card.audit_status,
         routing_decision=shot_card.routing_decision,
         template_config=template_config,
+        ai_score=ai_score,
+        ai_score_dimensions=ai_score_dimensions,
+        ai_score_source=ai_score_source,
     )
 
 
