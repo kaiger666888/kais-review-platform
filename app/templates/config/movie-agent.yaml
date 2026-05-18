@@ -1,0 +1,69 @@
+name: movie-agent-templates
+version: "1.0"
+source_system: kais-movie-agent
+templates:
+  art-direction:
+    desktop:
+      decision_panel: partials/_template_candidate_grid.html
+      media_player: partials/_media_player.html
+      show_scores: true
+      show_candidates: true
+      candidate_layout: side-by-side
+    mobile:
+      card_variant: candidate-swipe
+      show_scores: true
+  character:
+    desktop:
+      decision_panel: partials/_template_candidate_grid.html
+      media_player: partials/_media_player.html
+      show_scores: true
+      show_candidates: true
+      candidate_layout: grid
+    mobile:
+      card_variant: candidate-swipe
+      show_scores: true
+  voice:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_scores: false
+      show_candidates: false
+    mobile:
+      card_variant: default
+  scene:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_scores: true
+      show_candidates: false
+    mobile:
+      card_variant: default
+  storyboard:
+    desktop:
+      decision_panel: partials/_template_candidate_grid.html
+      media_player: partials/_media_player.html
+      show_scores: true
+      show_candidates: true
+      candidate_layout: grid
+    mobile:
+      card_variant: candidate-swipe
+      show_scores: true
+  quality-gate:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_scores: true
+      show_candidates: false
+    mobile:
+      card_variant: default
+      show_scores: true
+  _default:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_scores: false
+      show_candidates: true
+      candidate_layout: grid
+    mobile:
+      card_variant: default
+      show_scores: false
