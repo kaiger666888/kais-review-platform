@@ -1,4 +1,22 @@
-<div id="review-list">
+<div id="review-list"
+     x-init="if (!Alpine.store('batch')) { Alpine.store('batch', { active: false, selectedIds: [] }) }">
+  <!-- Batch mode header -->
+  <div class="px-4 py-2 flex items-center justify-between border-b border-gray-100 bg-gray-50">
+    <div class="flex items-center gap-2">
+      <button type="button"
+              @click="$store.batch.active = !$store.batch.active; if (!$store.batch.active) $store.batch.selectedIds = []"
+              class="text-xs font-semibold px-2 py-1 rounded border border-gray-300 hover:bg-gray-100"
+              :class="$store.batch.active ? 'bg-blue-50 border-blue-400 text-blue-700' : 'text-gray-600'">
+        <span x-text="$store.batch.active ? 'Cancel Select' : 'Select'"></span>
+      </button>
+      <span x-show="$store.batch.active && $store.batch.selectedIds.length > 0"
+            x-cloak
+            class="text-xs text-gray-500">
+        <span x-text="$store.batch.selectedIds.length"></span> selected
+      </span>
+    </div>
+  </div>
+
   {% if reviews %}
     {% for review in reviews %}
       {% include "partials/_review_card.html" %}
@@ -17,4 +35,11 @@
   {% else %}
     {% include "partials/_empty_state.html" %}
   {% endif %}
+
+  <!-- Batch action bar (shown when batch mode active and items selected) -->
+  <div x-show="$store.batch.active && $store.batch.selectedIds.length > 0"
+       x-cloak
+       x-transition>
+    {% include "partials/_batch_action_bar.html" %}
+  </div>
 </div>

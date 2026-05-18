@@ -262,6 +262,164 @@ async def reject_review_htmx(request: Request, review_id: int, reason: str = For
 
 
 # ---------------------------------------------------------------------------
+# V1 Batch Review Routes
+# ---------------------------------------------------------------------------
+
+
+@router.post("/reviews/batch/approve-htmx", response_class=HTMLResponse)
+async def batch_approve_reviews_htmx(request: Request):
+    """HTMX form handler: batch approve multiple V1 reviews with per-item audit trail."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    form = await request.form()
+    review_ids_raw = form.get("review_ids", "[]")
+    comment = form.get("comment", "")
+
+    # Validate review_ids (T-25-02 mitigation)
+    try:
+        review_ids = json.loads(str(review_ids_raw))
+        if not isinstance(review_ids, list):
+            raise ValueError("Expected list")
+        review_ids = [int(rid) for rid in review_ids[:100]]
+    except (ValueError, TypeError):
+        return HTMLResponse(
+            "<p>Invalid review_ids format.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "Invalid review IDs", "type": "error"}})},
+        )
+
+    if not review_ids:
+        return HTMLResponse(
+            "<p>No reviews selected.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "No reviews selected", "type": "error"}})},
+        )
+
+    approved_count = 0
+    errors = []
+
+    for review_id in review_ids:
+        async with async_session_factory() as session:
+            review = await session.get(Review, review_id)
+            if review is None:
+                errors.append(f"Review {review_id} not found")
+                continue
+
+            try:
+                await transition_state(
+                    session=session,
+                    review_id=review_id,
+                    from_state=ReviewState(review.state),
+                    to_state=ReviewState.COMPLETE,
+                    expected_version=review.version,
+                    actor="reviewer",
+                    action="approve",
+                    payload={"comment": str(comment) if comment else None},
+                )
+                approved_count += 1
+            except (StateConflictError, InvalidTransitionError) as e:
+                errors.append(f"Review {review_id}: {e}")
+
+    # Return result fragment
+    msg = f"Approved {approved_count} of {len(review_ids)} reviews"
+    if errors:
+        msg += f" ({len(errors)} failed)"
+
+    result_html = f'''<div id="batch-result" class="p-4">
+      <div class="bg-white border border-gray-200 rounded-lg p-3">
+        <p class="text-sm font-semibold {("text-green-700" if approved_count > 0 else "text-red-700")}">{msg}</p>
+        {"<ul class='mt-2 text-xs text-red-600 space-y-1'>" + "".join(f"<li>{e}</li>" for e in errors) + "</ul>" if errors else ""}
+      </div>
+    </div>'''
+
+    rendered = HTMLResponse(result_html)
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": msg, "type": "success" if approved_count > 0 else "warning"},
+        "review_status": {},
+    })
+    return rendered
+
+
+@router.post("/reviews/batch/reject-htmx", response_class=HTMLResponse)
+async def batch_reject_reviews_htmx(request: Request):
+    """HTMX form handler: batch reject multiple V1 reviews with per-item audit trail."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return HTMLResponse("<p>Authentication required.</p>", status_code=401)
+
+    form = await request.form()
+    review_ids_raw = form.get("review_ids", "[]")
+    comment = form.get("comment", "")
+
+    # Validate review_ids (T-25-02 mitigation)
+    try:
+        review_ids = json.loads(str(review_ids_raw))
+        if not isinstance(review_ids, list):
+            raise ValueError("Expected list")
+        review_ids = [int(rid) for rid in review_ids[:100]]
+    except (ValueError, TypeError):
+        return HTMLResponse(
+            "<p>Invalid review_ids format.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "Invalid review IDs", "type": "error"}})},
+        )
+
+    if not review_ids:
+        return HTMLResponse(
+            "<p>No reviews selected.</p>", status_code=400,
+            headers={"HX-Trigger": json.dumps({"showToast": {"message": "No reviews selected", "type": "error"}})},
+        )
+
+    rejected_count = 0
+    errors = []
+
+    for review_id in review_ids:
+        async with async_session_factory() as session:
+            review = await session.get(Review, review_id)
+            if review is None:
+                errors.append(f"Review {review_id} not found")
+                continue
+
+            try:
+                await transition_state(
+                    session=session,
+                    review_id=review_id,
+                    from_state=ReviewState(review.state),
+                    to_state=ReviewState.COMPLETE,
+                    expected_version=review.version,
+                    actor="reviewer",
+                    action="reject",
+                    payload={"reason": str(comment) if comment else "batch_reject"},
+                )
+                rejected_count += 1
+            except (StateConflictError, InvalidTransitionError) as e:
+                errors.append(f"Review {review_id}: {e}")
+
+    msg = f"Rejected {rejected_count} of {len(review_ids)} reviews"
+    if errors:
+        msg += f" ({len(errors)} failed)"
+
+    result_html = f'''<div id="batch-result" class="p-4">
+      <div class="bg-white border border-gray-200 rounded-lg p-3">
+        <p class="text-sm font-semibold {("text-red-700" if rejected_count > 0 else "text-gray-700")}">{msg}</p>
+        {"<ul class='mt-2 text-xs text-red-600 space-y-1'>" + "".join(f"<li>{e}</li>" for e in errors) + "</ul>" if errors else ""}
+      </div>
+    </div>'''
+
+    rendered = HTMLResponse(result_html)
+    rendered.headers["HX-Trigger"] = json.dumps({
+        "showToast": {"message": msg, "type": "success" if rejected_count > 0 else "warning"},
+        "review_status": {},
+    })
+    return rendered
+
+
+# ---------------------------------------------------------------------------
 # Desktop Workstation Routes
 # ---------------------------------------------------------------------------
 

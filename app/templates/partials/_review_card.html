@@ -1,11 +1,23 @@
-<article class="border-b border-gray-200 p-4 cursor-pointer hover:bg-gray-50 active:bg-gray-100 min-h-[44px]"
+<article class="border-b border-gray-200 p-4 cursor-pointer hover:bg-gray-50 active:bg-gray-100 min-h-[44px] relative"
          hx-get="/reviews/{{ review.id }}/detail"
          hx-target="#detail-overlay"
          hx-swap="innerHTML"
          role="button"
          tabindex="0"
          aria-label="Review {{ review.id }}: {{ review.type }} from {{ review.source_system }}">
-  <div class="flex items-start gap-4">
+  <!-- Batch checkbox (visible when batch mode active) -->
+  <div x-show="$store.batch && $store.batch.active"
+       x-cloak
+       class="absolute top-3 left-2 z-10"
+       @click.stop>
+    <input type="checkbox"
+           :value="{{ review.id }}"
+           x-model="$store.batch.selectedIds"
+           @click.stop
+           class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+  </div>
+  <div class="flex items-start gap-4"
+       :class="$store.batch && $store.batch.active ? 'ml-6' : ''">
     <!-- Thumbnail placeholder -->
     <div class="w-12 h-12 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-gray-400">
