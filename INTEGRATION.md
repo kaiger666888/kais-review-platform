@@ -1,206 +1,106 @@
 # kais-review-platform 集成开发指导
 
 > 来源: kais-aigc-integration 契约层
-> 更新: 2026-05-17
-> 状态: Phase 0 收尾中
+> 更新: 2026-05-18
+> 状态: Phase 0-3 + 4B + 4C 已全部完成 (2026-05-18)
 
-## 当前架构状态
+## Phase 0-3 完成状态
 
-本 repo 已大幅演进，具备 V1 Review API + V2 Shot Card 双层架构：
+| Task | 状态 | 文件 |
+|------|------|------|
+| ApproveRequest.result 扩展 | ✅ | app/models/schemas.py (ReviewResult) |
+| approve 存储 result | ✅ | app/api/v1/actions.py |
+| 回调 payload 携带 result | ✅ | app/workers/tasks.py |
+| movie-agent 策略文件 | ✅ | app/policies/movie_agent_phases.yaml (6 条规则) |
+| 健康检查增强 | ✅ | app/main.py (/api/v1/health) |
+| trace_id 接收存储 | ✅ | app/api/v1/reviews.py (X-Trace-Id) |
 
-**V1 Review API**（通用审核）:
-- `POST /api/v1/reviews/` — 提交审核
-- `POST /api/v1/reviews/{id}/approve` — 批准
-- `POST /api/v1/reviews/{id}/reject` — 拒绝
-- `ApproveRequest` 仅支持 `comment`（不支持 result/selected/scores）
-- 回调 payload 不携带审核结果详情
+## 定位说明
 
-**V2 Shot Card API**（短片专用）:
-- `POST /api/v1/shot-cards/` — 创建 Shot Card（含 candidates、visual_bundle）
-- `POST /api/v1/shot-cards/{id}/approve` — 批准
-- `Candidate` 模型原生支持多候选
-- `MobileShotCardBundle` 已展开 candidates 字段
+**review-platform 是纯策略治理平台，不引入 LLM。**
+- AI 评分（quality-gate、scene evaluation 等）由 movie-agent 自行完成
+- review-platform 只负责：策略路由 (AUTO/HUMAN/BLOCK)、审核状态机、回调通知、审核 UI
+- `NullScoringPlugin` 和 `shadow_score` 桩代码保持现状，不在本 repo 填充 LLM 逻辑
 
-**其他已实现能力**:
-- RBAC 多角色认证（Role enum + JWT claims）
-- Merkle 树审计 + 双写 + Git anchoring
-- A/B 测试 + Shadow Score
-- 批量审核（`BatchApproveRequest`）
-- 策略引擎 V1 + V2
-- 审计驾驶舱 + 移动端 dashboard
+## Phase 4B — 审核体验增强 (✅ 已完成)
 
-## 集成决策：movie-agent 应使用哪个 API?
+**实现**: Phase 23 (Review Template System) + Phase 24 (External Scoring Integration)
 
-### 方案 A：继续用 V1 Review API + 扩展 ApproveRequest
+### 4B.1 [P1] 审核模板系统
 
-在 `ApproveRequest` 上加 `result` 字段，回调 payload 带上结果。
+**目标**: 按 source_system + phase 自定义审核 UI
 
-**优点**: 改动小，向后兼容，movie-agent 已有 `ReviewPlatformClient`
-**缺点**: 多候选数据塞在 metadata 里，不如 V2 结构化
+**实现要点**:
+- 模板定义：YAML/JSON 配置文件
+- 渲染引擎：根据 review.metadata.phase 选择模板
+- movie-agent 模板：候选图片并排 + 评分 + 选择按钮
+- gold-team 模板：任务参数展示 + 风险评估
 
-### 方案 B：迁移到 V2 Shot Card API
+### 4B.2 [P1] quality-gate 接收外部评分
 
-movie-agent 直接用 `shot-cards` 端点，原生支持 candidates。
-
-**优点**: 数据结构化，原生多候选，移动端 UI 已适配
-**缺点**: movie-agent 需要重写客户端，Shot Card 的 schema（narrative_context、visual_bundle）与 movie-agent 的 phase 产出需要对齐
-
-### 建议选择
-
-**短期内用方案 A**（V1 + 扩展），原因是 movie-agent 的 `ReviewPlatformClient` 已写好。后续按需迁移方案 B。
-
----
-
-## 本 Repo 的集成任务
-
-### Task 1 [P0] V1 ApproveRequest 扩展 result 字段
-
-**问题**: movie-agent 审核完成后需要拿回 `selected`/`scores`/`feedback`，但当前 V1 approve 只存 `comment`。
-
-**修改文件**: `app/models/schemas.py`
+movie-agent 的 quality-gate phase 在本地完成 AI 评分后，将结果提交给 review-platform 存储：
 
 ```python
-# 在 ApproveRequest 之后新增
-class ReviewResult(BaseModel):
-    selected: list[int] | None = None
-    scores: list[dict] | None = None     # [{"id": 1, "score": 9, "comment": "..."}]
-    feedback: str | None = None
-
-class ApproveRequest(BaseModel):
-    """V1 legacy approve request — extended with result support."""
-    comment: str | None = None
-    result: ReviewResult | None = None   # 新增
+# movie-agent 提交审核时携带自评分数
+POST /api/v1/reviews/
+{
+  "metadata": {
+    "phase": "quality-gate",
+    "ai_score": 72,                    # movie-agent 本地评分结果
+    "ai_score_dimensions": {           # 各维度分数
+      "visual_quality": 80,
+      "audio_quality": 65,
+      "consistency": 70
+    },
+    "ai_score_source": "movie-agent"   # 标明评分来源
+  }
+}
 ```
 
-**修改文件**: `app/api/v1/actions.py`
+review-platform 只存储和展示这些分数，不自己计算。
 
-在 `approve_review()` 中把 result 存入 `metadata_json`:
+### 4B.3 [P2] 外部评分展示
 
-```python
-if request.result:
-    metadata = review.metadata_json or {}
-    metadata["review_result"] = request.result.model_dump()
-    review.metadata_json = metadata
-```
-
-**修改文件**: `app/workers/tasks.py` — 回调 payload 带上 result
-
-```python
-payload["result"] = review.metadata_json.get("review_result") if review.metadata_json else None
-```
-
-**契约文件**: `contracts/callback-schemas/review-callback.json`
+在审核详情页展示 movie-agent 提交的 AI 评分维度（只读展示，不调用 LLM）。
 
 ---
 
-### Task 2 [P1] 健康检查增强
+## Phase 4C — 可视化与运营 (✅ 已完成)
 
-**位置**: `app/api/v1/` 或 `app/main.py`
+**实现**: Phase 25 (Analytics Dashboard)
+**注**: 4C.2 PWA 移动端已在 Phase 21 (Mobile PWA) 中完成
 
-```python
-@app.get("/api/v1/health")
-async def health():
-    return {
-        "status": "ok",
-        "version": "1.2.0",
-        "redis": bool(redis.ping()),
-        "db": True,  # 简单查询
-        "active_sse": event_mgr.connection_count,
-    }
-```
+### 4C.1 [P2] 审核数据分析 Dashboard
 
----
+**指标**:
+- 审核通过率（按 source_system、phase 分组）
+- 平均等待时间
+- AUTO/HUMAN 比例
+- 外部评分分布（来自 movie-agent 的 ai_score）
 
-### Task 3 [P1] movie-agent 各 phase 策略文件
+### 4C.2 [P2] PWA 移动端
 
-**位置**: `app/policies/movie_agent_phases.yaml`
+离线审核、推送通知、响应式优化。
 
-检查是否已有此文件。如没有，新建:
+### 4C.3 [P2] 批量审核
 
-```yaml
-name: movie_agent_phases
-version: "1.0"
-rules:
-  - name: art_direction_human
-    priority: 1
-    conditions:
-      operator: AND
-      checks:
-        - field: source_system
-          operator: equals
-          value: kais-movie-agent
-        - field: metadata.phase
-          operator: equals
-          value: art-direction
-    disposition: HUMAN
-
-  - name: character_human
-    priority: 2
-    conditions:
-      operator: AND
-      checks:
-        - field: source_system
-          operator: equals
-          value: kais-movie-agent
-        - field: metadata.phase
-          operator: equals
-          value: character
-    disposition: HUMAN
-
-  - name: voice_human
-    priority: 3
-    conditions:
-      operator: AND
-      checks:
-        - field: source_system
-          operator: equals
-          value: kais-movie-agent
-        - field: metadata.phase
-          operator: equals
-          value: voice
-    disposition: HUMAN
-
-  - name: quality_gate_auto
-    priority: 10
-    conditions:
-      operator: AND
-      checks:
-        - field: source_system
-          operator: equals
-          value: kais-movie-agent
-        - field: metadata.phase
-          operator: equals
-          value: quality-gate
-    disposition: AUTO
-```
+`BatchApproveRequest` 支持一次审核多个任务。
 
 ---
 
-### Task 4 [P2] 多候选审核 UI（V1 Review Web）
+## 契约同步
 
-当 review 的 metadata 包含 candidates 时，审核详情页渲染多候选选择 UI。
-
-**位置**: `app/web/routes.py` — `review_detail_partial()`
-
-检测 `metadata.candidates` 存在时渲染并排图片 + 评分 + 选择按钮。
-
----
-
-## 环境变量
-
-```bash
-# 集成相关（给 movie-agent 和 gold-team 分配的 key）
-RP_API_KEY_MOVIE_AGENT=rp-movie-agent-secret-key
-RP_API_KEY_GOLD_TEAM=rp-gold-team-secret-key
-```
+review-platform API 契约:
+- `/home/kai/workspace/kais-aigc-integration/contracts/review-platform-api.yaml`
+- 回调 schema: `contracts/callback-schemas/review-callback.json`
 
 ## 任务优先级
 
-| # | 任务 | 优先级 | 预估 |
-|---|------|--------|------|
-| 1 | V1 ApproveRequest 扩展 result + 回调 payload | P0 | 1-2h |
-| 2 | 健康检查增强 | P1 | 30min |
-| 3 | movie-agent 策略文件 | P1 | 30min |
-| 4 | 多候选审核 UI | P2 | 2-3h |
-
-**先做 Task 1** — 这是 movie-agent 审核结果回传的阻塞项。
+| # | 任务 | 优先级 | 预估 | 状态 | Phase |
+|---|------|--------|------|------|-------|
+| 4B.1 | 审核模板系统 | P1 | 2 天 | ✅ | Phase 23 |
+| 4B.2 | quality-gate 外部评分接收 | P2 | 0.5 天 | ✅ | Phase 24 |
+| 4B.3 | 外部评分展示 | P2 | 1 天 | ✅ | Phase 24 |
+| 4C.1 | 审核数据分析 Dashboard | P2 | 3 天 | ✅ | Phase 25 |
+| 4C.2 | PWA 移动端 | P2 | 5 天 | ✅ | Phase 21 |
+| 4C.3 | 批量审核 | P2 | 2 天 | ✅ | Phase 25 |
