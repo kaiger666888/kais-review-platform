@@ -360,7 +360,8 @@ class TestDecisionPanelScoreRendering:
             shot=shot,
             template=tc,
         )
-        assert "AI Score" not in html
+        # Check the visible h3 heading is not rendered (comment text may still appear)
+        assert '<h3 class="text-xs font-semibold uppercase text-gray-500">AI Score</h3>' not in html
 
     def test_decision_panel_no_ai_score_when_no_score_data(self):
         """Test 9: _decision_panel.html does NOT render AI Score section when no ai_score."""
@@ -380,7 +381,7 @@ class TestDecisionPanelScoreRendering:
             shot=shot,
             template=tc,
         )
-        assert "AI Score" not in html
+        assert '<h3 class="text-xs font-semibold uppercase text-gray-500">AI Score</h3>' not in html
 
 
 class TestMobileCardScoreRendering:

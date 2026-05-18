@@ -66,6 +66,38 @@
     {% endif %}
   </div>
 
+  <!-- AI Score (shown when template.show_scores is true and score data present) -->
+  {% if template and template.show_scores %}
+  {% if nc.get('ai_score') is not none %}
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">AI Score</h3>
+    <div class="flex items-center gap-2">
+      <span class="text-lg font-bold
+        {% if nc.get('ai_score', 0) >= 70 %}text-green-400
+        {% elif nc.get('ai_score', 0) >= 50 %}text-yellow-400
+        {% else %}text-red-400{% endif %}">{{ nc.get('ai_score') }}</span>
+      <span class="text-xs text-gray-500">/ 100</span>
+    </div>
+    {% if nc.get('ai_score_dimensions') %}
+    <div class="space-y-1">
+      {% for dim, val in nc.ai_score_dimensions.items() %}
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-400">{{ dim }}</span>
+        <span class="text-xs font-mono
+          {% if val >= 70 %}text-green-400
+          {% elif val >= 50 %}text-yellow-400
+          {% else %}text-red-400{% endif %}">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if nc.get('ai_score_source') %}
+    <div class="text-xs text-gray-500">Source: {{ nc.get('ai_score_source') }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
   <!-- Provenance -->
   <div class="space-y-2">
     <h3 class="text-xs font-semibold uppercase text-gray-500">Provenance</h3>
