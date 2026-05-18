@@ -5,7 +5,7 @@
 - [x] **v1.0** — Policy-driven review governance platform — [archived](milestones/v1.0-ROADMAP.md)
 - [x] **v1.1** — Integration tests & tech debt — [archived](milestones/v1.1-ROADMAP.md)
 - [x] **v1.2** — External system integration — [see below]
-- [ ] **v2.0** — Shot Card-driven pipeline governance platform — Phases 15-22
+- [ ] **v2.0** — Shot Card-driven pipeline governance platform — Phases 15-25
 
 ## Phases
 
@@ -46,9 +46,12 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 - [x] **Phase 17: GitOps Policy Engine** — Enhanced policy engine with Shot Card input, Git integration, provenance tracking (completed 2026-05-16)
 - [x] **Phase 18: Routing & Checkpoints** — Approval router with priority queues, checkpoint manager with timeout escalation, event bus enhancements (completed 2026-05-16)
 - [x] **Phase 19: AI Audit & Capability Tokens** — AI audit Phase 0 stubs, capability token issuance, model registry placeholders (completed 2026-05-16)
-- [ ] **Phase 20: Desktop Workstation** — 3-column UI, keyboard shortcuts, dual-column comparison, batch operations, candidate array, media preview
+- [x] **Phase 20: Desktop Workstation** — 3-column UI, keyboard shortcuts, dual-column comparison, batch operations, candidate array, media preview (completed 2026-05-16)
 - [x] **Phase 21: Mobile PWA** — Card flow layout, gesture controls, offline caching, mobile API endpoints (completed 2026-05-16)
 - [x] **Phase 22: Audit & Compliance** — Merkle Root anchoring, dual-write audit recorder, tiered storage, data lifecycle, multi-role auth, audit cockpit dashboards (completed 2026-05-16)
+- [ ] **Phase 23: Review Template System** — YAML template definitions, template rendering engine per source_system + phase, movie-agent + gold-team templates (INTEGRATION 4B.1)
+- [ ] **Phase 24: External Scoring Integration** — quality-gate external score storage, score display in review UI (INTEGRATION 4B.2 + 4B.3)
+- [ ] **Phase 25: Analytics Dashboard** — Review data analytics, throughput metrics, score distributions, batch review enhancements (INTEGRATION 4C.1 + 4C.3)
 
 ## Phase Details
 
@@ -182,10 +185,46 @@ Plans:
 - [x] 22-02-PLAN.md — Multi-role authentication: Role enum, JWT role claims, require_role dependencies, role-aware token exchange (AUTH-01)
 - [x] 22-03-PLAN.md — Desktop audit cockpit + mobile audit dashboard: timeline, stats, policy diff, waterfall (AUDIT-03, AUDIT-04)
 
+### Phase 23: Review Template System
+**Goal**: Custom review UI per source_system + phase via YAML template definitions and a rendering engine, enabling movie-agent and gold-team to have tailored review experiences
+**Depends on**: Phase 15 (Shot Card model), Phase 20 (Desktop Workstation), Phase 21 (Mobile PWA)
+**Success Criteria** (what must be TRUE):
+  1. Template definitions exist as YAML config files keyed by source_system + phase, with per-template layout rules (fields to display, order, emphasis)
+  2. A rendering engine selects the correct template based on review.metadata.phase (or shot card narrative context) and produces the appropriate HTML partials for desktop and mobile
+  3. Movie-agent template renders candidate images side-by-side with scores and selection buttons; gold-team template renders task parameters with risk assessment display
+  4. Unknown source_system/phase combinations gracefully fall back to a default template
+**UI hint**: yes
+**Plans:** 2 plans
+
+Plans:
+- [ ] 23-01-PLAN.md — TemplateRegistry engine + YAML config files (default, movie-agent, gold-team) + source_system derivation + unit tests
+- [ ] 23-02-PLAN.md — Template-aware route handlers + desktop wrapper partials (candidate grid, risk assessment) + mobile API template_config + rendering tests
+
+### Phase 24: External Scoring Integration
+**Goal**: movie-agent's quality-gate AI scores are stored and displayed in review UI without review-platform computing any scores itself
+**Depends on**: Phase 15 (Shot Card model), Phase 23 (template system for display)
+**Success Criteria** (what must be TRUE):
+  1. Review submission API accepts metadata.ai_score, ai_score_dimensions, and ai_score_source fields from movie-agent
+  2. External scores are stored in the review/shot_card record and returned in API responses
+  3. Desktop and mobile review UIs display AI score dimensions (visual_quality, audio_quality, consistency) as read-only badges/panels
+**Plans:** 0/0 plans
+
+### Phase 25: Analytics Dashboard
+**Goal**: Review data analytics dashboard showing throughput, approval rates, score distributions, and batch review enhancements
+**Depends on**: Phase 22 (Audit & Compliance), Phase 24 (external scores for distributions)
+**Success Criteria** (what must be TRUE):
+  1. Dashboard shows approval/rejection rates grouped by source_system and phase
+  2. Average review wait time is tracked and displayed
+  3. AUTO/HUMAN routing ratio is visible as a metric
+  4. External score distributions (from movie-agent ai_score) are visualized
+  5. BatchApproveRequest supports one-action review of multiple tasks with proper audit trail
+**UI hint**: yes
+**Plans:** 0/0 plans
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
+Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 -> 23 -> 24 -> 25
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -194,6 +233,9 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 | 17. GitOps Policy Engine | v2.0 | 1/2 | Complete    | 2026-05-16 |
 | 18. Routing & Checkpoints | v2.0 | 3/3 | Complete    | 2026-05-16 |
 | 19. AI Audit & Capability Tokens | v2.0 | 2/2 | Complete    | 2026-05-16 |
-| 20. Desktop Workstation | v2.0 | 1/3 | In Progress|  |
+| 20. Desktop Workstation | v2.0 | 3/3 | Complete   | 2026-05-16 |
 | 21. Mobile PWA | v2.0 | 2/2 | Complete   | 2026-05-16 |
 | 22. Audit & Compliance | v2.0 | 3/3 | Complete   | 2026-05-16 |
+| 23. Review Template System | v2.0 | 0/2 | Pending    |  |
+| 24. External Scoring Integration | v2.0 | 0/0 | Pending    |  |
+| 25. Analytics Dashboard | v2.0 | 0/0 | Pending    |  |
