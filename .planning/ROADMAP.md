@@ -51,7 +51,7 @@ Full rewrite from generic review queue to Shot Card-driven pipeline governance p
 - [x] **Phase 22: Audit & Compliance** — Merkle Root anchoring, dual-write audit recorder, tiered storage, data lifecycle, multi-role auth, audit cockpit dashboards (completed 2026-05-16)
 - [x] **Phase 23: Review Template System** — YAML template definitions, template rendering engine per source_system + phase, movie-agent + gold-team templates (INTEGRATION 4B.1) (completed 2026-05-18)
 - [x] **Phase 24: External Scoring Integration** — quality-gate external score storage, score display in review UI (INTEGRATION 4B.2 + 4B.3) (completed 2026-05-18)
-- [ ] **Phase 25: Analytics Dashboard** — Review data analytics, throughput metrics, score distributions, batch review enhancements (INTEGRATION 4C.1 + 4C.3)
+- [x] **Phase 25: Analytics Dashboard** — Review data analytics, throughput metrics, score distributions, batch review enhancements (INTEGRATION 4C.1 + 4C.3) (completed 2026-05-18)
 
 ## Phase Details
 
@@ -210,7 +210,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 25-01-PLAN.md — Analytics API + dashboard page + routing/score visualizations + V1 batch review UI
+- [x] 25-01-PLAN.md — Analytics API + dashboard page + routing/score visualizations + V1 batch review UI
 
 Plans:
 - [x] 24-01-PLAN.md -- Extend schemas + mobile bundle for AI scores, render score panels in desktop and mobile UI -- completed 2026-05-18
@@ -225,7 +225,7 @@ Plans:
   4. External score distributions (from movie-agent ai_score) are visualized
   5. BatchApproveRequest supports one-action review of multiple tasks with proper audit trail
 **UI hint**: yes
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 25-01-PLAN.md — Analytics API + dashboard page + routing/score visualizations + V1 batch review UI
@@ -247,4 +247,4 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 ->
 | 22. Audit & Compliance | v2.0 | 3/3 | Complete   | 2026-05-16 |
 | 23. Review Template System | v2.0 | 2/2 | Complete   | 2026-05-18 |
 | 24. External Scoring Integration | v2.0 | 1/1 | Complete   | 2026-05-18 |
-| 25. Analytics Dashboard | v2.0 | 0/0 | Pending    |  |
+| 25. Analytics Dashboard | v2.0 | 1/1 | Complete   | 2026-05-18 |
