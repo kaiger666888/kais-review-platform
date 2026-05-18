@@ -210,6 +210,9 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
+- [ ] 25-01-PLAN.md — Analytics API + dashboard page + routing/score visualizations + V1 batch review UI
+
+Plans:
 - [x] 24-01-PLAN.md -- Extend schemas + mobile bundle for AI scores, render score panels in desktop and mobile UI -- completed 2026-05-18
 
 ### Phase 25: Analytics Dashboard
@@ -222,7 +225,10 @@ Plans:
   4. External score distributions (from movie-agent ai_score) are visualized
   5. BatchApproveRequest supports one-action review of multiple tasks with proper audit trail
 **UI hint**: yes
-**Plans:** 0/0 plans
+**Plans:** 1 plan
+
+Plans:
+- [ ] 25-01-PLAN.md — Analytics API + dashboard page + routing/score visualizations + V1 batch review UI
 
 ## Progress
 
