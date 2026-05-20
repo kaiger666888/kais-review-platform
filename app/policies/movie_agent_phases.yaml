@@ -1,9 +1,9 @@
 name: movie_agent_phases
-version: "1.0"
-description: "审核路由策略 for kais-movie-agent 各管线阶段"
+version: "2.0"
+description: "审核路由策略 for kais-movie-agent V4.1 音画融合管线"
 rules:
-  # 美术方向 — 人工审核（3选1 多候选）
-  - name: art_direction_human
+  # 视觉灵魂帧 — 人工审核（3选1 多候选）
+  - name: soul_visual_human
     priority: 1
     conditions:
       operator: AND
@@ -13,11 +13,11 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: art-direction
+          value: soul-visual
     disposition: HUMAN
 
-  # 角色设计 — 人工审核（多选）
-  - name: character_human
+  # 声音灵魂 — 人工审核（音色确认）
+  - name: soul_voice_human
     priority: 2
     conditions:
       operator: AND
@@ -27,11 +27,11 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: character
+          value: soul-voice
     disposition: HUMAN
 
-  # 配音 — 人工审核（音色确认）
-  - name: voice_human
+  # 时空剧本 — 人工审核（AI 评分阈值）
+  - name: spatio_temporal_script_human
     priority: 3
     conditions:
       operator: AND
@@ -41,11 +41,11 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: voice
+          value: spatio-temporal-script
     disposition: HUMAN
 
-  # 场景 — 人工审核
-  - name: scene_human
+  # 种子骨架 — 人工审核（多选）
+  - name: seed_skeleton_human
     priority: 4
     conditions:
       operator: AND
@@ -55,11 +55,11 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: scene
+          value: seed-skeleton
     disposition: HUMAN
 
-  # 分镜 — 人工审核
-  - name: storyboard_human
+  # 动态运镜预览 — 人工审核
+  - name: motion_preview_human
     priority: 5
     conditions:
       operator: AND
@@ -69,11 +69,39 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: storyboard
+          value: motion-preview
     disposition: HUMAN
 
-  # quality-gate — 自动通过
-  - name: quality_gate_auto
+  # AI风格化预览 — 人工审核
+  - name: ai_preview_human
+    priority: 6
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: ai-preview
+    disposition: HUMAN
+
+  # 终版生产 — 人工审核
+  - name: final_production_human
+    priority: 7
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: kais-movie-agent
+        - field: metadata.phase
+          operator: equals
+          value: final-production
+    disposition: HUMAN
+
+  # 合成与质检 — 自动通过（内部 AI 评估）
+  - name: composition_auto
     priority: 10
     conditions:
       operator: AND
@@ -83,5 +111,5 @@ rules:
           value: kais-movie-agent
         - field: metadata.phase
           operator: equals
-          value: quality-gate
+          value: composition
     disposition: AUTO
