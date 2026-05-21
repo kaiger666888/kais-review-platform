@@ -4,6 +4,9 @@ Gold-team imports this module to submit GPU tasks for review before
 dispatch. AUTO-approved reviews return immediately; HUMAN-routed reviews
 require waiting for callback approval.
 
+Inter-service JWT authentication has been removed. The client makes
+direct HTTP calls without Bearer auth headers.
+
 Usage:
     client = ReviewPlatformClient()
     result = await client.submit_gpu_review(
@@ -22,7 +25,6 @@ Usage:
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
 
 import httpx
@@ -102,9 +104,8 @@ class ReviewClientError(Exception):
 class ReviewPlatformClient:
     """Async client for submitting GPU task reviews to the review platform.
 
-    Authenticates via API key exchange for JWT, then submits reviews
-    with gold-team metadata including task_type, GPU requirements,
-    and requesting user information.
+    Inter-service JWT authentication has been removed. All API calls are
+    made directly without Bearer auth headers.
 
     Coordination Pattern:
         Gold-team submits reviews via ReviewPlatformClient -> review-platform API.
@@ -121,15 +122,11 @@ class ReviewPlatformClient:
     def __init__(
         self,
         base_url: str = "http://192.168.71.140:8090",
-        api_key: str = "",
         timeout: float = 10.0,
     ) -> None:
         self._base_url = base_url.rstrip("/")
-        self._api_key = api_key
         self._timeout = timeout
         self._http_client = httpx.AsyncClient(timeout=timeout)
-        self._token: str | None = None
-        self._token_expires: float = 0.0
 
     # -- Risk score computation (GT-03) --
 
@@ -145,32 +142,6 @@ class ReviewPlatformClient:
         elif task_type in LOW_RISK_TYPES:
             return 0.2
         return 0.5
-
-    # -- Authentication --
-
-    async def _ensure_token(self) -> str:
-        """Ensure a valid JWT token is available, refreshing if needed."""
-        if self._token and time.time() < self._token_expires:
-            return self._token
-
-        resp = await self._http_client.post(
-            f"{self._base_url}/api/v1/auth/token",
-            json={
-                "api_key": self._api_key,
-                "client_id": "kais-gold-team",
-            },
-        )
-        if resp.status_code != 200:
-            raise ReviewClientError(
-                f"Authentication failed: {resp.status_code} {resp.text}"
-            )
-
-        data = resp.json()["data"]
-        self._token = data["access_token"]
-        # Cache token with 60s safety margin before expiry
-        expires_in = data.get("expires_in", 900)
-        self._token_expires = time.time() + expires_in - 60
-        return self._token
 
     # -- Public API --
 
@@ -198,8 +169,6 @@ class ReviewPlatformClient:
         - Review submission includes task type, GPU requirements, requesting user
         - AUTO-approved reviews return immediately, gold-team continues without waiting
         """
-        token = await self._ensure_token()
-
         # Build review metadata
         review_metadata: dict = {
             "task_type": task_type,
@@ -227,7 +196,6 @@ class ReviewPlatformClient:
             resp = await self._http_client.post(
                 f"{self._base_url}/api/v1/reviews",
                 json=body,
-                headers={"Authorization": f"Bearer {token}"},
             )
         except httpx.ConnectError as exc:
             raise ReviewClientError(
@@ -256,12 +224,9 @@ class ReviewPlatformClient:
         Calls GET /api/v1/reviews/{review_id}.
         Returns ReviewQueryResult with state, disposition, version.
         """
-        token = await self._ensure_token()
-
         try:
             resp = await self._http_client.get(
                 f"{self._base_url}/api/v1/reviews/{review_id}",
-                headers={"Authorization": f"Bearer {token}"},
             )
         except httpx.ConnectError as exc:
             raise ReviewClientError(

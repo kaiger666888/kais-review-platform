@@ -77,9 +77,13 @@ async def require_jwt(
     return payload
 
 
-async def get_current_client(payload: dict = Depends(require_jwt)) -> str:
-    """Extract client identity from validated JWT payload."""
-    return payload["client"]
+async def get_current_client() -> str:
+    """Return client identity for inter-service requests.
+
+    Auth removed for inter-service integration — all API endpoints
+    receive a default identity without JWT validation.
+    """
+    return "api"
 
 
 # --- Role-Based Access Control ---

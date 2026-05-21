@@ -21,9 +21,9 @@ class Settings(BaseSettings):
     git_repo_url: str = ""
     git_branch: str = "main"
 
-    # Auth
-    api_key: str
-    jwt_secret: str
+    # Auth (inter-service auth removed; kept for web UI login)
+    api_key: str = ""
+    jwt_secret: str = "dev-no-auth"
     capability_token_secret: str = ""  # Phase 19 token issuance
 
     # General

@@ -38,10 +38,14 @@ async def login_page(request: Request, error: str | None = None):
 
 
 @router.post("/login")
-async def login_submit(request: Request, api_key: str = Form(...)):
-    """Validate API key, set JWT cookie, redirect to dashboard."""
+async def login_submit(request: Request, api_key: str = Form("")):
+    """Validate API key, set JWT cookie, redirect to dashboard.
+
+    If api_key is not configured (empty string), any login is accepted.
+    If api_key is configured, it must match the submitted value.
+    """
     settings = get_settings()
-    if api_key != settings.api_key:
+    if settings.api_key and api_key != settings.api_key:
         return templates.TemplateResponse(request, "pages/login.html", {
             "error": "Invalid API key",
         }, status_code=200)

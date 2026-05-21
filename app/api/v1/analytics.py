@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import case, cast, func, select, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import require_jwt
+from app.core.auth import get_current_client
 from app.core.database import get_db
 from app.models.schema import AuditEntry, Review
 from app.models.schemas import ApiResponse
@@ -57,7 +57,7 @@ def _parse_date_range(
 async def get_analytics_summary(
     start_date: str | None = Query(None, description="ISO date, default 7 days ago"),
     end_date: str | None = Query(None, description="ISO date, default today"),
-    payload: dict = Depends(require_jwt),
+    payload: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db),
 ):
     """Aggregate V1 review analytics: by source_system, phase, throughput, avg wait time."""
@@ -219,7 +219,7 @@ async def get_analytics_summary(
 async def get_routing_ratio(
     start_date: str | None = Query(None, description="ISO date, default 7 days ago"),
     end_date: str | None = Query(None, description="ISO date, default today"),
-    payload: dict = Depends(require_jwt),
+    payload: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db),
 ):
     """AUTO/HUMAN/AI_AUDIT/BLOCK routing ratio from ShotCard data."""
@@ -267,7 +267,7 @@ async def get_routing_ratio(
 async def get_score_distribution(
     start_date: str | None = Query(None, description="ISO date, default 7 days ago"),
     end_date: str | None = Query(None, description="ISO date, default today"),
-    payload: dict = Depends(require_jwt),
+    payload: dict = Depends(get_current_client),
     db: AsyncSession = Depends(get_db),
 ):
     """AI score distribution from ShotCard narrative_context JSONB."""

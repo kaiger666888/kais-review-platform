@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, case, literal_column
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import require_jwt, require_auditor, get_current_client
+from app.core.auth import get_current_client
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.merkle import commit_merkle_root_to_git, compute_daily_merkle_root
@@ -42,7 +42,7 @@ router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 @router.get("/merkle/verify", response_model=ApiResponse[dict])
 async def verify_merkle_root(
     target_date: str | None = Query(None, description="YYYY-MM-DD, defaults to yesterday"),
-    payload: dict = Depends(require_jwt),
+    client: str = Depends(get_current_client),
 ):
     """Verify audit log integrity via Merkle root comparison.
 
@@ -160,7 +160,7 @@ async def get_audit_stats(
     start_date: str | None = Query(None, description="ISO date, default 7 days ago"),
     end_date: str | None = Query(None, description="ISO date, default today"),
     project_id: str | None = Query(None, description="Optional project filter"),
-    payload: dict = Depends(require_auditor),
+    client: str = Depends(get_current_client),
     db: AsyncSession = Depends(get_db),
 ):
     """Aggregate audit statistics: throughput, approval rate, rejection reasons, policy hit rates."""
@@ -325,7 +325,7 @@ async def get_audit_timeline(
     actor: str | None = Query(None),
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
-    payload: dict = Depends(require_auditor),
+    client: str = Depends(get_current_client),
     db: AsyncSession = Depends(get_db),
 ):
     """Paginated audit timeline with review metadata for display."""
@@ -384,7 +384,7 @@ async def get_audit_timeline(
 async def get_policy_diff(
     commit_sha_1: str = Query(..., min_length=7, description="First commit SHA"),
     commit_sha_2: str = Query(..., min_length=7, description="Second commit SHA"),
-    payload: dict = Depends(require_auditor),
+    client: str = Depends(get_current_client),
 ):
     """Compare policy YAML files between two Git commits.
 
