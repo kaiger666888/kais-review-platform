@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Desktop Workstation - Kai's Review Platform{% endblock %}
+
+{% block content %}
+<div x-data="workstationState()"
+     @keydown.document.prevent.space="handleKey($event, 'space')"
+     @keydown.document.prevent.y="handleKey($event, 'y')"
+     @keydown.document.prevent.n="handleKey($event, 'n')"
+     @keydown.document.prevent.j="handleKey($event, 'j')"
+     @keydown.document.prevent.k="handleKey($event, 'k')"
+     @keydown.document.prevent.d="handleKey($event, 'd')"
+     @keydown.document.prevent.b="handleKey($event, 'b')"
+     @keydown.document.prevent.g="handleKey($event, 'g')"
+     @keydown.document.prevent.escape="handleKey($event, 'escape')"
+     class="h-screen flex flex-col bg-gray-900"
+     style="margin: -8px; padding-bottom: 0;">
+
+  <!-- Top header bar -->
+  <header class="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4 shrink-0">
+    <h1 class="text-gray-200 text-sm font-semibold">Desktop Workstation</h1>
+    <span class="ml-3 text-gray-500 text-xs" x-text="activeShotId ? 'Shot #' + activeShotId : ''"></span>
+
+    <!-- Batch mode indicator -->
+    <template x-if="batchMode">
+      <span class="ml-2 text-yellow-400 text-xs font-mono bg-yellow-900/50 px-2 py-0.5 rounded">BATCH [B]</span>
+    </template>
+
+    <!-- Batch toolbar (visible when batch mode has selection) -->
+    <template x-if="batchMode && selectedItems.length > 0">
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-yellow-400 text-xs font-mono" x-text="selectedItems.length + ' selected'"></span>
+        <button @click="batchApprove()" class="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded font-semibold">
+          Approve <kbd class="ml-1 text-xs bg-green-800 px-1 rounded">Y</kbd>
+        </button>
+        <button @click="batchReject()" class="px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-xs rounded font-semibold">
+          Reject <kbd class="ml-1 text-xs bg-red-800 px-1 rounded">N</kbd>
+        </button>
+        <button @click="selectedItems = []" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded">
+          Clear
+        </button>
+      </div>
+    </template>
+  </header>
+
+  <!-- 3-column grid -->
+  <div class="flex-1 grid grid-cols-[25fr_45fr_30fr] overflow-hidden relative">
+
+    <!-- LEFT: Shot Queue -->
+    <div class="border-r border-gray-700 flex flex-col overflow-hidden relative"
+         x-show="!leftCollapsed"
+         x-transition>
+      <!-- Filter controls -->
+      {% include "partials/_shot_queue_filters.html" %}
+      <!-- Shot list (HTMX infinite scroll) -->
+      <div id="shot-queue-list" class="flex-1 overflow-y-auto"
+           hx-get="/partials/shot-queue"
+           hx-trigger="load"
+           hx-target="#shot-queue-list"
+           hx-swap="innerHTML">
+      </div>
+    </div>
+
+    <!-- Left collapse toggle -->
+    <button @click="toggleLeft()" class="absolute top-1/2 z-10 bg-gray-800 border border-gray-700 rounded-r px-1 py-2 text-gray-500 hover:text-gray-300"
+            :style="leftCollapsed ? 'left: 0' : 'left: 25%'"
+            style="margin-top: -16px; margin-left: -1px;">
+      <svg class="w-3 h-3 transition-transform" :class="leftCollapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+
+    <!-- CENTER: Media Preview -->
+    <div class="flex flex-col overflow-hidden p-4">
+      <div id="media-preview" class="flex-1 flex items-center justify-center">
+        <span class="text-gray-500 text-sm">Select a shot card to preview</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Decision Panel -->
+    <div class="border-l border-gray-700 flex flex-col overflow-y-auto p-4">
+      <div id="decision-panel">
+        <span class="text-gray-500 text-sm">No shot selected</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Overlay partials -->
+  {% include "partials/_comparison_view.html" %}
+  {% include "partials/_policy_drawer.html" %}
+</div>
+
+<script>
+function workstationState() {
+  return {
+    activeShotId: null,
+    activeShot: null,
+    allShots: [],
+    allShotIds: [],
+    selectedItems: [],
+    lastClickedIndex: null,
+    showComparison: false,
+    comparisonMode: 'first-last',
+    showPolicy: false,
+    showLog: false,
+    batchMode: false,
+    leftCollapsed: false,
+    rightCollapsed: false,
+    selectedCandidate: 0,
+
+    // Keyboard input guard — skip shortcuts when typing in inputs
+    isInputFocused() {
+      var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      return tag === 'input' || tag === 'textarea' || tag === 'select';
+    },
+
+    handleKey(event, key) {
+      if (this.isInputFocused()) return;
+
+      switch(key) {
+        case 'space': this.togglePlay(); break;
+        case 'y': this.approve(); break;
+        case 'n': this.reject(); break;
+        case 'j': this.nextShot(); break;
+        case 'k': this.prevShot(); break;
+        case 'd': this.toggleComparison(); break;
+        case 'b': this.toggleBatchMode(); break;
+        case 'g': this.togglePolicy(); break;
+        case 'escape': this.resetMode(); break;
+      }
+    },
+
+    // Navigation
+    nextShot() {
+      if (this.allShotIds.length === 0) return;
+      var idx = this.allShotIds.indexOf(this.activeShotId);
+      var next = idx < this.allShotIds.length - 1 ? idx + 1 : 0;
+      this.selectShotById(this.allShotIds[next]);
+    },
+
+    prevShot() {
+      if (this.allShotIds.length === 0) return;
+      var idx = this.allShotIds.indexOf(this.activeShotId);
+      var prev = idx > 0 ? idx - 1 : this.allShotIds.length - 1;
+      this.selectShotById(this.allShotIds[prev]);
+    },
+
+    selectShotById(id) {
+      this.activeShotId = id;
+      htmx.ajax('GET', '/partials/shot-card-detail/' + id, '#decision-panel');
+    },
+
+    // Media
+    togglePlay() {
+      var video = document.getElementById('shot-video');
+      if (!video) return;
+      if (video.paused) video.play(); else video.pause();
+    },
+
+    // Decisions
+    approve() {
+      if (!this.activeShotId) return;
+      if (this.batchMode && this.selectedItems.length > 0) {
+        this.batchApprove();
+      } else {
+        htmx.ajax('POST', '/shot-cards/' + this.activeShotId + '/approve', '#shot-queue-list');
+      }
+    },
+
+    reject() {
+      if (!this.activeShotId) return;
+      if (this.batchMode && this.selectedItems.length > 0) {
+        this.batchReject();
+      } else {
+        htmx.ajax('POST', '/shot-cards/' + this.activeShotId + '/reject', '#decision-panel');
+      }
+    },
+
+    // Batch operations
+    toggleBatchMode() {
+      this.batchMode = !this.batchMode;
+      if (!this.batchMode) this.selectedItems = [];
+    },
+
+    toggleSelect(shotId, index, event) {
+      if (!this.batchMode) {
+        // Normal mode: select shot
+        this.activeShotId = shotId;
+        htmx.ajax('GET', '/partials/shot-card-detail/' + shotId, '#decision-panel');
+        return;
+      }
+
+      if (event.shiftKey && this.lastClickedIndex !== null) {
+        // Range select
+        var start = Math.min(this.lastClickedIndex, index);
+        var end = Math.max(this.lastClickedIndex, index);
+        for (var i = start; i <= end; i++) {
+          var id = this.allShotIds[i];
+          if (id && !this.selectedItems.includes(id)) {
+            this.selectedItems.push(id);
+          }
+        }
+      } else if (event.ctrlKey || event.metaKey) {
+        // Toggle individual
+        var idx = this.selectedItems.indexOf(shotId);
+        if (idx > -1) this.selectedItems.splice(idx, 1);
+        else this.selectedItems.push(shotId);
+      } else {
+        // Single select in batch mode (replace selection)
+        this.selectedItems = [shotId];
+      }
+      this.lastClickedIndex = index;
+    },
+
+    batchApprove() {
+      if (this.selectedItems.length === 0) return;
+      var count = this.selectedItems.length;
+      var ids = this.selectedItems.slice();
+      fetch('/partials/shot-cards/batch/approve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({shot_card_ids: ids})
+      }).then(function() {
+        htmx.ajax('GET', '/partials/shot-queue', '#shot-queue-list');
+        window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: count + ' shot cards approved', type: 'success'}}));
+      });
+      this.selectedItems = [];
+      this.batchMode = false;
+    },
+
+    batchReject() {
+      if (this.selectedItems.length === 0) return;
+      var count = this.selectedItems.length;
+      var ids = this.selectedItems.slice();
+      var reason = prompt('Rejection reason:');
+      if (!reason) return;
+      fetch('/partials/shot-cards/batch/reject', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({shot_card_ids: ids, reason: reason})
+      }).then(function() {
+        htmx.ajax('GET', '/partials/shot-queue', '#shot-queue-list');
+        window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: count + ' shot cards rejected', type: 'success'}}));
+      });
+      this.selectedItems = [];
+      this.batchMode = false;
+    },
+
+    // Comparison
+    toggleComparison() {
+      this.showComparison = !this.showComparison;
+      if (this.showComparison) {
+        this.loadComparisonImages();
+      }
+    },
+
+    loadComparisonImages() {
+      // Find active shot card element to read keyframe URLs
+      var activeCard = document.querySelector('[data-shot-id="' + this.activeShotId + '"]');
+      if (!activeCard) return;
+
+      var firstUrl = activeCard.dataset.firstFrame || '';
+      var lastUrl = activeCard.dataset.lastFrame || '';
+
+      var leftImg = document.getElementById('comp-img-left');
+      var rightImg = document.getElementById('comp-img-right');
+      if (leftImg && firstUrl) leftImg.src = firstUrl;
+      if (rightImg && lastUrl) rightImg.src = lastUrl;
+    },
+
+    // Policy
+    togglePolicy() {
+      this.showPolicy = !this.showPolicy;
+    },
+
+    // Reset all modes
+    resetMode() {
+      this.showComparison = false;
+      this.showPolicy = false;
+      this.showLog = false;
+      this.batchMode = false;
+      this.selectedItems = [];
+    },
+
+    // Collapse toggles
+    toggleLeft() {
+      this.leftCollapsed = !this.leftCollapsed;
+    },
+    toggleRight() {
+      this.rightCollapsed = !this.rightCollapsed;
+    },
+
+    // Initialize shot IDs from DOM
+    init() {
+      this.refreshShotIds();
+      document.body.addEventListener('htmx:afterSettle', function() {
+        this.refreshShotIds();
+      }.bind(this));
+    },
+
+    refreshShotIds() {
+      var cards = document.querySelectorAll('[data-shot-id]');
+      this.allShotIds = Array.from(cards).map(function(el) { return parseInt(el.dataset.shotId); }).filter(Boolean);
+    }
+  };
+}
+</script>
+{% endblock %}

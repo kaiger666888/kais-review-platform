@@ -1,0 +1,167 @@
+{% if shot %}
+<div class="space-y-4">
+  <!-- Narrative Context -->
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">Context</h3>
+    {% set nc = shot.narrative_context or {} %}
+    <div class="text-sm text-gray-300">Scene {{ nc.get('scene', '?') }}</div>
+    <div class="text-sm text-gray-300">Shot {{ nc.get('shot_number', '?') }}</div>
+    {% if nc.get('emotion_curve') %}
+    <div class="text-xs text-gray-400">{{ nc.emotion_curve }}</div>
+    {% endif %}
+    {% if nc.get('continuity_tags') %}
+    <div class="flex flex-wrap gap-1">
+      {% for tag in nc.continuity_tags %}
+      <span class="text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Prompts -->
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">Prompts</h3>
+    {% if shot.visual_bundle and shot.visual_bundle.get('prompt') %}
+    <div>
+      <span class="text-xs text-gray-500">Visual:</span>
+      <p class="text-xs text-gray-400 line-clamp-3">{{ shot.visual_bundle.prompt }}</p>
+    </div>
+    {% endif %}
+    {% if shot.audio_bundle %}
+    <div>
+      {% if shot.audio_bundle.get('bgm_prompt') %}
+      <span class="text-xs text-gray-500">BGM:</span>
+      <p class="text-xs text-gray-400 line-clamp-2">{{ shot.audio_bundle.bgm_prompt }}</p>
+      {% endif %}
+      {% if shot.audio_bundle.get('sfx_prompt') %}
+      <span class="text-xs text-gray-500">SFX:</span>
+      <p class="text-xs text-gray-400 line-clamp-2">{{ shot.audio_bundle.sfx_prompt }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Node Status -->
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">Node Status</h3>
+    <div class="flex items-center gap-2">
+      <span class="text-xs px-1.5 py-0.5 rounded
+        {% if shot.audit_status == 'awaiting_audit' %}bg-yellow-900 text-yellow-300
+        {% elif shot.audit_status == 'approved' %}bg-green-900 text-green-300
+        {% elif shot.audit_status == 'rejected' %}bg-red-900 text-red-300
+        {% else %}bg-gray-700 text-gray-300{% endif %}">
+        {{ shot.audit_status }}
+      </span>
+      {% if shot.routing_decision %}
+      <span class="text-xs text-gray-400">Route: {{ shot.routing_decision }}</span>
+      {% endif %}
+    </div>
+    {% if shot.min_audit_set %}
+    <div class="text-xs text-gray-400">
+      Required: {{ shot.min_audit_set | join(', ') }}
+    </div>
+    {% endif %}
+    {% if shot.blocking_reason %}
+    <div class="text-xs text-red-400">{{ shot.blocking_reason }}</div>
+    {% endif %}
+  </div>
+
+  <!-- AI Score (shown when template.show_scores is true and score data present) -->
+  {% if template and template.show_scores %}
+  {% if nc.get('ai_score') is not none %}
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">AI Score</h3>
+    <div class="flex items-center gap-2">
+      <span class="text-lg font-bold
+        {% if nc.get('ai_score', 0) >= 70 %}text-green-400
+        {% elif nc.get('ai_score', 0) >= 50 %}text-yellow-400
+        {% else %}text-red-400{% endif %}">{{ nc.get('ai_score') }}</span>
+      <span class="text-xs text-gray-500">/ 100</span>
+    </div>
+    {% if nc.get('ai_score_dimensions') %}
+    <div class="space-y-1">
+      {% for dim, val in nc.ai_score_dimensions.items() %}
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-400">{{ dim }}</span>
+        <span class="text-xs font-mono
+          {% if val >= 70 %}text-green-400
+          {% elif val >= 50 %}text-yellow-400
+          {% else %}text-red-400{% endif %}">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if nc.get('ai_score_source') %}
+    <div class="text-xs text-gray-500">Source: {{ nc.get('ai_score_source') }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- Provenance -->
+  <div class="space-y-2">
+    <h3 class="text-xs font-semibold uppercase text-gray-500">Provenance</h3>
+    {% if shot.policy_commit_sha %}
+    <div class="text-xs text-gray-400">
+      Policy: <span class="font-mono">{{ shot.policy_commit_sha[:8] }}</span>
+    </div>
+    {% endif %}
+    {% if shot.execution_id %}
+    <div class="text-xs text-gray-400">
+      Execution: <span class="font-mono">{{ shot.execution_id }}</span>
+    </div>
+    {% endif %}
+    {% if shot.workflow_version %}
+    <div class="text-xs text-gray-400">
+      Workflow: {{ shot.workflow_version }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Decision Buttons (only for awaiting_audit) -->
+  {% if shot.audit_status == 'awaiting_audit' %}
+  <div class="space-y-2 pt-4 border-t border-gray-700">
+    <button class="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-semibold text-sm"
+            hx-post="/shot-cards/{{ shot.id }}/approve"
+            hx-target="#shot-queue-list"
+            hx-swap="innerHTML"
+            aria-label="Approve shot card">
+      Approve <kbd class="ml-2 text-xs bg-green-800 px-1 rounded">Y</kbd>
+    </button>
+    <div x-data="{ showRejectForm: false }">
+      <button class="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded font-semibold text-sm"
+              @click="showRejectForm = !showRejectForm"
+              aria-label="Reject shot card">
+        Reject <kbd class="ml-2 text-xs bg-red-800 px-1 rounded">N</kbd>
+      </button>
+      <template x-if="showRejectForm">
+        <form class="mt-2 space-y-2"
+              hx-post="/shot-cards/{{ shot.id }}/reject"
+              hx-target="#shot-queue-list"
+              hx-swap="innerHTML">
+          <textarea name="reason"
+                    placeholder="Rejection reason (required)"
+                    required
+                    class="w-full bg-gray-800 text-gray-200 text-xs rounded px-2 py-1.5 border border-gray-600 resize-none"
+                    rows="3"></textarea>
+          <button type="submit"
+                  class="w-full py-1.5 bg-red-700 hover:bg-red-600 text-white rounded text-xs font-semibold">
+            Confirm Reject
+          </button>
+        </form>
+      </template>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Media Preview OOB swap — includes the full media player partial -->
+<div id="media-preview" hx-swap-oob="true">
+  {% include "partials/_media_player.html" %}
+</div>
+
+{% else %}
+<div class="space-y-4">
+  <span class="text-gray-500 text-sm">No shot selected</span>
+</div>
+{% endif %}

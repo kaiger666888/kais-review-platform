@@ -1,0 +1,49 @@
+<article class="border-b border-gray-200 p-4 cursor-pointer hover:bg-gray-50 active:bg-gray-100 min-h-[44px] relative"
+         hx-get="/reviews/{{ review.id }}/detail"
+         hx-target="#detail-overlay"
+         hx-swap="innerHTML"
+         role="button"
+         tabindex="0"
+         aria-label="Review {{ review.id }}: {{ review.type }} from {{ review.source_system }}">
+  <!-- Batch checkbox (visible when batch mode active) -->
+  <div x-show="$store.batch && $store.batch.active"
+       x-cloak
+       class="absolute top-3 left-2 z-10"
+       @click.stop>
+    <input type="checkbox"
+           :value="{{ review.id }}"
+           x-model="$store.batch.selectedIds"
+           @click.stop
+           class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+  </div>
+  <div class="flex items-start gap-4"
+       :class="$store.batch && $store.batch.active ? 'ml-6' : ''">
+    <!-- Thumbnail placeholder -->
+    <div class="w-12 h-12 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-gray-400">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+      </svg>
+    </div>
+    <!-- Card content -->
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <!-- Type badge -->
+        <span class="text-xs font-semibold px-2 py-0.5 rounded
+          {% if review.disposition == 'HUMAN' %}bg-blue-100 text-blue-700
+          {% elif review.disposition == 'AI_AUDIT' %}bg-purple-100 text-purple-700
+          {% elif review.disposition == 'BLOCK' %}bg-red-100 text-red-700
+          {% else %}bg-gray-100 text-gray-700{% endif %}">
+          {{ review.type }}
+        </span>
+        {% if review.priority == 'critical' %}
+          <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" aria-label="Critical priority"></span>
+        {% endif %}
+      </div>
+      <div class="text-xs text-gray-500 flex items-center gap-2">
+        <span>{{ review.source_system }}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>{{ review.created_at | elapsed_time }}</span>
+      </div>
+    </div>
+  </div>
+</article>

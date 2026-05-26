@@ -1,0 +1,21 @@
+name: gold-team-templates
+version: "1.0"
+source_system: kais-gold-team
+templates:
+  task-parameter:
+    desktop:
+      decision_panel: partials/_template_risk_assessment.html
+      media_player: partials/_media_player.html
+      show_scores: false
+      show_candidates: false
+    mobile:
+      card_variant: risk-assessment
+  _default:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_scores: false
+      show_candidates: true
+      candidate_layout: grid
+    mobile:
+      card_variant: default

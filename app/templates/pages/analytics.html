@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Kai's Review Platform{% endblock %}
+
+{% block content %}
+<div x-data="analyticsState()"
+     class="min-h-screen bg-gray-50">
+
+  <!-- Header bar -->
+  <header class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="flex items-center justify-between">
+      <h1 class="text-gray-200 text-sm font-semibold">Analytics Dashboard</h1>
+      <span class="text-gray-400 text-xs">Role: <span class="text-gray-300 font-mono">{{ user.role }}</span></span>
+    </div>
+
+    <!-- Date range picker -->
+    <div class="mt-2 flex items-center gap-2 flex-wrap">
+      <label class="text-gray-400 text-xs">From</label>
+      <input type="date" x-model="startDate"
+             class="bg-gray-700 text-gray-200 text-xs border border-gray-600 rounded px-2 py-1">
+      <label class="text-gray-400 text-xs">To</label>
+      <input type="date" x-model="endDate"
+             class="bg-gray-700 text-gray-200 text-xs border border-gray-600 rounded px-2 py-1">
+      <button @click="refreshAll()"
+              class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-semibold">
+        Refresh
+      </button>
+
+      <!-- Quick select buttons -->
+      <div class="flex gap-1 ml-2">
+        <button @click="quickSelect('today')"
+                class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded">
+          Today
+        </button>
+        <button @click="quickSelect('7d')"
+                class="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-blue-200 text-xs rounded">
+          7d
+        </button>
+        <button @click="quickSelect('30d')"
+                class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded">
+          30d
+        </button>
+        <button @click="quickSelect('all')"
+                class="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded">
+          All
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dashboard sections -->
+  <div class="max-w-5xl mx-auto p-4 space-y-6">
+
+    <!-- Metrics + By Source/Phase -->
+    <div id="analytics-metrics"
+         hx-get="/partials/analytics-metrics"
+         hx-trigger="load"
+         hx-include="[name='start_date'],[name='end_date']"
+         hx-vals='js:{start_date: startDate, end_date: endDate}'
+         hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-12 text-gray-400">
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading metrics...
+      </div>
+    </div>
+
+    <!-- Routing Ratio -->
+    <div id="analytics-routing"
+         hx-get="/partials/analytics-routing"
+         hx-trigger="load"
+         hx-vals='js:{start_date: startDate, end_date: endDate}'
+         hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-12 text-gray-400">
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading routing data...
+      </div>
+    </div>
+
+    <!-- Score Distribution -->
+    <div id="analytics-scores"
+         hx-get="/partials/analytics-scores"
+         hx-trigger="load"
+         hx-vals='js:{start_date: startDate, end_date: endDate}'
+         hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-12 text-gray-400">
+        <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading score data...
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function analyticsState() {
+  var today = new Date();
+  var weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  function fmt(d) { return d.toISOString().split('T')[0]; }
+
+  return {
+    startDate: '{{ default_start_date }}' || fmt(weekAgo),
+    endDate: '{{ default_end_date }}' || fmt(today),
+
+    quickSelect(period) {
+      var now = new Date();
+      var start = new Date();
+      if (period === 'today') {
+        // start = today
+      } else if (period === '7d') {
+        start.setDate(start.getDate() - 7);
+      } else if (period === '30d') {
+        start.setDate(start.getDate() - 30);
+      } else if (period === 'all') {
+        start = new Date('2024-01-01');
+      }
+      this.startDate = fmt(start);
+      this.endDate = fmt(now);
+      this.refreshAll();
+    },
+
+    refreshAll() {
+      htmx.ajax('GET', '/partials/analytics-metrics?start_date=' + this.startDate + '&end_date=' + this.endDate, '#analytics-metrics');
+      htmx.ajax('GET', '/partials/analytics-routing?start_date=' + this.startDate + '&end_date=' + this.endDate, '#analytics-routing');
+      htmx.ajax('GET', '/partials/analytics-scores?start_date=' + this.startDate + '&end_date=' + this.endDate, '#analytics-scores');
+    }
+  };
+}
+</script>
+{% endblock %}

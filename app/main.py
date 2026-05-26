@@ -1,0 +1,180 @@
+import logging
+import time
+from contextlib import asynccontextmanager
+
+import redis.asyncio as aioredis
+from sqlalchemy import text
+from arq import create_pool
+from arq.connections import RedisSettings
+from fastapi import Depends, FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+
+from app.api.v1.analytics import router as analytics_router
+from app.api.v1.ab_tests import router as ab_tests_router
+from app.api.v1.actions import router as actions_router
+from app.api.v1.audit_api import router as audit_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.batch import router as batch_router
+from app.api.v1.events import router as events_router
+from app.api.v1.policies import router as policies_router
+from app.api.v1.reviews import router as reviews_router
+from app.api.v1.webhooks import router as webhooks_router
+from app.api.v1.shot_cards import router as shot_cards_router
+from app.api.v1.shot_cards_v6 import router as shot_cards_v6_router
+from app.api.v1.mobile import router as mobile_router
+from app.api.v1.media import router as media_router
+from app.api.v1.tokens import router as tokens_router
+from app.web.routes import router as web_router
+from app.web.auth import router as web_auth_router
+from app.web.sse import router as sse_router
+from app.core.dependencies import get_arq_pool, get_redis
+from app.core.config import get_settings
+from app.core.database import engine
+from app.core.events import event_manager
+from app.core.policy import get_policy_engine
+from app.core.template_registry import get_template_registry
+from app.models.schema import create_tables
+from app.models.shot_card_v6 import ShotCardV6  # ensure V6 model is registered
+from app.models.base import Base as V6Base
+from app.bot import create_bot_application
+from app.bot.lifecycle import bot_start, bot_stop
+
+settings = get_settings()
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: initialize database schema
+    async with engine.begin() as conn:
+        await conn.run_sync(create_tables)
+        await conn.run_sync(V6Base.metadata.create_all)
+
+    # Startup: load default policies from YAML files
+    try:
+        engine_instance = get_policy_engine()
+        loaded = engine_instance.load_from_directory("app/policies")
+        logger.info("Loaded %d default policies: %s", len(loaded), loaded)
+    except Exception as exc:
+        logger.warning("Failed to load default policies: %s", exc)
+
+    # Startup: load template configs from YAML files
+    try:
+        template_registry = get_template_registry()
+        loaded_templates = template_registry.load_from_directory("app/templates/config")
+        logger.info("Loaded %d template configs: %s", len(loaded_templates), loaded_templates)
+    except Exception as exc:
+        logger.warning("Failed to load template configs: %s", exc)
+
+    # Startup: record start time for uptime
+    app.state._start_time = time.time()
+
+    # Startup: initialize Redis connection
+    try:
+        app.state.redis = aioredis.from_url(
+            settings.redis_url, decode_responses=True
+        )
+    except Exception:
+        app.state.redis = None
+
+    # Startup: initialize arq pool
+    try:
+        app.state.arq_pool = await create_pool(
+            RedisSettings.from_dsn(settings.redis_url)
+        )
+    except Exception:
+        app.state.arq_pool = None
+
+    # Startup: initialize Telegram Bot
+    try:
+        app.state.bot_application = create_bot_application()
+        await bot_start(app.state.bot_application)
+    except Exception as exc:
+        app.state.bot_application = None
+        logger.warning("Bot startup failed, continuing without Telegram Bot: %s", exc)
+
+    yield
+
+    # Shutdown: stop Telegram Bot
+    try:
+        await bot_stop(app.state.bot_application)
+    except Exception as exc:
+        logger.warning("Bot stop failed: %s", exc)
+
+    # Shutdown: cleanup connections
+    if app.state.redis:
+        await app.state.redis.close()
+    if app.state.arq_pool:
+        await app.state.arq_pool.close()
+    await engine.dispose()
+
+
+app = FastAPI(
+    lifespan=lifespan,
+    title="Kai's Review Platform",
+    version="1.0.0",
+)
+
+# Mount static files for PWA (manifest, service worker, icons)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Register API routers
+app.include_router(analytics_router)
+app.include_router(ab_tests_router)
+app.include_router(auth_router)
+app.include_router(reviews_router)
+app.include_router(actions_router)
+app.include_router(batch_router)
+app.include_router(audit_router)
+app.include_router(policies_router)
+app.include_router(events_router)
+app.include_router(webhooks_router)
+app.include_router(shot_cards_router)
+app.include_router(shot_cards_v6_router)
+app.include_router(mobile_router)
+app.include_router(media_router)
+app.include_router(tokens_router)
+app.include_router(web_auth_router)
+app.include_router(sse_router)
+app.include_router(web_router)
+
+
+@app.get("/health")
+@app.get("/api/v1/health")
+async def health():
+    import time
+    checks = {
+        "status": "ok",
+        "version": "6.0.0",
+        "uptime_seconds": round(time.time() - app.state._start_time, 1) if hasattr(app.state, "_start_time") else None,
+    }
+
+    # Check Redis connectivity
+    try:
+        redis = getattr(app.state, "redis", None)
+        if redis:
+            await redis.ping()
+            checks["redis"] = True
+        else:
+            checks["redis"] = False
+            checks["status"] = "degraded"
+    except Exception:
+        checks["redis"] = False
+        checks["status"] = "degraded"
+
+    # Check DB connectivity
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["db"] = True
+    except Exception:
+        checks["db"] = False
+        checks["status"] = "degraded"
+
+    # Active SSE connections
+    checks["active_sse"] = event_manager.connection_count
+
+    status_code = 200 if checks["status"] == "ok" else 503
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=checks, status_code=status_code)

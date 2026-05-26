@@ -1,0 +1,50 @@
+<!-- app/templates/partials/_policy_drawer.html -->
+<template x-if="showPolicy">
+  <div class="fixed inset-y-0 right-0 w-96 bg-gray-800 border-l border-gray-700 shadow-xl z-50 flex flex-col"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="translate-x-full"
+       x-transition:enter-end="translate-x-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="translate-x-0"
+       x-transition:leave-end="translate-x-full">
+
+    <!-- Drawer header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-700">
+      <h2 class="text-sm font-semibold text-gray-200">Git Policy</h2>
+      <button @click="showPolicy = false" class="text-gray-500 hover:text-gray-300">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Policy content — loaded via HTMX when drawer opens -->
+    <div id="policy-content" class="flex-1 overflow-y-auto p-4"
+         hx-get="/api/v1/policies/current"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <div class="text-gray-500 text-sm">Loading policy...</div>
+    </div>
+
+    <!-- Policy metadata -->
+    <div class="p-3 border-t border-gray-700 bg-gray-850">
+      <div class="flex items-center justify-between">
+        <div class="text-xs text-gray-500">
+          <span>Commit: </span>
+          <code id="policy_commit_sha" class="text-gray-400 font-mono">---</code>
+        </div>
+        <button hx-get="/api/v1/policies/current"
+                hx-target="#policy-content"
+                hx-swap="innerHTML"
+                class="text-xs text-blue-400 hover:text-blue-300">
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Keyboard hint -->
+    <div class="p-2 border-t border-gray-700 text-center text-xs text-gray-500">
+      Press <kbd class="bg-gray-700 px-1 rounded">G</kbd> or <kbd class="bg-gray-700 px-1 rounded">Esc</kbd> to close
+    </div>
+  </div>
+</template>

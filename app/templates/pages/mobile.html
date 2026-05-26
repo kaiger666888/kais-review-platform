@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1f2937">
+  <title>Review - Kai's Review Platform</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <style>
+    /* Prevent pull-to-refresh and overscroll bounce */
+    html, body {
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+      touch-action: none;
+    }
+    /* Card transition for snap-back */
+    .card-transition {
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .card-snap-back {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    /* Swipe action overlay animation */
+    .swipe-overlay {
+      transition: opacity 0.15s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 h-screen overflow-hidden flex flex-col"
+      style="padding-bottom: env(safe-area-inset-bottom);">
+
+  <!-- Context bar (fixed top) -->
+  {% include "partials/_mobile_context_bar.html" %}
+
+  <!-- Card viewport (full remaining height) -->
+  <div x-data="mobileState()"
+       class="relative flex-1 overflow-hidden mt-14"
+       @touchstart="onTouchStart($event)"
+       @touchmove.prevent="onTouchMove($event)"
+       @touchend="onTouchEnd($event)">
+
+    <!-- Previous card (peek behind) -->
+    <template x-if="currentIndex > 0">
+      <div class="absolute inset-x-6 top-4 bottom-4 bg-gray-800/50 rounded-2xl -z-10"
+           style="transform: scale(0.95) translateY(8px);">
+      </div>
+    </template>
+
+    <!-- Current card (interactive, swipeable) -->
+    <template x-if="cards.length > 0">
+      <div class="absolute inset-x-4 top-2 bottom-2"
+           :class="isSwiping ? 'card-transition' : 'card-snap-back'"
+           :style="'transform: translate(' + deltaX + 'px,' + deltaY + 'px) rotate(' + (deltaX * 0.05) + 'deg)'">
+
+        <!-- Card content -->
+        {% include "partials/_mobile_card.html" %}
+
+        <!-- Approve overlay (swipe left) -->
+        <div x-show="isSwiping && isSwipeLeft()"
+             class="swipe-overlay absolute inset-0 bg-green-500/20 flex items-center justify-center rounded-2xl pointer-events-none">
+          <div class="bg-green-600/80 text-white px-6 py-3 rounded-xl">
+            <svg class="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-lg font-bold">APPROVE</span>
+          </div>
+        </div>
+
+        <!-- Reject overlay (swipe right) -->
+        <div x-show="isSwiping && isSwipeRight()"
+             class="swipe-overlay absolute inset-0 bg-red-500/20 flex items-center justify-center rounded-2xl pointer-events-none">
+          <div class="bg-red-600/80 text-white px-6 py-3 rounded-xl">
+            <svg class="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span class="text-lg font-bold">REJECT</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Empty state -->
+    <template x-if="cards.length === 0 && !loading">
+      <div class="flex flex-col items-center justify-center h-full text-gray-500">
+        <svg class="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span class="text-lg">No cards to review</span>
+        <span class="text-sm mt-1">All caught up!</span>
+      </div>
+    </template>
+
+    <!-- Loading state -->
+    <template x-if="loading">
+      <div class="flex items-center justify-center h-full">
+        <div class="flex flex-col items-center text-gray-400">
+          <svg class="animate-spin h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span class="text-sm">Loading cards...</span>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Bottom action hints -->
+  <div class="flex items-center justify-between px-6 py-2 bg-gray-800 border-t border-gray-700 text-gray-500 text-xs"
+       x-show="cards.length > 0 && !showDetail">
+    <span class="flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Reject
+    </span>
+    <span class="flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+      </svg>
+      Details
+    </span>
+    <span class="flex items-center gap-1">
+      Approve
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+      </svg>
+    </span>
+  </div>
+
+  <!-- Toast notification area -->
+  <div x-show="toastMessage"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 translate-y-2"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed bottom-16 inset-x-4 z-50 pointer-events-none">
+    <div class="max-w-sm mx-auto px-4 py-2 rounded-lg shadow-lg text-center text-sm font-medium"
+         :class="{
+           'bg-green-600 text-white': toastType === 'success',
+           'bg-red-600 text-white': toastType === 'error',
+           'bg-blue-600 text-white': toastType === 'info'
+         }"
+         x-text="toastMessage">
+    </div>
+  </div>
+
+  <!-- CDN Scripts -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.9"></script>
+
+  <!-- Alpine.js State Manager -->
+  <script>
+  function mobileState() {
+    return {
+      cards: [],
+      currentIndex: 0,
+      candidateIndex: 0,
+      cursor: null,
+      loading: false,
+      hasMore: true,
+      showDetail: false,
+      zoomScale: 1,
+      toastMessage: '',
+      toastType: 'info',
+      toastTimer: null,
+
+      // Swipe gesture state
+      startX: 0,
+      startY: 0,
+      deltaX: 0,
+      deltaY: 0,
+      isSwiping: false,
+
+      // Pinch-to-zoom state
+      initialPinchDistance: 0,
+      initialZoomScale: 1,
+
+      // Swipe threshold in pixels
+      SWIPE_THRESHOLD: 80,
+
+      // ----- Touch handlers -----
+
+      onTouchStart(event) {
+        if (event.touches.length === 2) {
+          // Pinch start
+          this.onPinchStart(event);
+          return;
+        }
+
+        if (event.touches.length === 1) {
+          var touch = event.touches[0];
+          this.startX = touch.clientX;
+          this.startY = touch.clientY;
+          this.deltaX = 0;
+          this.deltaY = 0;
+          this.isSwiping = true;
+        }
+      },
+
+      onTouchMove(event) {
+        if (event.touches.length === 2) {
+          this.onPinchMove(event);
+          return;
+        }
+
+        if (event.touches.length === 1 && this.isSwiping) {
+          var touch = event.touches[0];
+          this.deltaX = touch.clientX - this.startX;
+          this.deltaY = touch.clientY - this.startY;
+        }
+      },
+
+      onTouchEnd(event) {
+        if (this.initialPinchDistance > 0) {
+          this.onPinchEnd(event);
+          return;
+        }
+
+        if (!this.isSwiping) return;
+        this.isSwiping = false;
+
+        var action = this.classifySwipe();
+
+        switch (action) {
+          case 'approve':
+            this.approve();
+            break;
+          case 'reject':
+            this.reject();
+            break;
+          case 'up':
+            if (!this.showDetail) {
+              this.showDetail = true;
+            }
+            break;
+          case 'down':
+            if (this.showDetail) {
+              this.showDetail = false;
+            } else if (this.currentIndex >= this.cards.length - 1) {
+              this.loadMore();
+            } else {
+              this.nextCard();
+            }
+            break;
+          case 'next':
+            this.nextCard();
+            break;
+          default:
+            // No action — snap back
+            break;
+        }
+
+        // Reset delta with animation
+        var self = this;
+        this.deltaX = 0;
+        this.deltaY = 0;
+      },
+
+      // ----- Gesture classifiers -----
+
+      classifySwipe() {
+        var absX = Math.abs(this.deltaX);
+        var absY = Math.abs(this.deltaY);
+
+        // Horizontal swipe dominant
+        if (absX > this.SWIPE_THRESHOLD && absX > absY) {
+          if (this.deltaX < 0) return 'approve';  // Swipe left
+          if (this.deltaX > 0) return 'reject';    // Swipe right
+        }
+
+        // Vertical swipe dominant
+        if (absY > this.SWIPE_THRESHOLD && absY > absX) {
+          if (this.deltaY < 0) return 'up';        // Swipe up
+          if (this.deltaY > 0) return 'down';      // Swipe down
+        }
+
+        return null;
+      },
+
+      isSwipeLeft() {
+        return this.deltaX < -this.SWIPE_THRESHOLD && Math.abs(this.deltaY) < 100;
+      },
+
+      isSwipeRight() {
+        return this.deltaX > this.SWIPE_THRESHOLD && Math.abs(this.deltaY) < 100;
+      },
+
+      // ----- Pinch-to-zoom -----
+
+      onPinchStart(event) {
+        if (event.touches.length !== 2) return;
+        var dx = event.touches[0].clientX - event.touches[1].clientX;
+        var dy = event.touches[0].clientY - event.touches[1].clientY;
+        this.initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+        this.initialZoomScale = this.zoomScale;
+      },
+
+      onPinchMove(event) {
+        if (event.touches.length !== 2 || this.initialPinchDistance === 0) return;
+        var dx = event.touches[0].clientX - event.touches[1].clientX;
+        var dy = event.touches[0].clientY - event.touches[1].clientY;
+        var currentDistance = Math.sqrt(dx * dx + dy * dy);
+        var scale = this.initialZoomScale * (currentDistance / this.initialPinchDistance);
+        this.zoomScale = Math.max(1, Math.min(scale, 4));
+      },
+
+      onPinchEnd(event) {
+        this.initialPinchDistance = 0;
+        if (this.zoomScale < 1.1) {
+          this.zoomScale = 1;
+        }
+      },
+
+      // ----- Card navigation -----
+
+      nextCard() {
+        if (this.currentIndex < this.cards.length - 1) {
+          this.currentIndex++;
+          this.candidateIndex = 0;
+          this.showDetail = false;
+          this.zoomScale = 1;
+        } else {
+          // At the end, try loading more
+          this.loadMore();
+        }
+      },
+
+      prevCard() {
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+          this.candidateIndex = 0;
+          this.showDetail = false;
+          this.zoomScale = 1;
+        }
+      },
+
+      // ----- Candidate navigation -----
+
+      nextCandidate() {
+        var card = this.cards[this.currentIndex];
+        if (card && card.candidates && this.candidateIndex < card.candidates.length - 1) {
+          this.candidateIndex++;
+        }
+      },
+
+      prevCandidate() {
+        if (this.candidateIndex > 0) {
+          this.candidateIndex--;
+        }
+      },
+
+      // ----- Decision actions -----
+
+      async approve() {
+        if (this.cards.length === 0) return;
+        var card = this.cards[this.currentIndex];
+        this.showToast('Approved shot ' + card.shot_number, 'success');
+
+        try {
+          await fetch('/api/v1/mobile/cards/' + card.id + '/swipe-decision', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ action: 'approve' })
+          });
+        } catch (e) {
+          // Offline or error — action cached by Service Worker
+          console.warn('Swipe decision failed (offline?):', e);
+        }
+
+        // Move to next card
+        this.removeCurrentCard();
+      },
+
+      async reject() {
+        if (this.cards.length === 0) return;
+        var card = this.cards[this.currentIndex];
+        this.showToast('Rejected shot ' + card.shot_number, 'error');
+
+        try {
+          await fetch('/api/v1/mobile/cards/' + card.id + '/swipe-decision', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ action: 'reject', reason: 'Mobile reject' })
+          });
+        } catch (e) {
+          console.warn('Swipe decision failed (offline?):', e);
+        }
+
+        // Move to next card
+        this.removeCurrentCard();
+      },
+
+      removeCurrentCard() {
+        this.cards.splice(this.currentIndex, 1);
+        this.candidateIndex = 0;
+        this.showDetail = false;
+        this.zoomScale = 1;
+
+        if (this.currentIndex >= this.cards.length && this.cards.length > 0) {
+          this.currentIndex = this.cards.length - 1;
+        }
+
+        // Load more if running low
+        if (this.cards.length <= 3 && this.hasMore) {
+          this.loadMore();
+        }
+      },
+
+      // ----- Data loading -----
+
+      async loadCards() {
+        this.loading = true;
+        try {
+          var url = '/api/v1/mobile/cards?limit=10';
+          if (this.cursor) {
+            url += '&cursor=' + encodeURIComponent(this.cursor);
+          }
+
+          var response = await fetch(url, { credentials: 'same-origin' });
+          var data = await response.json();
+
+          if (data.status === 'ok' && data.data) {
+            var items = data.data.items || [];
+            this.cards = this.cards.concat(items);
+            this.hasMore = data.data.has_more || false;
+            this.cursor = data.data.next_cursor || null;
+          }
+        } catch (e) {
+          console.warn('Failed to load cards:', e);
+          this.showToast('Failed to load cards', 'error');
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadMore() {
+        if (this.loading || !this.hasMore) return;
+        await this.loadCards();
+      },
+
+      async loadAudio() {
+        if (this.cards.length === 0) return;
+        var card = this.cards[this.currentIndex];
+        if (!card || card.audio_status === 'ready') return;
+
+        try {
+          var response = await fetch('/api/v1/mobile/cards/' + card.id + '/audio', {
+            credentials: 'same-origin'
+          });
+          var data = await response.json();
+
+          if (data.status === 'ok' && data.data) {
+            card.audio_status = 'ready';
+            card.bgm_prompt = data.data.bgm_prompt || card.bgm_prompt;
+            card.sfx_prompt = data.data.sfx_prompt || card.sfx_prompt;
+          }
+        } catch (e) {
+          // Audio loading is progressive, failures are non-blocking
+          console.warn('Failed to load audio:', e);
+        }
+      },
+
+      // ----- Toast -----
+
+      showToast(message, type) {
+        var self = this;
+        this.toastMessage = message;
+        this.toastType = type || 'info';
+        if (this.toastTimer) clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(function() {
+          self.toastMessage = '';
+        }, 2000);
+      },
+
+      // ----- Initialize -----
+
+      init() {
+        this.loadCards();
+
+        // Preload audio for current card after a short delay
+        var self = this;
+        this.$watch('currentIndex', function() {
+          setTimeout(function() { self.loadAudio(); }, 500);
+        });
+      }
+    };
+  }
+  </script>
+
+  <!-- Alpine.js (deferred, loads after state definition) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/static/sw.js').then(function(reg) {
+          console.log('Service Worker registered:', reg.scope);
+        }).catch(function(err) {
+          console.warn('Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

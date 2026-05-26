@@ -1,0 +1,43 @@
+<div class="p-2 hover:bg-gray-750 cursor-pointer flex items-center gap-2 border-b border-gray-700"
+     data-shot-id="{{ shot.id }}"
+     {% if shot.visual_bundle and shot.visual_bundle.get('keyframes') %}
+     data-first-frame="{{ shot.visual_bundle.get('keyframes', {}).get('first', {}).get('url', '') }}"
+     data-last-frame="{{ shot.visual_bundle.get('keyframes', {}).get('last', {}).get('url', '') }}"
+     {% endif %}
+     x-bind:class="{
+       'ring-2 ring-blue-500 bg-gray-750': activeShotId === {{ shot.id }},
+       'ring-2 ring-yellow-500 bg-gray-750': selectedItems.includes({{ shot.id }}) && activeShotId !== {{ shot.id }}
+     }"
+     hx-get="/partials/shot-card-detail/{{ shot.id }}"
+     hx-target="#decision-panel"
+     hx-swap="innerHTML"
+     @click="toggleSelect({{ shot.id }}, {{ loop.index0 }}, $event)">
+
+  {% if shot.visual_bundle and shot.visual_bundle.get('keyframes') and shot.visual_bundle.get('keyframes', {}).get('first') %}
+  <img class="w-16 h-9 object-cover rounded"
+       src="{{ shot.visual_bundle['keyframes']['first']['url'] }}"
+       alt="Shot {{ shot.narrative_context.get('shot_number', '?') }}" />
+  {% else %}
+  <div class="w-16 h-9 bg-gray-700 rounded flex items-center justify-center">
+    <span class="text-gray-500 text-xs">--</span>
+  </div>
+  {% endif %}
+
+  <div class="flex-1 min-w-0">
+    <div class="text-sm text-gray-200 truncate">
+      Shot {{ shot.narrative_context.get('shot_number', '?') }}
+    </div>
+    <div class="text-xs text-gray-400">
+      Scene {{ shot.narrative_context.get('scene', '?') }}
+    </div>
+  </div>
+
+  {% set routing = shot.routing_decision or '' %}
+  <span class="text-xs px-1.5 py-0.5 rounded
+    {% if routing == 'HUMAN' %}bg-red-900 text-red-300
+    {% elif routing == 'AI_AUDIT' %}bg-yellow-900 text-yellow-300
+    {% elif routing == 'BLOCK' %}bg-orange-900 text-orange-300
+    {% else %}bg-green-900 text-green-300{% endif %}">
+    {{ shot.audit_status }}
+  </span>
+</div>

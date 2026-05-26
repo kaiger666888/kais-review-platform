@@ -1,0 +1,42 @@
+<div class="p-2 border-b border-gray-700">
+  <div class="flex items-center gap-2">
+    <!-- Project filter -->
+    <select name="project"
+            hx-get="/partials/shot-queue"
+            hx-target="#shot-queue-list"
+            hx-swap="innerHTML"
+            hx-include="[name='scene'],[name='risk']"
+            class="bg-gray-800 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600 flex-1 min-w-0">
+      <option value="">All Projects</option>
+      {% for p in projects %}
+      <option value="{{ p }}" {% if current_project == p %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Scene filter -->
+    <input name="scene"
+           type="text"
+           placeholder="Scene..."
+           hx-get="/partials/shot-queue"
+           hx-target="#shot-queue-list"
+           hx-swap="innerHTML"
+           hx-include="[name='project'],[name='risk']"
+           hx-trigger="keyup changed delay:300ms"
+           value="{{ current_scene or '' }}"
+           class="bg-gray-800 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600 w-20" />
+
+    <!-- Risk/Status filter -->
+    <select name="risk"
+            hx-get="/partials/shot-queue"
+            hx-target="#shot-queue-list"
+            hx-swap="innerHTML"
+            hx-include="[name='project'],[name='scene']"
+            class="bg-gray-800 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600">
+      <option value="">All Status</option>
+      <option value="awaiting_audit" {% if current_risk == "awaiting_audit" %}selected{% endif %}>Awaiting Audit</option>
+      <option value="approved" {% if current_risk == "approved" %}selected{% endif %}>Approved</option>
+      <option value="rejected" {% if current_risk == "rejected" %}selected{% endif %}>Rejected</option>
+      <option value="pending_audio" {% if current_risk == "pending_audio" %}selected{% endif %}>Pending Audio</option>
+    </select>
+  </div>
+</div>

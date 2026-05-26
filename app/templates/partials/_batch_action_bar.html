@@ -1,0 +1,87 @@
+<!-- Batch action bar: fixed bottom bar for batch approve/reject operations -->
+<div class="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-300 shadow-lg z-40 px-4 py-3">
+  <div class="max-w-lg mx-auto flex items-center gap-3">
+    <!-- Selected count -->
+    <div class="text-xs text-gray-600 font-medium">
+      <span x-text="$store.batch.selectedIds.length"></span> reviews selected
+    </div>
+
+    <!-- Comment input -->
+    <input type="text"
+           x-model="$store.batch.comment"
+           placeholder="Comment (optional)"
+           class="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+
+    <!-- Batch Approve -->
+    <button type="button"
+            @click="batchApprove()"
+            class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-semibold whitespace-nowrap">
+      Batch Approve
+    </button>
+
+    <!-- Batch Reject -->
+    <button type="button"
+            @click="batchReject()"
+            class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-semibold whitespace-nowrap">
+      Batch Reject
+    </button>
+
+    <!-- Cancel -->
+    <button type="button"
+            @click="$store.batch.active = false; $store.batch.selectedIds = []; $store.batch.comment = ''"
+            class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded font-semibold whitespace-nowrap">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<script>
+function batchApprove() {
+  var ids = Alpine.store('batch').selectedIds.map(Number);
+  if (ids.length === 0) return;
+
+  fetch('/reviews/batch/approve-htmx', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'review_ids=' + encodeURIComponent(JSON.stringify(ids)) +
+          '&comment=' + encodeURIComponent(Alpine.store('batch').comment || '')
+  }).then(function(r) { return r.text(); }).then(function(html) {
+    Alpine.store('batch').selectedIds = [];
+    Alpine.store('batch').comment = '';
+    // Trigger review list refresh via SSE event
+    document.body.dispatchEvent(new CustomEvent('review_status', { bubbles: true }));
+    // Also show toast
+    var msg = 'Batch approve processed';
+    document.body.dispatchEvent(new CustomEvent('show-toast', {
+      detail: { message: msg, type: 'success' },
+      bubbles: true
+    }));
+  });
+}
+
+function batchReject() {
+  var ids = Alpine.store('batch').selectedIds.map(Number);
+  if (ids.length === 0) return;
+
+  var comment = Alpine.store('batch').comment || '';
+  if (!comment) {
+    comment = prompt('Enter rejection reason:');
+    if (!comment) return;
+  }
+
+  fetch('/reviews/batch/reject-htmx', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'review_ids=' + encodeURIComponent(JSON.stringify(ids)) +
+          '&comment=' + encodeURIComponent(comment)
+  }).then(function(r) { return r.text(); }).then(function(html) {
+    Alpine.store('batch').selectedIds = [];
+    Alpine.store('batch').comment = '';
+    document.body.dispatchEvent(new CustomEvent('review_status', { bubbles: true }));
+    document.body.dispatchEvent(new CustomEvent('show-toast', {
+      detail: { message: 'Batch reject processed', type: 'success' },
+      bubbles: true
+    }));
+  });
+}
+</script>

@@ -1,0 +1,14 @@
+name: default-template
+version: "1.0"
+source_system: default
+templates:
+  _default:
+    desktop:
+      decision_panel: partials/_decision_panel.html
+      media_player: partials/_media_player.html
+      show_candidates: true
+      show_scores: false
+      candidate_layout: grid
+    mobile:
+      card_variant: default
+      show_scores: false

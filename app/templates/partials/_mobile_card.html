@@ -1,0 +1,242 @@
+<!-- Mobile Shot Card: renders a single card from cards[currentIndex] -->
+<!-- Expects Alpine.js scope: cards, currentIndex, candidateIndex, showDetail, zoomScale -->
+
+<template x-if="cards.length > 0">
+  <div class="h-full flex flex-col bg-gray-800 rounded-2xl overflow-hidden shadow-xl">
+
+    <!-- First Frame Image (full width, 16:9 container) -->
+    <div class="relative w-full bg-gray-750 flex-shrink-0"
+         style="aspect-ratio: 16/9;"
+         @touchstart.prevent.stop="onPinchStart($event)"
+         @touchmove.prevent.stop="onPinchMove($event)"
+         @touchend.prevent.stop="onPinchEnd($event)">
+
+      <!-- Image with zoom transform -->
+      <div class="w-full h-full overflow-hidden">
+        <template x-if="cards[currentIndex].first_frame_url">
+          <img :src="cards[currentIndex].first_frame_url"
+               :style="'transform: scale(' + zoomScale + '); transform-origin: center center; transition: transform 0.15s ease-out;'"
+               class="w-full h-full object-cover"
+               alt="First frame" />
+        </template>
+        <template x-if="!cards[currentIndex].first_frame_url">
+          <div class="w-full h-full bg-gray-700 flex items-center justify-center">
+            <span class="text-gray-500 text-sm">No preview</span>
+          </div>
+        </template>
+      </div>
+
+      <!-- Candidate indicator dots (overlaid on image bottom) -->
+      <template x-if="cards[currentIndex].candidates && cards[currentIndex].candidates.length > 0">
+        <div class="absolute bottom-2 inset-x-0 flex items-center justify-center gap-2">
+          <template x-for="(cand, idx) in cards[currentIndex].candidates" :key="idx">
+            <div class="w-2.5 h-2.5 rounded-full transition-colors duration-200"
+                 :class="idx === candidateIndex ? 'bg-blue-400' : 'bg-gray-400/50'"
+                 @click.stop="candidateIndex = idx">
+            </div>
+          </template>
+          <span class="text-white text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded ml-1"
+                x-text="(candidateIndex + 1) + '/' + cards[currentIndex].candidates.length">
+          </span>
+          <!-- Score display when template_config.show_scores is true (candidate-swipe variant) -->
+          <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.show_scores && cards[currentIndex].candidates[candidateIndex]">
+            <span class="text-white text-xs font-mono bg-black/40 px-1.5 py-0.5 rounded"
+                  x-text="cards[currentIndex].candidates[candidateIndex].score ? Math.round(cards[currentIndex].candidates[candidateIndex].score * 100) + '%' : ''">
+            </span>
+          </template>
+        </div>
+      </template>
+
+      <!-- Risk assessment badge (risk-assessment variant) -->
+      <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.card_variant === 'risk-assessment'">
+        <div class="absolute top-2 left-2 bg-black/60 rounded px-2 py-1">
+          <div class="text-xs text-gray-400">Risk</div>
+          <div class="flex items-center gap-1">
+            <div class="w-16 bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <div class="h-1.5 rounded-full"
+                   :class="{
+                     'bg-red-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                     'bg-yellow-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                     'bg-green-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                   }"
+                   :style="'width: ' + ((cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) : 0) + '%'">
+              </div>
+            </div>
+            <span class="text-white text-xs font-mono"
+                  x-text="(cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) + '%' : 'N/A'">
+            </span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Pinch-to-zoom indicator -->
+      <div x-show="zoomScale > 1" x-transition
+           class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+        <span x-text="Math.round(zoomScale * 100) + '%'"></span>
+      </div>
+    </div>
+
+    <!-- Card body: Last frame + info -->
+    <div class="flex-1 flex flex-col p-3 min-h-0 overflow-y-auto">
+
+      <!-- Last frame thumbnail (smaller, right-aligned) -->
+      <div class="flex justify-end mb-3">
+        <div class="w-2/5">
+          <div class="text-xs text-gray-500 mb-1 text-right">Last frame</div>
+          <template x-if="cards[currentIndex].last_frame_url">
+            <img :src="cards[currentIndex].last_frame_url"
+                 class="w-full rounded-lg object-cover bg-gray-700"
+                 style="aspect-ratio: 16/9;"
+                 alt="Last frame" />
+          </template>
+          <template x-if="!cards[currentIndex].last_frame_url">
+            <div class="w-full rounded-lg bg-gray-700 flex items-center justify-center"
+                 style="aspect-ratio: 16/9;">
+              <span class="text-gray-600 text-xs">No preview</span>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Status badges -->
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs px-2 py-0.5 rounded font-medium"
+              :class="{
+                'bg-yellow-900 text-yellow-300': cards[currentIndex].audit_status === 'awaiting_audit',
+                'bg-green-900 text-green-300': cards[currentIndex].audit_status === 'approved',
+                'bg-red-900 text-red-300': cards[currentIndex].audit_status === 'rejected',
+                'bg-gray-700 text-gray-400': !['awaiting_audit','approved','rejected'].includes(cards[currentIndex].audit_status)
+              }"
+              x-text="cards[currentIndex].audit_status">
+        </span>
+        <template x-if="cards[currentIndex].routing_decision">
+          <span class="text-xs text-gray-400"
+                x-text="'Route: ' + cards[currentIndex].routing_decision">
+          </span>
+        </template>
+      </div>
+
+      <!-- Detail panel (shown on swipe-up) -->
+      <template x-if="showDetail">
+        <div class="space-y-3 pt-2 border-t border-gray-700" x-transition>
+          <!-- Risk assessment section (risk-assessment variant) -->
+          <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.card_variant === 'risk-assessment'">
+            <div>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 mb-1">Risk Assessment</h4>
+              <div class="flex items-center gap-2 mb-2">
+                <div class="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
+                  <div class="h-2 rounded-full"
+                       :class="{
+                         'bg-red-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                         'bg-yellow-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                         'bg-green-500': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                       }"
+                       :style="'width: ' + ((cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) : 0) + '%'">
+                  </div>
+                </div>
+                <span class="text-xs font-mono"
+                      :class="{
+                        'text-red-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.7,
+                        'text-yellow-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) >= 0.3 && (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.7,
+                        'text-green-400': (cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) < 0.3
+                      }"
+                      x-text="(cards[currentIndex].narrative_context && cards[currentIndex].narrative_context.risk_score) ? Math.round(cards[currentIndex].narrative_context.risk_score * 100) + '%' : 'N/A'">
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <!-- Visual prompt -->
+          <template x-if="cards[currentIndex].visual_prompt">
+            <div>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 mb-1">Visual Prompt</h4>
+              <p class="text-xs text-gray-300 leading-relaxed"
+                 x-text="cards[currentIndex].visual_prompt">
+              </p>
+            </div>
+          </template>
+
+          <!-- AI Score (shown when template_config.show_scores and ai_score present) -->
+          <template x-if="cards[currentIndex].template_config && cards[currentIndex].template_config.show_scores && cards[currentIndex].ai_score != null">
+            <div>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 mb-1">AI Score</h4>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg font-bold"
+                      :class="{
+                        'text-green-400': cards[currentIndex].ai_score >= 70,
+                        'text-yellow-400': cards[currentIndex].ai_score >= 50 && cards[currentIndex].ai_score < 70,
+                        'text-red-400': cards[currentIndex].ai_score < 50
+                      }"
+                      x-text="cards[currentIndex].ai_score">
+                </span>
+                <span class="text-xs text-gray-500">/ 100</span>
+              </div>
+              <template x-if="cards[currentIndex].ai_score_dimensions">
+                <div class="space-y-1">
+                  <template x-for="(val, dim) in cards[currentIndex].ai_score_dimensions" :key="dim">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs text-gray-400" x-text="dim"></span>
+                      <span class="text-xs font-mono"
+                            :class="{
+                              'text-green-400': val >= 70,
+                              'text-yellow-400': val >= 50 && val < 70,
+                              'text-red-400': val < 50
+                            }"
+                            x-text="val">
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template x-if="cards[currentIndex].ai_score_source">
+                <div class="text-xs text-gray-500 mt-1"
+                     x-text="'Source: ' + cards[currentIndex].ai_score_source">
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Audio prompts -->
+          <template x-if="cards[currentIndex].audio_status === 'ready'">
+            <div>
+              <h4 class="text-xs font-semibold uppercase text-gray-500 mb-1">Audio</h4>
+              <template x-if="cards[currentIndex].bgm_prompt">
+                <div class="mb-1">
+                  <span class="text-xs text-gray-500">BGM:</span>
+                  <p class="text-xs text-gray-400" x-text="cards[currentIndex].bgm_prompt"></p>
+                </div>
+              </template>
+              <template x-if="cards[currentIndex].sfx_prompt">
+                <div>
+                  <span class="text-xs text-gray-500">SFX:</span>
+                  <p class="text-xs text-gray-400" x-text="cards[currentIndex].sfx_prompt"></p>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Audio status -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Audio:</span>
+            <span class="text-xs px-1.5 py-0.5 rounded"
+                  :class="{
+                    'bg-green-900 text-green-300': cards[currentIndex].audio_status === 'ready',
+                    'bg-yellow-900 text-yellow-300': cards[currentIndex].audio_status === 'pending',
+                    'bg-red-900 text-red-300': cards[currentIndex].audio_status === 'failed'
+                  }"
+                  x-text="cards[currentIndex].audio_status">
+            </span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Swipe-up hint (when detail hidden) -->
+      <template x-if="!showDetail">
+        <div class="mt-auto pt-3 text-center">
+          <span class="text-gray-600 text-xs">Swipe up for details</span>
+        </div>
+      </template>
+    </div>
+
+  </div>
+</template>

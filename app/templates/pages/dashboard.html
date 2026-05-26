@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="bg-white border-b border-gray-200 p-4">
+  <h1 class="text-2xl font-semibold text-gray-900">Kai's Review Platform</h1>
+</div>
+
+<!-- SSE wrapper: real-time review status updates via cookie-auth endpoint -->
+<div hx-ext="sse" sse-connect="/events/stream">
+  <!-- New reviews banner: shows count of new items, click resets and refreshes -->
+  {% include "partials/_new_reviews_banner.html" %}
+
+  <!-- Review list area -->
+  <div id="review-list-container"
+       hx-get="/partials/review-list?status={{ active_tab }}"
+       hx-trigger="sse:review_status, load, refreshList from:body"
+       hx-target="#review-list"
+       hx-swap="innerHTML">
+    {% include "partials/_review_list.html" %}
+  </div>
+</div>
+
+<!-- Detail overlay container -->
+<div id="detail-overlay">
+  {% if detail_id and reviews %}
+    {% set review = reviews | selectattr('id', 'equalto', detail_id) | first %}
+    {% if review %}
+      {% include "partials/_review_detail.html" %}
+    {% else %}
+      {# Review not in current page -- fetch via HTMX on load #}
+      <div hx-get="/reviews/{{ detail_id }}/detail"
+           hx-trigger="load"
+           hx-target="#detail-overlay"
+           hx-swap="innerHTML"></div>
+    {% endif %}
+  {% elif detail_id %}
+    {# detail_id set but no reviews match -- fetch via HTMX #}
+    <div hx-get="/reviews/{{ detail_id }}/detail"
+         hx-trigger="load"
+         hx-target="#detail-overlay"
+         hx-swap="innerHTML"></div>
+  {% endif %}
+</div>
+{% endblock %}

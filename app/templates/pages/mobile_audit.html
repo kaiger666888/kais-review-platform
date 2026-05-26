@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111827">
+  <title>Audit Dashboard - Kai's Review Platform</title>
+  <style>
+    html, body {
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="flex items-center justify-between">
+      <h1 class="text-white text-base font-semibold">Audit Dashboard</h1>
+      <span class="text-gray-400 text-xs font-mono">{{ user.role }}</span>
+    </div>
+
+    {% if user.role == 'admin' %}
+    <!-- Admin date filter -->
+    <div x-data="{ showFilter: false }" class="mt-2">
+      <button @click="showFilter = !showFilter" class="text-xs text-blue-400 hover:text-blue-300">
+        <span x-show="!showFilter">Show date filter</span>
+        <span x-show="showFilter" x-cloak>Hide date filter</span>
+      </button>
+      <div x-show="showFilter" x-transition class="mt-2 flex items-center gap-2">
+        <input type="date" x-model="startDate" x-init="
+          var d = new Date(); d.setDate(d.getDate() - 7);
+          startDate = d.toISOString().split('T')[0];
+        " class="bg-gray-700 text-gray-200 text-xs border border-gray-600 rounded px-2 py-1 flex-1">
+        <span class="text-gray-500 text-xs">to</span>
+        <input type="date" x-model="endDate" x-init="
+          endDate = new Date().toISOString().split('T')[0];
+        " class="bg-gray-700 text-gray-200 text-xs border border-gray-600 rounded px-2 py-1 flex-1">
+      </div>
+    </div>
+    {% endif %}
+  </header>
+
+  <!-- Stats cards -->
+  <div class="px-4 py-3">
+    <div x-data="mobileAuditState()" x-init="init()">
+
+      <!-- Stats summary row -->
+      <div class="grid grid-cols-3 gap-3 mb-4" id="mobile-stats">
+        <template x-if="stats">
+          <div class="contents">
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+              <div class="text-xl font-bold text-white" x-text="stats.total_decisions || 0"></div>
+              <div class="text-gray-400 text-xs mt-0.5">Decisions</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+              <div class="text-xl font-bold"
+                   :class="stats.approval_rate >= 0.8 ? 'text-green-400' : stats.approval_rate >= 0.6 ? 'text-yellow-400' : 'text-red-400'"
+                   x-text="(stats.approval_rate * 100 || 0).toFixed(0) + '%'"></div>
+              <div class="text-gray-400 text-xs mt-0.5">Approval</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+              <div class="text-xl font-bold text-blue-400" x-text="(stats.avg_decision_time_minutes || 0).toFixed(0) + 'm'"></div>
+              <div class="text-gray-400 text-xs mt-0.5">Avg Time</div>
+            </div>
+          </div>
+        </template>
+        <template x-if="!stats">
+          <div class="contents">
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700 animate-pulse">
+              <div class="text-xl font-bold text-gray-600">--</div>
+              <div class="text-gray-500 text-xs mt-0.5">Loading</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700 animate-pulse">
+              <div class="text-xl font-bold text-gray-600">--</div>
+              <div class="text-gray-500 text-xs mt-0.5">Loading</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700 animate-pulse">
+              <div class="text-xl font-bold text-gray-600">--</div>
+              <div class="text-gray-500 text-xs mt-0.5">Loading</div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Review waterfall -->
+      <div class="mb-2">
+        <h2 class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Review History</h2>
+      </div>
+
+      <div id="mobile-waterfall" class="space-y-2">
+        <template x-for="item in waterfall" :key="item.id">
+          <div @click="toggleDetail(item.id)"
+               class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden cursor-pointer active:bg-gray-750">
+            <div class="flex items-center px-3 py-2.5">
+              <!-- Action indicator -->
+              <div class="w-2 h-2 rounded-full mr-3 shrink-0"
+                   :class="item.action === 'approve' ? 'bg-green-500' : 'bg-red-500'"></div>
+
+              <!-- Summary -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-white text-sm font-medium">#<span x-text="item.review_id"></span></span>
+                  <span class="text-xs px-1.5 py-0.5 rounded font-medium"
+                        :class="item.action === 'approve' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'"
+                        x-text="item.action"></span>
+                </div>
+                <div class="text-gray-500 text-xs mt-0.5" x-text="item.actor + ' | ' + formatTime(item.created_at)"></div>
+              </div>
+
+              <!-- Expand chevron -->
+              <svg class="w-4 h-4 text-gray-500 shrink-0 transition-transform"
+                   :class="expandedId === item.id ? 'rotate-180' : ''"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+
+            <!-- Expanded detail -->
+            <div x-show="expandedId === item.id" x-transition class="px-3 pb-2.5 border-t border-gray-700 pt-2">
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span class="text-gray-500">From:</span>
+                  <span class="text-gray-300 ml-1" x-text="item.from_state || '-'"></span>
+                </div>
+                <div>
+                  <span class="text-gray-500">To:</span>
+                  <span class="text-gray-300 ml-1" x-text="item.to_state || '-'"></span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-gray-500">Source:</span>
+                  <span class="text-gray-300 ml-1" x-text="item.source_system || '-'"></span>
+                </div>
+                <div class="col-span-2" x-show="item.payload && item.payload.reason">
+                  <span class="text-gray-500">Reason:</span>
+                  <span class="text-red-400 ml-1" x-text="item.payload ? item.payload.reason : ''"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Empty state -->
+        <template x-if="waterfall.length === 0 && !loading">
+          <div class="text-center py-12 text-gray-500">
+            <svg class="w-12 h-12 mx-auto mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="text-sm">No review history</p>
+          </div>
+        </template>
+
+        <!-- Loading -->
+        <template x-if="loading">
+          <div class="flex items-center justify-center py-8">
+            <svg class="animate-spin h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          </div>
+        </template>
+
+        <!-- Load more -->
+        <template x-if="hasMore && !loading">
+          <div class="text-center py-2">
+            <button @click="loadMore()" class="text-blue-400 text-xs hover:text-blue-300">
+              Load more
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div x-data="{ show: false, msg: '', type: 'info' }"
+       x-show="show"
+       x-transition
+       @show-toast.window="show = true; msg = $event.detail.message; type = $event.detail.type; setTimeout(() => show = false, 3000)"
+       class="fixed bottom-4 inset-x-4 z-50 pointer-events-none">
+    <div class="max-w-sm mx-auto px-4 py-2 rounded-lg shadow-lg text-center text-sm font-medium"
+         :class="type === 'success' ? 'bg-green-600 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'"
+         x-text="msg">
+    </div>
+  </div>
+
+  <!-- CDN Scripts -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.9"></script>
+
+  <script>
+  function mobileAuditState() {
+    return {
+      stats: null,
+      waterfall: [],
+      expandedId: null,
+      loading: false,
+      hasMore: true,
+      cursor: null,
+
+      async init() {
+        await Promise.all([this.loadStats(), this.loadWaterfall()]);
+      },
+
+      async loadStats() {
+        try {
+          var resp = await fetch('/api/v1/audit/stats', { credentials: 'same-origin' });
+          var data = await resp.json();
+          if (data.data) {
+            this.stats = data.data;
+          }
+        } catch (e) {
+          console.warn('Failed to load stats:', e);
+        }
+      },
+
+      async loadWaterfall() {
+        this.loading = true;
+        try {
+          var url = '/api/v1/audit/timeline?limit=10&action=approve&action=reject';
+          if (this.cursor) url += '&cursor=' + this.cursor;
+          var resp = await fetch(url, { credentials: 'same-origin' });
+          var data = await resp.json();
+          if (data.data) {
+            this.waterfall = this.waterfall.concat(data.data.items || []);
+            this.hasMore = data.data.has_more || false;
+            this.cursor = data.data.next_cursor || null;
+          }
+        } catch (e) {
+          console.warn('Failed to load waterfall:', e);
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async loadMore() {
+        if (this.loading || !this.hasMore) return;
+        await this.loadWaterfall();
+      },
+
+      toggleDetail(id) {
+        this.expandedId = this.expandedId === id ? null : id;
+      },
+
+      formatTime(isoStr) {
+        if (!isoStr) return '';
+        var d = new Date(isoStr);
+        var now = new Date();
+        var diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+      }
+    };
+  }
+  </script>
+
+  <!-- Alpine.js (deferred) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+
+  {% if user.role == 'admin' %}
+  <!-- Admin link to policy diff -->
+  <div class="fixed bottom-4 right-4">
+    <a href="/audit-cockpit" class="bg-gray-700 text-gray-300 text-xs px-3 py-2 rounded-lg shadow-lg hover:bg-gray-600">
+      Full Cockpit
+    </a>
+  </div>
+  {% endif %}
+</body>
+</html>

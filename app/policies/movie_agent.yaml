@@ -1,0 +1,70 @@
+name: movie_agent
+version: "1.0"
+rules:
+  # High-risk visual phases — require human review
+  - name: high_risk_visual_phases
+    priority: 1
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-movie-agent"
+        - field: type
+          operator: equals
+          value: "movie_phase"
+        - field: metadata.phase_name
+          operator: in
+          value:
+            - art_direction
+            - art-direction
+            - character
+            - scene
+    disposition: HUMAN
+
+  # Medium-risk phases — human review for storyboard
+  - name: medium_risk_storyboard
+    priority: 2
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-movie-agent"
+        - field: type
+          operator: equals
+          value: "movie_phase"
+        - field: metadata.phase_name
+          operator: in
+          value:
+            - storyboard
+            - camera
+    disposition: HUMAN
+
+  # Low-risk audio phase — auto approve
+  - name: low_risk_voice
+    priority: 3
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-movie-agent"
+        - field: type
+          operator: equals
+          value: "movie_phase"
+        - field: metadata.phase_name
+          operator: equals
+          value: "voice"
+    disposition: AUTO
+
+  # Default for unknown movie-agent phases — safe conservative: human review
+  - name: movie_agent_default
+    priority: 10
+    conditions:
+      operator: AND
+      checks:
+        - field: source_system
+          operator: equals
+          value: "kais-movie-agent"
+    disposition: HUMAN
