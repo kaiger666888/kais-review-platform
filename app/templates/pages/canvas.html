@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline Canvas - Kai's Review Platform</title>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #030712; }
+    svg text { user-select: none; }
+  </style>
+</head>
+<body>
+<div x-data="canvasState()"
+     class="h-screen w-screen overflow-hidden bg-gray-950 relative"
+     @wheel.prevent="onWheel($event)"
+     @mousedown="onMouseDown($event)"
+     @mousemove="onMouseMove($event)"
+     @mouseup="onMouseUp($event)"
+     @keydown.document.escape="selectedNode = null">
+
+  <!-- Top bar -->
+  <div class="absolute top-0 left-0 right-0 h-11 bg-gray-900/90 backdrop-blur border-b border-gray-800 flex items-center px-4 z-30">
+    <a href="/" class="text-gray-300 text-sm font-semibold hover:text-white">← Review</a>
+    <h1 class="text-gray-300 text-sm font-semibold ml-4">Pipeline Canvas</h1>
+    <span class="ml-3 text-gray-600 text-xs font-mono" x-text="projectLabel"></span>
+    <div class="ml-auto flex items-center gap-3">
+      <button @click="fitView()" class="text-gray-500 hover:text-gray-300 text-xs px-2 py-1 border border-gray-700 rounded">Fit</button>
+      <button @click="zoomIn()" class="text-gray-500 hover:text-gray-300 text-xs px-2 py-1 border border-gray-700 rounded">+</button>
+      <span class="text-gray-600 text-xs font-mono w-12 text-center" x-text="Math.round(scale * 100) + '%'"></span>
+      <button @click="zoomOut()" class="text-gray-500 hover:text-gray-300 text-xs px-2 py-1 border border-gray-700 rounded">−</button>
+    </div>
+  </div>
+
+  <!-- Phase lane headers -->
+  <div class="absolute top-11 left-0 right-0 h-7 bg-gray-900/50 z-20 flex" style="pointer-events: none;">
+    <template x-for="phase in phases" :key="phase.id">
+      <div class="flex items-center px-3 text-xs font-bold tracking-wider border-r border-gray-800/50"
+           :style="'width: 260px; min-width: 260px; color:' + phase.color"
+           x-text="phase.label"></div>
+    </template>
+  </div>
+
+  <!-- Canvas viewport -->
+  <div class="absolute inset-0 pt-[72px] overflow-hidden">
+    <svg :viewBox="viewBox" class="w-full h-full" style="cursor: grab;" :style="isPanning ? 'cursor: grabbing' : ''">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4B5563"/>
+        </marker>
+      </defs>
+
+      <!-- Phase column backgrounds -->
+      <template x-for="(phase, i) in phases" :key="'bg-'+phase.id">
+        <rect :x="i * 270 - 10" :y="-5000" width="260" height="10000" :fill="phase.color" fill-opacity="0.03"/>
+      </template>
+
+      <!-- Phase column dividers -->
+      <template x-for="(phase, i) in phases" :key="'line-'+phase.id">
+        <line :x1="i * 270 - 10" :y1="-5000" :x2="i * 270 - 10" :y2="5000" stroke="#374151" stroke-width="1" stroke-dasharray="4,4"/>
+      </template>
+
+      <!-- Connection lines -->
+      <template x-for="conn in connections" :key="'c-'+conn.from+'-'+conn.to">
+        <path :d="'M'+conn.x1+','+conn.y1+' C'+(conn.x1+60)+','+conn.y1+' '+(conn.x2-60)+','+conn.y2+' '+conn.x2+','+conn.y2"
+              stroke="#4B5563" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)"/>
+      </template>
+
+      <!-- Nodes -->
+      <template x-for="node in nodes" :key="node.id">
+        <g @click.stop="selectedNode = node"
+           :transform="'translate(' + node.x + ',' + node.y + ')'"
+           class="cursor-pointer">
+          <!-- Shadow -->
+          <rect x="2" y="2" width="230" height="150" rx="8" fill="black" fill-opacity="0.3"/>
+          <!-- Card -->
+          <rect width="230" height="150" rx="8"
+                :fill="node.status === 'approved' ? '#064E3B' : node.status === 'rejected' ? '#7F1D1D' : '#1E293B'"
+                :stroke="selectedNode?.id === node.id ? '#60A5FA' : '#334155'"
+                stroke-width="selectedNode?.id === node.id ? 2 : 1"/>
+          <!-- Phase color top bar -->
+          <rect width="230" height="3" rx="2" :fill="getPhaseColor(node.phase)" y="0"/>
+          <!-- Thumbnail area -->
+          <rect x="10" y="14" width="80" height="50" rx="4" fill="#0F172A"/>
+          <image x="12" y="16" width="76" height="46" :href="node.thumbnail || ''"
+                 preserveAspectRatio="xMidYMid slice" @error="$el.style.display='none'"/>
+          <text x="50" y="44" text-anchor="middle" fill="#374151" font-size="18" x-show="!node.thumbnail">🖼</text>
+          <!-- Shot ID & phase -->
+          <text x="100" y="32" fill="#F3F4F6" font-size="12" font-weight="700" x-text="node.shot_id"></text>
+          <rect x="100" y="38" width="50" height="16" rx="4" :fill="getPhaseColor(node.phase)" fill-opacity="0.2"/>
+          <text x="125" y="50" text-anchor="middle" :fill="getPhaseColor(node.phase)" font-size="9" font-weight="600"
+                x-text="node.phase.toUpperCase()"></text>
+          <!-- Score bar -->
+          <text x="10" y="82" fill="#6B7280" font-size="9">AI Score</text>
+          <rect x="60" y="76" width="120" height="6" rx="3" fill="#1E293B"/>
+          <rect x="60" y="76" :width="Math.max(0, node.score || 0) * 1.2" height="6" rx="3"
+                :fill="!node.score ? '#374151' : node.score >= 80 ? '#10B981' : node.score >= 50 ? '#F59E0B' : '#EF4444'"/>
+          <text x="190" y="83" fill="#9CA3AF" font-size="9" x-text="(node.score || '—')"></text>
+          <!-- Status -->
+          <rect x="10" y="100" width="80" height="22" rx="11"
+                :fill="node.status === 'approved' ? '#059669' : node.status === 'rejected' ? '#DC2626' : '#4B5563'"/>
+          <text x="50" y="115" text-anchor="middle" fill="white" font-size="10" font-weight="600"
+                x-text="node.status === 'approved' ? '✓ Approved' : node.status === 'rejected' ? '✗ Rejected' : '⏳ Pending'"></text>
+          <!-- Narrative preview -->
+          <text x="100" y="115" fill="#6B7280" font-size="8" x-text="(node.narrative || '').substring(0, 50) + ((node.narrative || '').length > 50 ? '…' : '')"></text>
+          <!-- Time -->
+          <text x="10" y="140" fill="#4B5563" font-size="8" x-text="node.timeAgo"></text>
+          <!-- New pulse animation for pending -->
+          <g x-show="node.status === 'pending'">
+            <rect width="230" height="150" rx="8" fill="none" stroke="#FBBF24" stroke-width="1" opacity="0.5">
+              <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/>
+            </rect>
+          </g>
+        </g>
+      </template>
+
+      <!-- Empty state -->
+      <g x-show="nodes.length === 0" transform="translate(400, 200)">
+        <text x="0" y="0" text-anchor="middle" fill="#4B5563" font-size="16" font-weight="600">Waiting for pipeline events…</text>
+        <text x="0" y="24" text-anchor="middle" fill="#374151" font-size="12">Shot cards will appear here as the pipeline progresses</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Detail panel (slide from right) -->
+  <template x-if="selectedNode">
+    <div class="absolute top-11 right-0 bottom-0 w-80 bg-gray-900 border-l border-gray-800 z-40 overflow-y-auto p-5"
+         @click.stop
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-gray-200 text-base font-bold" x-text="selectedNode.shot_id"></h2>
+        <button @click="selectedNode = null" class="text-gray-500 hover:text-gray-300 text-xl leading-none">&times;</button>
+      </div>
+      <!-- Preview -->
+      <div class="bg-gray-800 rounded-lg overflow-hidden mb-4 aspect-video">
+        <img x-show="selectedNode.asset_url" :src="selectedNode.asset_url" class="w-full h-full object-cover"/>
+        <div x-show="!selectedNode.asset_url" class="flex items-center justify-center h-full text-gray-600 text-sm">No preview</div>
+      </div>
+      <!-- Phase & Status -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="text-gray-500 text-xs mb-1">Phase</div>
+          <div class="text-sm font-bold" :style="'color:' + getPhaseColor(selectedNode.phase)" x-text="selectedNode.phase.toUpperCase()"></div>
+        </div>
+        <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="text-gray-500 text-xs mb-1">Status</div>
+          <div class="text-sm font-bold"
+               :class="selectedNode.status === 'approved' ? 'text-green-400' : selectedNode.status === 'rejected' ? 'text-red-400' : 'text-yellow-400'"
+               x-text="selectedNode.status"></div>
+        </div>
+      </div>
+      <!-- Scores -->
+      <template x-if="selectedNode.scores">
+        <div class="mb-4">
+          <div class="text-gray-500 text-xs mb-2 font-semibold">Quality Scores</div>
+          <template x-for="[key, val] in Object.entries(selectedNode.scores)" :key="key">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-gray-400 text-xs capitalize" x-text="key.replace(/_/g, ' ')"></span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 h-1.5 bg-gray-800 rounded-full">
+                  <div class="h-1.5 rounded-full transition-all"
+                       :style="'width:' + (val || 0) + '%'"
+                       :class="val >= 80 ? 'bg-green-500' : val >= 50 ? 'bg-yellow-500' : 'bg-red-500'"></div>
+                </div>
+                <span class="text-gray-300 text-xs w-8 text-right" x-text="(val || 0).toFixed(0)"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <!-- Context -->
+      <template x-if="selectedNode.narrative">
+        <div class="mb-4">
+          <div class="text-gray-500 text-xs mb-1 font-semibold">Context</div>
+          <p class="text-gray-400 text-xs leading-relaxed bg-gray-800/30 rounded p-2" x-text="selectedNode.narrative"></p>
+        </div>
+      </template>
+      <!-- Actions -->
+      <div class="flex gap-2 mt-4 pt-4 border-t border-gray-800">
+        <button @click="approveNode(selectedNode)"
+                class="flex-1 py-2.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg font-semibold transition-colors">
+          ✓ Approve
+        </button>
+        <button @click="rejectNode(selectedNode)"
+                class="flex-1 py-2.5 bg-red-700 hover:bg-red-600 text-white text-xs rounded-lg font-semibold transition-colors">
+          ✗ Reject
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <!-- SSE status -->
+  <div class="absolute bottom-4 right-4 z-30 flex items-center gap-2 bg-gray-900/80 rounded-full px-3 py-1">
+    <div class="w-2 h-2 rounded-full" :class="sseConnected ? 'bg-green-500' : 'bg-red-500'"></div>
+    <span class="text-gray-500 text-xs" x-text="sseConnected ? 'Live' : 'Offline'"></span>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="absolute bottom-4 left-4 z-30 bg-gray-900/80 rounded-lg px-4 py-2 text-xs flex items-center gap-3">
+    <span class="text-gray-400">Nodes <span class="text-gray-200 font-mono" x-text="nodes.length"></span></span>
+    <span class="text-green-500">✓ <span x-text="nodes.filter(n => n.status === 'approved').length"></span></span>
+    <span class="text-red-500">✗ <span x-text="nodes.filter(n => n.status === 'rejected').length"></span></span>
+    <span class="text-yellow-500">⏳ <span x-text="nodes.filter(n => n.status === 'pending').length"></span></span>
+  </div>
+</div>
+
+<script>
+function canvasState() {
+  return {
+    panX: 30, panY: 30, scale: 0.8,
+    isPanning: false, panStart: { x: 0, y: 0 },
+    selectedNode: null, sseConnected: false, projectLabel: '',
+    nodes: [], connections: [],
+
+    phases: [
+      { id: 'storyboard', label: 'STORYBOARD', color: '#A78BFA' },
+      { id: 'character', label: 'CHARACTER', color: '#F472B6' },
+      { id: 'image', label: 'IMAGE RENDER', color: '#34D399' },
+      { id: 'video', label: 'VIDEO', color: '#60A5FA' },
+      { id: 'audio', label: 'AUDIO', color: '#FBBF24' },
+      { id: 'compose', label: 'COMPOSE', color: '#F87171' },
+    ],
+
+    get viewBox() {
+      const w = window.innerWidth / this.scale;
+      const h = (window.innerHeight - 72) / this.scale;
+      return `${-this.panX} ${-this.panY} ${w} ${h}`;
+    },
+
+    getPhaseColor(phase) {
+      return (this.phases.find(p => p.id === phase) || {}).color || '#6B7280';
+    },
+
+    onWheel(e) {
+      const d = e.deltaY > 0 ? 0.92 : 1.08;
+      this.scale = Math.max(0.15, Math.min(3, this.scale * d));
+    },
+    onMouseDown(e) {
+      if (e.target.closest('.cursor-pointer') || e.target.closest('button') || e.target.closest('a') || e.target.closest('[x-transition]')) return;
+      this.isPanning = true;
+      this.panStart = { x: e.clientX - this.panX * this.scale, y: e.clientY - this.panY * this.scale };
+    },
+    onMouseMove(e) {
+      if (!this.isPanning) return;
+      this.panX = (e.clientX - this.panStart.x) / this.scale;
+      this.panY = (e.clientY - this.panStart.y) / this.scale;
+    },
+    onMouseUp() { this.isPanning = false; },
+    zoomIn() { this.scale = Math.min(3, this.scale * 1.25); },
+    zoomOut() { this.scale = Math.max(0.15, this.scale / 1.25); },
+
+    fitView() {
+      if (!this.nodes.length) { this.panX = 30; this.panY = 30; this.scale = 0.8; return; }
+      const xs = this.nodes.map(n => n.x);
+      const ys = this.nodes.map(n => n.y);
+      const minX = Math.min(...xs) - 60, minY = Math.min(...ys) - 60;
+      const maxX = Math.max(...xs) + 290, maxY = Math.max(...ys) + 210;
+      const w = maxX - minX, h = maxY - minY;
+      this.scale = Math.min(window.innerWidth / w, (window.innerHeight - 72) / h, 1.2);
+      this.panX = -minX + (window.innerWidth / this.scale - w) / 2;
+      this.panY = -minY + ((window.innerHeight - 72) / this.scale - h) / 2;
+    },
+
+    layoutNodes() {
+      const phaseCols = {};
+      this.phases.forEach((p, i) => phaseCols[p.id] = i);
+      const buckets = {};
+      this.nodes.forEach(n => {
+        const col = phaseCols[n.phase] ?? 0;
+        (buckets[col] = buckets[col] || []).push(n);
+      });
+      Object.entries(buckets).forEach(([col, nodes]) => {
+        nodes.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+        nodes.forEach((n, i) => { n.x = parseInt(col) * 270; n.y = i * 170; });
+      });
+      this.connections = [];
+      const shotPhases = {};
+      this.nodes.forEach(n => { (shotPhases[n.shot_id] = shotPhases[n.shot_id] || []).push(n); });
+      Object.values(shotPhases).forEach(arr => {
+        arr.sort((a, b) => (phaseCols[a.phase] ?? 0) - (phaseCols[b.phase] ?? 0));
+        for (let i = 1; i < arr.length; i++) {
+          const p = arr[i-1], c = arr[i];
+          this.connections.push({
+            from: p.id, to: c.id,
+            x1: p.x + 230, y1: p.y + 75,
+            x2: c.x, y2: c.y + 75,
+          });
+        }
+      });
+    },
+
+    upsertNode(card) {
+      const node = {
+        id: card.id,
+        shot_id: card.shot_id || card.shotId || 'shot',
+        phase: card.phase || 'image',
+        status: card.status || 'pending',
+        asset_url: card.asset_url || card.assetUrl || card.thumbnail_url || '',
+        thumbnail: card.thumbnail_url || card.thumbnailUrl || card.asset_url || '',
+        score: card.ai_score || card.score || card.score_aesthetics || null,
+        scores: card.scores || null,
+        narrative: card.narrative || card.prompt || '',
+        created_at: card.created_at || card.createdAt || new Date().toISOString(),
+        timeAgo: this.timeAgo(card.created_at || card.createdAt),
+      };
+      const idx = this.nodes.findIndex(n => n.id === node.id);
+      if (idx >= 0) Object.assign(this.nodes[idx], node);
+      else this.nodes.push(node);
+      this.layoutNodes();
+    },
+
+    timeAgo(s) {
+      if (!s) return '';
+      const m = Math.floor((Date.now() - new Date(s).getTime()) / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    },
+
+    async approveNode(node) {
+      const r = await fetch('/api/v1/v6/shot-cards/' + node.id + '/approve', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actor: 'canvas' }),
+      });
+      if (r.ok) node.status = 'approved';
+    },
+    async rejectNode(node) {
+      const reason = prompt('Rejection reason:');
+      if (!reason) return;
+      const r = await fetch('/api/v1/v6/shot-cards/' + node.id + '/reject', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actor: 'canvas', reason }),
+      });
+      if (r.ok) node.status = 'rejected';
+    },
+
+    async init() {
+      try {
+        const r = await fetch('/api/v1/v6/shot-cards?limit=200');
+        if (r.ok) {
+          const d = await r.json();
+          const cards = d.items || d.cards || d.data || [];
+          if (cards.length && cards[0].project_id) this.projectLabel = cards[0].project_id;
+          cards.forEach(c => this.upsertNode(c));
+          if (this.nodes.length) this.fitView();
+        }
+      } catch (e) { console.error('Load failed:', e); }
+      this.connectSSE();
+    },
+
+    connectSSE() {
+      const es = new EventSource('/events/stream');
+      es.onopen = () => { this.sseConnected = true; };
+      es.onerror = () => { this.sseConnected = false; setTimeout(() => this.connectSSE(), 5000); };
+      es.addEventListener('review_status', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.shot_card || d.card) this.upsertNode(d.shot_card || d.card);
+        } catch (err) { console.error('SSE:', err); }
+      });
+    },
+  };
+}
+</script>
+</body>
+</html>

@@ -1158,6 +1158,22 @@ async def analytics_dashboard(request: Request):
     })
 
 
+@router.get("/canvas", response_class=HTMLResponse)
+async def canvas_page(request: Request):
+    """Infinite canvas: pipeline shot cards laid out by phase column."""
+    try:
+        user = await get_template_user(
+            access_token=request.cookies.get("access_token"),
+        )
+    except Exception:
+        return RedirectResponse(url="/login", status_code=303)
+
+    return templates.TemplateResponse(request, "pages/canvas.html", {
+        "user": user,
+        "active_tab": "canvas",
+    })
+
+
 @router.get("/partials/analytics-metrics", response_class=HTMLResponse)
 async def analytics_metrics_partial(
     request: Request,
