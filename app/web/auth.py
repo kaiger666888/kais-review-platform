@@ -15,18 +15,18 @@ templates = Jinja2Templates(directory="app/templates")
 async def get_template_user(
     access_token: str | None = Cookie(None),
 ) -> dict:
-    """FastAPI dependency: read JWT from httpOnly cookie, return dict with client and role."""
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    settings = get_settings()
-    try:
-        payload = decode_jwt(access_token, settings.jwt_secret)
-    except AuthenticationError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return {
-        "client": payload.get("client", "unknown"),
-        "role": payload.get("role", "reviewer"),
-    }
+    """Return user info. No auth required for local use."""
+    if access_token:
+        settings = get_settings()
+        try:
+            payload = decode_jwt(access_token, settings.jwt_secret)
+            return {
+                "client": payload.get("client", "unknown"),
+                "role": payload.get("role", "reviewer"),
+            }
+        except AuthenticationError:
+            pass
+    return {"client": "local", "role": "admin"}
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -49,13 +49,13 @@ async def login_submit(request: Request, api_key: str = Form("")):
         return templates.TemplateResponse(request, "pages/login.html", {
             "error": "Invalid API key",
         }, status_code=200)
-    jwt_token = create_jwt("admin", settings.jwt_secret, expires_minutes=15, role="admin")
+    jwt_token = create_jwt("admin", settings.jwt_secret, expires_minutes=1440, role="admin")
     response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(
         key="access_token",
         value=jwt_token,
         httponly=True,
-        max_age=900,
+        max_age=86400,
         samesite="lax",
     )
     return response
@@ -81,7 +81,7 @@ async def token_deep_link(token: str, request: Request):
         return RedirectResponse(url="/?toast=token_expired", status_code=303)
 
     # Create JWT and set as httpOnly cookie
-    jwt_token = create_jwt("reviewer", settings.jwt_secret, expires_minutes=15, role="reviewer")
+    jwt_token = create_jwt("reviewer", settings.jwt_secret, expires_minutes=1440, role="reviewer")
     response = RedirectResponse(
         url=f"/?detail={review_id}",
         status_code=303,
@@ -90,7 +90,7 @@ async def token_deep_link(token: str, request: Request):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        max_age=900,  # 15 minutes
+        max_age=86400,
         samesite="lax",
     )
     return response

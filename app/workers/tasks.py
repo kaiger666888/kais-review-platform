@@ -340,28 +340,39 @@ async def deliver_review_callback(
             logger.error("callback_review_not_found", review_id=review_id)
             return {"status": "error", "reason": "review_not_found"}
 
-    # Skip delivery if review has no callback_url
-    if not review.callback_url:
-        return {"status": "skipped", "reason": "no_callback_url"}
+        # Refresh to ensure we read the latest committed metadata_json
+        # (the approve endpoint writes review_result in the same txn as the
+        # state transition, but arq may pick up the job before the ORM
+        # attribute is visible on a recycled session).
+        await session.refresh(review)
 
-    # Build enriched callback payload
-    result = None
-    if review.metadata_json and "review_result" in review.metadata_json:
-        result = review.metadata_json["review_result"]
+        # Skip delivery if review has no callback_url
+        if not review.callback_url:
+            return {"status": "skipped", "reason": "no_callback_url"}
 
+        # Capture all needed fields while session is active
+        callback_url = review.callback_url
+        callback_secret = review.callback_secret
+        disposition = review.disposition
+        source_system = review.source_system
+        result = None
+        if review.metadata_json and "review_result" in review.metadata_json:
+            result = review.metadata_json["review_result"]
+
+    # Build enriched callback payload (using fields captured inside session)
     callback_payload = {
         **event_data,
-        "disposition": review.disposition,
-        "review_id": review.id,
-        "source_system": review.source_system,
+        "disposition": disposition,
+        "review_id": review_id,
+        "source_system": source_system,
         "result": result,
     }
 
     # Compute HMAC-SHA256 signature using review's callback_secret
     body = json.dumps(callback_payload, default=str)
-    if review.callback_secret:
+    if callback_secret:
         signature = hmac.new(
-            review.callback_secret.encode(), body.encode(), hashlib.sha256
+            callback_secret.encode(), body.encode(), hashlib.sha256
         ).hexdigest()
     else:
         signature = ""
@@ -378,7 +389,7 @@ async def deliver_review_callback(
 
     try:
         response = await client.post(
-            review.callback_url,
+            callback_url,
             content=body,
             headers=headers,
             timeout=10.0,
@@ -387,7 +398,7 @@ async def deliver_review_callback(
             raise Exception(f"HTTP {response.status_code}: {response.text[:200]}")
         logger.info(
             "callback_delivered",
-            url=review.callback_url,
+            url=callback_url,
             status_code=response.status_code,
             try_number=job_try,
         )
@@ -395,7 +406,7 @@ async def deliver_review_callback(
     except Exception as e:
         logger.warning(
             "callback_delivery_failed",
-            url=review.callback_url,
+            url=callback_url,
             error=str(e),
             try_number=job_try,
         )
@@ -404,10 +415,10 @@ async def deliver_review_callback(
         logger.error(
             "callback_delivery_exhausted",
             review_id=review_id,
-            callback_url=review.callback_url,
+            callback_url=callback_url,
             tries=job_try,
         )
-        await _notify_telegram_admin(review_id, review.callback_url, str(e))
+        await _notify_telegram_admin(review_id, callback_url, str(e))
         return {"status": "failed", "error": str(e), "tries": job_try}
 
 

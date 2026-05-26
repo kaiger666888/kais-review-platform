@@ -71,6 +71,7 @@ async def transition_state(
     actor: str,
     action: str | None = None,
     payload: dict | None = None,
+    extra_updates: dict | None = None,
 ) -> Review:
     """Execute a state transition with optimistic locking.
 
@@ -83,6 +84,8 @@ async def transition_state(
         actor: Identity of the entity performing the transition.
         action: Optional action label for the audit log.
         payload: Optional extra data for the audit log.
+        extra_updates: Optional dict of additional column values to set
+            atomically with the state transition (e.g. metadata_json).
 
     Returns:
         The updated Review object.
@@ -103,6 +106,14 @@ async def transition_state(
         raise TerminalStateError("Cannot transition from terminal state COMPLETE")
 
     # Execute optimistic locking UPDATE
+    values = {
+        "state": to_state.value,
+        "version": expected_version + 1,
+        "updated_at": func.now(),
+    }
+    if extra_updates:
+        values.update(extra_updates)
+
     stmt = (
         update(Review)
         .where(
@@ -110,11 +121,7 @@ async def transition_state(
             Review.version == expected_version,
             Review.state == from_state.value,
         )
-        .values(
-            state=to_state.value,
-            version=expected_version + 1,
-            updated_at=func.now(),
-        )
+        .values(**values)
     )
     result = await session.execute(stmt)
 

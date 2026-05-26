@@ -353,6 +353,14 @@ async def approve_review(
             detail=f"Review is not in APPROVING state, current state: {review.state}",
         )
 
+    # Store result in metadata and pass to transition_state so both
+    # state change and metadata update happen in a single atomic commit,
+    # guaranteeing the callback worker reads the committed review_result.
+    metadata = None
+    if request.result:
+        metadata = review.metadata_json or {}
+        metadata["review_result"] = request.result.model_dump()
+
     try:
         await transition_state(
             db,
@@ -363,6 +371,7 @@ async def approve_review(
             actor,
             action="approve",
             payload={"comment": request.comment},
+            extra_updates={"metadata_json": metadata} if metadata else None,
         )
     except StateConflictError:
         raise HTTPException(
@@ -374,11 +383,6 @@ async def approve_review(
             status_code=status.HTTP_409_CONFLICT,
             detail="Invalid state transition",
         )
-
-    if request.result:
-        metadata = review.metadata_json or {}
-        metadata["review_result"] = request.result.model_dump()
-        review.metadata_json = metadata
 
     await db.refresh(review)
     return ApiResponse(
