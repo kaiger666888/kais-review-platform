@@ -17,6 +17,13 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# 本地 .env 携带 docker-compose 专用键(postgres_password/minio_root_*),
+# Settings(extra=forbid) 读到即崩——测试一律禁读 env_file,全部字段值走
+# 下方 os.environ 注入(docker 测试环境不经此路径)。
+from app.core.config import Settings as _Settings
+
+_Settings.model_config["env_file"] = None
+
 from app.core.auth import create_jwt
 from app.core.config import Settings, get_settings
 from app.models.schema import Base, create_tables

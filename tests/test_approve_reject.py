@@ -301,6 +301,7 @@ class TestDecisionPersistenceAndWaive:
         # 本地 .env 携带非 Settings 字段(compose 用键)会触发 extra_forbidden
         # ——既有 HTTP 级测试在本地同坏;此处禁读 env_file,字段值全部来自
         # conftest 的 os.environ 注入(docker 测试环境不受影响)。
+        _orig_env_file = Settings.model_config.get("env_file")
         Settings.model_config["env_file"] = None
         from app.main import app  # noqa: E402 (import after config patch)
         from app.core.database import get_db
@@ -328,6 +329,8 @@ class TestDecisionPersistenceAndWaive:
         async with AsyncClient(transport=transport, base_url="http://test") as c:
             yield c, db_session
         app.dependency_overrides.clear()
+        # 恢复类级 config(变异不得泄漏到后续测试)
+        Settings.model_config["env_file"] = _orig_env_file
 
     @pytest_asyncio.fixture
     async def approving_http(self, db_session):

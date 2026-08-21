@@ -301,6 +301,11 @@ class RejectRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
 
 
+class WaiveRequest(BaseModel):
+    """Waive request (54-02 R1 / GATE-03) — mirror of RejectRequest."""
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class ShotCardApproveRequest(BaseModel):
     comment: str | None = None
 

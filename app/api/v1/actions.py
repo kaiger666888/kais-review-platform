@@ -2,6 +2,7 @@
 
 POST /api/v1/reviews/{review_id}/approve -- Approve a review (REV-04)
 POST /api/v1/reviews/{review_id}/reject  -- Reject a review (REV-05)
+POST /api/v1/reviews/{review_id}/waive   -- Waive a review (54-02 R1, GATE-03)
 POST /api/v1/reviews/{review_id}/token   -- Generate one-time review token (DEBT-01)
 POST /api/v1/reviews/batch/approve       -- Batch approve multiple reviews
 POST /api/v1/reviews/batch/reject        -- Batch reject multiple reviews
@@ -36,6 +37,7 @@ from app.models.schemas import (
     ReviewResponse,
     ReviewState,
     ReviewTokenResponse,
+    WaiveRequest,
 )
 
 logger = structlog.get_logger(__name__)
@@ -356,10 +358,14 @@ async def approve_review(
     # Store result in metadata and pass to transition_state so both
     # state change and metadata update happen in a single atomic commit,
     # guaranteeing the callback worker reads the committed review_result.
-    metadata = None
-    if request.result:
-        metadata = review.metadata_json or {}
-        metadata["review_result"] = request.result.model_dump()
+    # R1 (54-02): decision ALWAYS lands on the record — the kmc poller reads
+    # metadata.review_result; an approve without result still carries
+    # {"decision": "approve"}. result fields merge on top when present.
+    metadata = review.metadata_json or {}
+    metadata["review_result"] = {
+        "decision": "approve",
+        **(request.result.model_dump() if request.result else {}),
+    }
 
     try:
         await transition_state(
@@ -429,6 +435,11 @@ async def reject_review(
             detail=f"Review is not in APPROVING state, current state: {review.state}",
         )
 
+    # R1 (54-02): reject decision lands on the record alongside the audit trail.
+    reject_metadata = {
+        **(review.metadata_json or {}),
+        "review_result": {"decision": "reject", "reason": request.reason},
+    }
     try:
         await transition_state(
             db,
@@ -439,6 +450,80 @@ async def reject_review(
             actor,
             action="reject",
             payload={"reason": request.reason},
+            extra_updates={"metadata_json": reject_metadata},
+        )
+    except StateConflictError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="State conflict: review was modified concurrently",
+        )
+    except InvalidTransitionError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invalid state transition",
+        )
+
+    await db.refresh(review)
+    return ApiResponse(
+        data=_review_response(review).model_dump(),
+        meta={"request_id": _request_id()},
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /{review_id}/waive
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/{review_id}/waive",
+    response_model=ApiResponse[ReviewResponse],
+)
+async def waive_review(
+    review_id: int,
+    request: WaiveRequest,
+    token: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    client: str = Depends(get_current_client),
+    redis=Depends(get_redis),
+):
+    """Waive a review item (54-02 R1 / GATE-03).
+
+    Mirror of reject_review: mandatory reason (1..500), APPROVING
+    prerequisite, same 404/409 guards. Decision lands on the record as
+    metadata.review_result = {"decision": "waive", "reason": ...} for the
+    kmc poller (R2/R3) to consume.
+    """
+    actor = await _resolve_actor(review_id, token, client, redis)
+
+    review = await db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Review {review_id} not found",
+        )
+
+    if review.state != ReviewState.APPROVING.value:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Review is not in APPROVING state, current state: {review.state}",
+        )
+
+    waive_metadata = {
+        **(review.metadata_json or {}),
+        "review_result": {"decision": "waive", "reason": request.reason},
+    }
+    try:
+        await transition_state(
+            db,
+            review.id,
+            ReviewState.APPROVING,
+            ReviewState.COMPLETE,
+            review.version,
+            actor,
+            action="waive",
+            payload={"reason": request.reason},
+            extra_updates={"metadata_json": waive_metadata},
         )
     except StateConflictError:
         raise HTTPException(
