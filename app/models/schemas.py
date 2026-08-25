@@ -406,3 +406,36 @@ class ApiResponse(BaseModel, Generic[T]):
     data: T | None = None
     meta: dict | None = None
     error: ErrorResponse | None = None
+
+
+# --- G15 ops (v3.2 Phase 67 / WBX-01): per-shot waive/requeue ---
+
+
+class G15OpsRequest(BaseModel):
+    """Per-shot waive/requeue on the open gate review (kap g15Bridge 形状).
+
+    shotIds 1..200 项、每项 1..128 字符(与 kap 桥 fail-closed 同口径)。
+    episode_refs 是 kap 侧画布探针解析的 episode 候选集(WR-01 同源),
+    content_ref 的 episode 段命中任一即算匹配。
+    """
+
+    model_config = {"populate_by_name": True}
+
+    projectId: int
+    episodeId: str = Field(min_length=1, max_length=64)
+    action: Literal["waive", "requeue"]
+    shotIds: list[str] = Field(min_length=1, max_length=200)
+    comment: str | None = Field(default=None, max_length=500)
+    gate: str = Field(min_length=1, max_length=64)
+    episode_refs: list[str] | None = Field(default=None, alias="episodeRefs")
+
+
+class G15OpsResponse(BaseModel):
+    """g15 ops 回执:delivered 恒 true(404/409 走 HTTP 错误码)。"""
+
+    delivered: bool
+    review_id: int
+    gate: str
+    action: Literal["waive", "requeue"]
+    shot_ids: list[str]
+    applied_at: str

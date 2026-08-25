@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.ab_tests import router as ab_tests_router
 from app.api.v1.actions import router as actions_router
+from app.api.v1.g15_ops import router as g15_ops_router
 from app.api.v1.audit_api import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.events import router as events_router
@@ -116,6 +117,7 @@ app.include_router(ab_tests_router)
 app.include_router(auth_router)
 app.include_router(reviews_router)
 app.include_router(actions_router)
+app.include_router(g15_ops_router)
 app.include_router(audit_router)
 app.include_router(policies_router)
 app.include_router(events_router)

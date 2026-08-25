@@ -153,6 +153,18 @@ async def batch_approve_reviews(
             continue
 
         try:
+            # 67-02 (v3.2 WBX-04 / F16): batch 路径此前不写
+            # metadata.review_result.decision——kmc poller 读不到三方
+            # 决策不一致(web UI 批准 → kmc 不阻、kap 反显示 approve)。
+            # 与单条端点同语义:decision 落记录 + carry-forward 豁免子集。
+            _meta = review.metadata_json or {}
+            _prev = _meta.get("review_result") if isinstance(_meta.get("review_result"), dict) else {}
+            _prev = _prev or {}
+            _new = {"decision": "approve"}
+            for _carry in ("waived_shot_ids", "requeue_shot_ids"):
+                if _carry in _prev:
+                    _new[_carry] = _prev[_carry]
+            _meta["review_result"] = _new
             await transition_state(
                 db,
                 review.id,
@@ -162,6 +174,7 @@ async def batch_approve_reviews(
                 actor,
                 action="batch_approve",
                 payload={"comment": request.comment, "batch": True},
+                extra_updates={"metadata_json": _meta},
             )
             items.append(
                 BatchItemResult(review_id=review_id, status="success")
@@ -260,6 +273,10 @@ async def batch_reject_reviews(
             continue
 
         try:
+            # 67-02 (v3.2 WBX-04 / F16):batch reject 同样落 decision(与
+            # 单条 reject 同语义:kmc poller 读 review_result.decision)。
+            _meta_r = review.metadata_json or {}
+            _meta_r["review_result"] = {"decision": "reject", "reason": request.reason}
             await transition_state(
                 db,
                 review.id,
@@ -269,6 +286,7 @@ async def batch_reject_reviews(
                 actor,
                 action="batch_reject",
                 payload={"reason": request.reason, "batch": True},
+                extra_updates={"metadata_json": _meta_r},
             )
             items.append(
                 BatchItemResult(review_id=review_id, status="success")
@@ -362,10 +380,20 @@ async def approve_review(
     # metadata.review_result; an approve without result still carries
     # {"decision": "approve"}. result fields merge on top when present.
     metadata = review.metadata_json or {}
-    metadata["review_result"] = {
+    prev_result = (
+        metadata.get("review_result") if isinstance(metadata.get("review_result"), dict) else {}
+    ) or {}
+    new_result = {
         "decision": "approve",
         **(request.result.model_dump() if request.result else {}),
     }
+    # 67-02 (v3.2 F09/F15): carry-forward 逐镜头豁免/重渲子集——approve 覆写
+    # review_result 曾把 g15/ops 预积累的 waived_shot_ids 冲掉,kmc 侧豁免
+    # 从子集放大回全量。
+    for _carry in ("waived_shot_ids", "requeue_shot_ids"):
+        if _carry in prev_result and _carry not in new_result:
+            new_result[_carry] = prev_result[_carry]
+    metadata["review_result"] = new_result
 
     try:
         await transition_state(

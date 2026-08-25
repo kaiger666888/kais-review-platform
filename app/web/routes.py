@@ -176,17 +176,26 @@ async def approve_review_htmx(request: Request, review_id: int):
         if review is None:
             return HTMLResponse("<p>Review not found.</p>", status_code=404)
 
-        # Store candidate selection in metadata if present
+        # 67-02 (v3.2 WBX-04 / F16):web 单条 approve 此前不写
+        # review_result.decision(API 路径 54-02 R1 有,kmc poller 三方读法
+        # 不一致)。现在与 API 同语义:decision + selected + 豁免子集 carry。
         payload_data = {"comment": comment if isinstance(comment, str) else None}
+        metadata = review.metadata_json or {}
+        prev_result = (
+            metadata.get("review_result")
+            if isinstance(metadata.get("review_result"), dict) else {}
+        ) or {}
+        new_result = {"decision": "approve"}
         if selected_raw and str(selected_raw).strip():
             import json as _json
             try:
-                selected = _json.loads(str(selected_raw))
-                metadata = review.metadata_json or {}
-                metadata["review_result"] = {"selected": selected}
-                review.metadata_json = metadata
+                new_result["selected"] = _json.loads(str(selected_raw))
             except (ValueError, TypeError):
                 pass
+        for _carry in ("waived_shot_ids", "requeue_shot_ids"):
+            if _carry in prev_result and _carry not in new_result:
+                new_result[_carry] = prev_result[_carry]
+        metadata["review_result"] = new_result
 
         try:
             await transition_state(
@@ -198,6 +207,7 @@ async def approve_review_htmx(request: Request, review_id: int):
                 actor="reviewer",
                 action="approve",
                 payload=payload_data,
+                extra_updates={"metadata_json": metadata},
             )
         except (StateConflictError, InvalidTransitionError) as e:
             return HTMLResponse(
@@ -229,6 +239,9 @@ async def reject_review_htmx(request: Request, review_id: int, reason: str = For
         if review is None:
             return HTMLResponse("<p>Review not found.</p>", status_code=404)
 
+        # 67-02 (v3.2 WBX-04 / F16):web 单条 reject 落 decision(与 API 同语义)。
+        _meta_r = review.metadata_json or {}
+        _meta_r["review_result"] = {"decision": "reject", "reason": reason}
         try:
             await transition_state(
                 session=session,
@@ -239,6 +252,7 @@ async def reject_review_htmx(request: Request, review_id: int, reason: str = For
                 actor="reviewer",
                 action="reject",
                 payload={"reason": reason},
+                extra_updates={"metadata_json": _meta_r},
             )
         except (StateConflictError, InvalidTransitionError) as e:
             return HTMLResponse(
@@ -309,6 +323,17 @@ async def batch_approve_reviews_htmx(request: Request):
                 continue
 
             try:
+                # 67-02 (v3.2 WBX-04 / F16):web batch approve 落 decision。
+                _meta_a = review.metadata_json or {}
+                _prev_a = (
+                    _meta_a.get("review_result")
+                    if isinstance(_meta_a.get("review_result"), dict) else {}
+                ) or {}
+                _new_a = {"decision": "approve"}
+                for _carry in ("waived_shot_ids", "requeue_shot_ids"):
+                    if _carry in _prev_a:
+                        _new_a[_carry] = _prev_a[_carry]
+                _meta_a["review_result"] = _new_a
                 await transition_state(
                     session=session,
                     review_id=review_id,
@@ -318,6 +343,7 @@ async def batch_approve_reviews_htmx(request: Request):
                     actor="reviewer",
                     action="approve",
                     payload={"comment": str(comment) if comment else None},
+                    extra_updates={"metadata_json": _meta_a},
                 )
                 approved_count += 1
             except (StateConflictError, InvalidTransitionError) as e:
@@ -386,6 +412,12 @@ async def batch_reject_reviews_htmx(request: Request):
                 continue
 
             try:
+                # 67-02 (v3.2 WBX-04 / F16):web batch reject 落 decision。
+                _meta_j = review.metadata_json or {}
+                _meta_j["review_result"] = {
+                    "decision": "reject",
+                    "reason": str(comment) if comment else "batch_reject",
+                }
                 await transition_state(
                     session=session,
                     review_id=review_id,
@@ -395,6 +427,7 @@ async def batch_reject_reviews_htmx(request: Request):
                     actor="reviewer",
                     action="reject",
                     payload={"reason": str(comment) if comment else "batch_reject"},
+                    extra_updates={"metadata_json": _meta_j},
                 )
                 rejected_count += 1
             except (StateConflictError, InvalidTransitionError) as e:
